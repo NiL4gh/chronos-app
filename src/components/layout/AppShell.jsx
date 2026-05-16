@@ -8,7 +8,7 @@ import Button from '../ui/Button';
 import { Input, Select } from '../ui/Input';
 import Toggle from '../ui/Toggle';
 
-const AppShell = ({ role = 'admin' }) => {
+const AppShell = ({ role = 'admin', onRoleChange }) => {
   const [collapsed, setCollapsed] = useState(false);
 
   // Toast state
@@ -47,8 +47,26 @@ const AppShell = ({ role = 'admin' }) => {
         <Topbar
           collapsed={collapsed}
           onLogTime={() => setManualTimeOpen(true)}
+          onStartTimer={() => triggerToast('Timer started', 'Your timer is running. Stop it anytime from My Time.', 'success')}
+          role={role}
+          onRoleChange={onRoleChange}
         />
         <main className="flex-1 overflow-y-auto px-8 py-6">
+          {role === 'employee' && (
+            <div className="mb-6 flex items-center justify-between px-4 py-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
+                <p className="text-xs font-medium text-amber-400">Viewing as Employee — Alex Johnson</p>
+                <p className="text-xs text-neutral-500">You are seeing the restricted employee interface.</p>
+              </div>
+              <button
+                onClick={() => onRoleChange('admin')}
+                className="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors duration-150"
+              >
+                Switch back to Admin
+              </button>
+            </div>
+          )}
           <Outlet context={{ triggerToast, role }} />
         </main>
       </div>

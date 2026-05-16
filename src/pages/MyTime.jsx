@@ -5,6 +5,7 @@ import {
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
+import { Input } from '../components/ui/Input'
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
 import { timeLogs, projects } from '../data/mockData'
@@ -15,6 +16,7 @@ export default function MyTime() {
   const [timerRunning, setTimerRunning] = useState(false)
   const [elapsed, setElapsed] = useState('00:00:00')
   const [currentTask, setCurrentTask] = useState('')
+  const [showManualEntry, setShowManualEntry] = useState(false)
 
   const totalToday = myLogs
     .filter(l => l.date === '2025-05-12')
@@ -149,11 +151,33 @@ export default function MyTime() {
             <h3 className="text-base font-medium text-neutral-100">My Time Entries</h3>
             <p className="text-xs text-neutral-500 mt-0.5">All your logged time this period</p>
           </div>
-          <Button variant="primary" size="sm">
+          <Button variant="primary" size="sm" onClick={() => setShowManualEntry(s => !s)}>
             <Plus size={13} />
-            Add Entry
+            {showManualEntry ? 'Cancel' : 'Add Entry'}
           </Button>
         </div>
+        {showManualEntry && (
+          <div className="px-6 py-4 border-b border-neutral-800">
+            <div className="flex items-end gap-4">
+              <div className="w-36">
+                <Input type="date" label="Date" />
+              </div>
+              <div className="w-28">
+                <Input type="time" label="Start" />
+              </div>
+              <div className="w-28">
+                <Input type="time" label="End" />
+              </div>
+              <div className="flex-1">
+                <Input placeholder="Task description" label="Task" />
+              </div>
+              <div className="w-36">
+                <Input label="Project" placeholder="Select project" />
+              </div>
+              <Button variant="primary" size="sm">Save</Button>
+            </div>
+          </div>
+        )}
         <Table>
           <TableHead>
             <Th>Project</Th>

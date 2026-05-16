@@ -7,6 +7,7 @@ import Button from '../components/ui/Button'
 import { ActivityBar } from '../components/ui/ProgressBar'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
 import { teamMembers } from '../data/mockData'
+import MemberProfileDrawer from '../components/team/MemberProfileDrawer';
 
 function StatusDot({ status }) {
   const colors = { active: 'bg-emerald-500', idle: 'bg-amber-500', offline: 'bg-neutral-600' }
@@ -14,6 +15,7 @@ function StatusDot({ status }) {
 }
 
 export default function Team() {
+  const [profileMember, setProfileMember] = useState(null);
   const [search, setSearch] = useState('')
   const [view, setView] = useState('grid')
 
@@ -84,7 +86,12 @@ export default function Team() {
                     <StatusDot status={member.status} className="absolute -bottom-0.5 -right-0.5" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-neutral-200">{member.name}</p>
+                    <button
+                      onClick={() => setProfileMember(member)}
+                      className="text-sm font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150 text-left"
+                    >
+                      {member.name}
+                    </button>
                     <p className="text-xs text-neutral-500">{member.role}</p>
                   </div>
                 </div>
@@ -155,7 +162,12 @@ export default function Team() {
                     <div className="flex items-center gap-2.5">
                       <Avatar name={member.name} size="sm" />
                       <div>
-                        <p className="font-medium text-neutral-200">{member.name}</p>
+                        <button
+                          onClick={() => setProfileMember(member)}
+                          className="font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150"
+                        >
+                          {member.name}
+                        </button>
                         <p className="text-xs text-neutral-600">{member.email}</p>
                       </div>
                     </div>
@@ -186,6 +198,12 @@ export default function Team() {
           </Table>
         </Card>
       )}
+      <MemberProfileDrawer
+        member={profileMember}
+        context="team"
+        isOpen={profileMember !== null}
+        onClose={() => setProfileMember(null)}
+      />
     </div>
   )
 }

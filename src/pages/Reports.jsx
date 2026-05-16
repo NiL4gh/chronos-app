@@ -6,6 +6,8 @@ import {
 import Card from '../components/ui/Card'
 import Button from '../components/ui/Button'
 import SplitButton from '../components/ui/SplitButton';
+import MemberProfileDrawer from '../components/team/MemberProfileDrawer';
+import { teamMembers } from '../data/mockData';
 import { useOutletContext } from 'react-router-dom';
 import Badge from '../components/ui/Badge'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
@@ -41,7 +43,7 @@ function DateInput({ label, value, onChange }) {
         type="date"
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors duration-150"
+        className="rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-300 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors duration-150 [color-scheme:dark]"
       />
     </div>
   )
@@ -49,6 +51,7 @@ function DateInput({ label, value, onChange }) {
 
 export default function Reports() {
   const { triggerToast } = useOutletContext();
+  const [profileMember, setProfileMember] = useState(null);
   const [startDate, setStartDate] = useState('2025-05-06')
   const [endDate, setEndDate] = useState('2025-05-12')
   const [view, setView] = useState('Weekly')
@@ -218,7 +221,17 @@ export default function Reports() {
           <TableBody>
             {reportRows.map((row, i) => (
               <Tr key={i}>
-                <Td><span className="font-medium text-neutral-200">{row.member}</span></Td>
+                <Td>
+                  <button
+                    onClick={() => {
+                      const found = teamMembers.find(m => m.name === row.member);
+                      if (found) setProfileMember(found);
+                    }}
+                    className="font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150"
+                  >
+                    {row.member}
+                  </button>
+                </Td>
                 <Td><span className="text-neutral-400">{row.project}</span></Td>
                 {days.map(d => (
                   <Td key={d}><span className="font-mono">{row[d.toLowerCase()]}h</span></Td>
@@ -256,6 +269,12 @@ export default function Reports() {
           </TableBody>
         </Table>
       </Card>
+      <MemberProfileDrawer
+        member={profileMember}
+        context="reports"
+        isOpen={profileMember !== null}
+        onClose={() => setProfileMember(null)}
+      />
     </div>
   )
 }

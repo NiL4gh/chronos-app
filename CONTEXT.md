@@ -203,6 +203,8 @@ src/
       AppShell.jsx
       Sidebar.jsx
       Topbar.jsx
+    team/
+      MemberProfileDrawer.jsx
   pages/
     Dashboard.jsx
     Team.jsx
@@ -250,3 +252,19 @@ src/
 - `App.jsx` — /settings route registered, role="admin" passed to AppShell
 - `Reports.jsx` — SplitButton replacing plain button, triggerToast wired
 - `Invoices.jsx` — Pipeline tabs, EmptyState, Create Invoice drawer, "Sign here" fix
+
+**Recent Architecture Updates:**
+- `App.jsx` — role state lives here, passed as prop to AppShell with onRoleChange setter
+- `AppShell.jsx` — accepts onRoleChange, passes it to Topbar, shows amber employee-view banner when role = 'employee'
+- `Topbar.jsx` — compound timer action group (Start Timer primary + Manual sub-button), role switcher pill (Admin/Employee toggle)
+- `Dashboard.jsx` — consumes role from outlet context; hides Team Pulse in employee view; filters time logs to userId 'u1' in employee view; member names clickable
+- `Team.jsx` — member names clickable (grid + table), opens MemberProfileDrawer with context='team'
+- `Reports.jsx` — member names clickable, opens MemberProfileDrawer with context='reports'
+- `Input.jsx` — [color-scheme:dark] added so native date pickers render correctly on dark background
+- `src/components/team/MemberProfileDrawer.jsx` — ✅ COMPLETE. Context-sensitive member profile drawer with tabs.
+
+**Role System Implementation:**
+- role state is in App.jsx, defaults to 'admin'
+- Mock current user is u1 (Alex Johnson) for employee view scoping
+- Switcher in Topbar: two-button pill, no login required
+- Employee view: amber banner, restricted sidebar (Team/Reports/Invoices absent from DOM), personal-only data

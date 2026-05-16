@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useOutletContext } from 'react-router-dom'
 import {
   Clock, TrendingUp, TrendingDown, Layers, DollarSign,
   ArrowUpRight, ArrowDownRight, MoreHorizontal, Zap,
@@ -10,6 +11,7 @@ import { ActivityBar } from '../components/ui/ProgressBar'
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
 import { dashboardMetrics, teamMembers, timeLogs } from '../data/mockData'
+import MemberProfileDrawer from '../components/team/MemberProfileDrawer';
 
 function MetricCard({ icon: Icon, label, value, delta, unit = '', accentColor = 'text-violet-400' }) {
   const isPositive = delta >= 0
@@ -47,6 +49,8 @@ function StatusBadge({ status }) {
 }
 
 export default function Dashboard() {
+  const { role } = useOutletContext();
+  const [profileMember, setProfileMember] = useState(null);
   const m = dashboardMetrics
   const recentLogs = timeLogs.slice(0, 7)
 
@@ -82,7 +86,8 @@ export default function Dashboard() {
       {/* ── Team Pulse + Weekly Bar Chart ──────────────────────────────────── */}
       <div className="grid grid-cols-5 gap-6">
 
-        {/* Team Pulse — 3/5 */}
+        {/* Team Pulse — admin only */}
+        {role === 'admin' && (
         <Card className="col-span-3" padding="p-0">
           <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
             <div className="flex items-center justify-between">
@@ -102,7 +107,12 @@ export default function Dashboard() {
                 <Avatar name={member.name} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-sm font-medium text-neutral-200">{member.name}</span>
+                    <button
+                      onClick={() => setProfileMember(member)}
+                      className="text-sm font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150 text-left"
+                    >
+                      {member.name}
+                    </button>
                     <StatusBadge status={member.status} />
                   </div>
                   <p className="text-xs text-neutral-500 truncate">{member.currentTask}</p>
@@ -122,6 +132,7 @@ export default function Dashboard() {
             ))}
           </div>
         </Card>
+        )}
 
         {/* Weekly Hours — 2/5 */}
         <Card className="col-span-2" padding="p-6">
@@ -183,7 +194,7 @@ export default function Dashboard() {
             <Th></Th>
           </TableHead>
           <TableBody>
-            {recentLogs.map(log => (
+            {(role === 'employee' ? recentLogs.filter(log => log.userId === 'u1') : recentLogs).map(log => (
               <Tr key={log.id}>
                 <Td>
                   <div className="flex items-center gap-2.5">
@@ -224,6 +235,12 @@ export default function Dashboard() {
           </TableBody>
         </Table>
       </Card>
+      <MemberProfileDrawer
+        member={profileMember}
+        context="dashboard"
+        isOpen={profileMember !== null}
+        onClose={() => setProfileMember(null)}
+      />
     </div>
   )
 }
