@@ -78,9 +78,9 @@ const Sidebar = ({ collapsed, onToggle, role = 'admin' }) => {
         {/* User stub */}
         {!collapsed && (
           <div className="flex items-center gap-3 px-3 py-2 mt-1">
-            <Avatar name="Alex Johnson" size="sm" />
+            <Avatar name="Niloy Pal" size="sm" />
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-neutral-300 truncate">Alex Johnson</p>
+              <p className="text-xs font-medium text-neutral-300 truncate">Niloy Pal</p>
               <p className="text-xs text-neutral-600 truncate capitalize">{role}</p>
             </div>
           </div>

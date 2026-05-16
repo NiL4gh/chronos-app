@@ -265,6 +265,6 @@ src/
 
 **Role System Implementation:**
 - role state is in App.jsx, defaults to 'admin'
-- Mock current user is u1 (Alex Johnson) for employee view scoping
+- Mock current user is u1 (Niloy Pal) for employee view scoping
 - Switcher in Topbar: two-button pill, no login required
 - Employee view: amber banner, restricted sidebar (Team/Reports/Invoices absent from DOM), personal-only data

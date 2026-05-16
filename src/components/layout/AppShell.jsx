@@ -56,7 +56,7 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
             <div className="mb-6 flex items-center justify-between px-4 py-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
               <div className="flex items-center gap-2.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
-                <p className="text-xs font-medium text-amber-400">Viewing as Employee — Alex Johnson</p>
+                <p className="text-xs font-medium text-amber-400">Viewing as Employee — Niloy Pal</p>
                 <p className="text-xs text-neutral-500">You are seeing the restricted employee interface.</p>
               </div>
               <button

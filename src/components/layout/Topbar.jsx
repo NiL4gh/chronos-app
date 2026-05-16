@@ -2,7 +2,7 @@ import { useLocation } from 'react-router-dom';
 import { Search, Bell, Play, PenLine } from 'lucide-react';
 
 const PAGE_META = {
-  '/dashboard': { title: 'Dashboard', subtitle: 'Good morning, Alex' },
+  '/dashboard': { title: 'Dashboard', subtitle: 'Good morning, Niloy' },
   '/team': { title: 'Team', subtitle: 'Manage your workspace members' },
   '/projects': { title: 'Projects', subtitle: 'Track goals and project health' },
   '/reports': { title: 'Reports', subtitle: 'Time and billing analytics' },
