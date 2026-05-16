@@ -1,4 +1,4 @@
-import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import Card, { CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
 import { Settings as SettingsIcon, Bell } from 'lucide-react';
 
 const Settings = () => {
