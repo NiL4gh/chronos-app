@@ -64,7 +64,7 @@ function GoalEngine({ project, onUpdateGoal }) {
       <div className="relative shrink-0">
         <button
           onClick={() => setOpen(o => !o)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-neutral-700 hover:border-neutral-600 bg-transparent text-xs text-neutral-400 hover:text-neutral-200 transition-colors duration-150"
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-neutral-700 hover:border-neutral-600 bg-neutral-800/60 hover:bg-neutral-800 text-xs text-neutral-400 hover:text-neutral-200 transition-colors duration-150"
         >
           Edit Goal
           <ChevronDown size={11} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
@@ -102,7 +102,7 @@ function ProjectCard({ project }) {
   const memberDetails = project.members.map(id => teamMembers.find(m => m.id === id)).filter(Boolean)
 
   return (
-    <Card padding="p-5" className="group hover:border-neutral-700 transition-colors duration-150 flex flex-col gap-0">
+    <Card padding="p-5" className="group hover:border-neutral-700 hover:bg-neutral-800/20 transition-colors duration-200 flex flex-col gap-0">
       {/* Top */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-2.5">
@@ -138,17 +138,17 @@ function ProjectCard({ project }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div>
-          <p className="text-xs text-neutral-600 mb-0.5">Budget</p>
+          <p className="text-xs text-neutral-500 mb-0.5">Budget</p>
           <p className="text-sm font-mono font-medium text-neutral-300">${(project.budget / 1000).toFixed(0)}k</p>
         </div>
         <div>
-          <p className="text-xs text-neutral-600 mb-0.5">Spent</p>
+          <p className="text-xs text-neutral-500 mb-0.5">Spent</p>
           <p className={`text-sm font-mono font-medium ${budgetPct > 85 ? 'text-red-400' : 'text-neutral-300'}`}>
             ${(project.spent / 1000).toFixed(1)}k
           </p>
         </div>
         <div>
-          <p className="text-xs text-neutral-600 mb-0.5">Due</p>
+          <p className="text-xs text-neutral-500 mb-0.5">Due</p>
           <p className="text-sm font-mono text-neutral-400">{project.dueDate.slice(5)}</p>
         </div>
       </div>
@@ -213,12 +213,13 @@ export default function Projects() {
           { label: 'Total Budget', value: '$' + (projects.reduce((a, p) => a + p.budget, 0) / 1000).toFixed(0) + 'k', icon: DollarSign },
           { label: 'Total Hours Logged', value: projects.reduce((a, p) => a + p.loggedHours, 0).toFixed(0) + 'h', icon: Calendar },
         ].map(s => (
-          <Card key={s.label} padding="p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <s.icon size={13} className="text-neutral-600" />
+          <Card key={s.label} padding="p-4" className="flex flex-col gap-1.5">
+            <p className="text-2xl font-semibold font-mono text-neutral-100 tracking-tight">{s.value}</p>
+            <div className="flex items-center gap-1.5">
+              <s.icon size={12} className="text-neutral-600" />
               <p className="text-xs text-neutral-500">{s.label}</p>
             </div>
-            <p className="text-xl font-semibold font-mono text-neutral-100">{s.value}</p>
+            <div className="h-px w-8 bg-violet-500/30 rounded-full" />
           </Card>
         ))}
       </div>

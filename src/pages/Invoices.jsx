@@ -43,9 +43,15 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle }) {
     <div className="flex flex-col h-full">
       {/* Detail toolbar */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-800 shrink-0">
-        <div>
-          <p className="text-base font-semibold text-neutral-100">{invoice.invoiceNumber}</p>
-          <p className="text-xs text-neutral-500 mt-0.5">{invoice.client.name}</p>
+        <div className="flex items-center gap-3">
+          <div className="w-px h-6 bg-violet-500/50 rounded-full" />
+          <div>
+            <div className="flex items-center gap-2">
+              <p className="text-base font-semibold text-neutral-100 font-mono">{invoice.invoiceNumber}</p>
+              <StatusBadge status={invoice.status} />
+            </div>
+            <p className="text-xs text-neutral-500 mt-0.5">{invoice.client.name}</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm">
@@ -62,15 +68,16 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle }) {
         <div className="max-w-2xl mx-auto space-y-6">
 
           {/* Header row */}
-          <div className="flex justify-between items-start">
-            <div>
-              <p className="text-2xl font-semibold font-mono text-neutral-100">
-                {invoice.invoiceNumber}
-              </p>
-              <p className="text-sm text-neutral-500 mt-1">Issued: {invoice.issueDate}</p>
-              <p className="text-sm text-neutral-500">Due: {invoice.dueDate}</p>
+          <div className="flex justify-between items-start p-4 rounded-lg bg-neutral-800/40 border border-neutral-800">
+            <div className="space-y-1">
+              <p className="text-xs text-neutral-600 uppercase tracking-widest font-semibold">Invoice Details</p>
+              <p className="text-sm text-neutral-300">Issued: <span className="font-mono text-neutral-200">{invoice.issueDate}</span></p>
+              <p className="text-sm text-neutral-300">Due: <span className="font-mono text-neutral-200">{invoice.dueDate}</span></p>
             </div>
-            <StatusBadge status={invoice.status} />
+            <div className="text-right">
+              <p className="text-xs text-neutral-600 mb-1">Total Amount</p>
+              <p className="text-2xl font-semibold font-mono text-neutral-100">${invoice.total.toLocaleString()}</p>
+            </div>
           </div>
 
           {/* From / Bill To */}
@@ -286,15 +293,17 @@ export default function Invoices() {
                     : 'border-l-transparent hover:bg-neutral-800/40'
                 }`}
               >
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <span className="text-xs font-mono text-neutral-400">{inv.invoiceNumber}</span>
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <p className="text-sm font-medium text-neutral-200 truncate">{inv.client.name}</p>
                   <StatusBadge status={inv.status} />
                 </div>
-                <p className="text-sm font-medium text-neutral-200 truncate">{inv.client.name}</p>
-                <p className="text-xs text-neutral-500 mt-0.5">Due {inv.dueDate}</p>
-                <p className="text-sm font-mono font-semibold text-neutral-100 mt-1">
-                  ${inv.total.toLocaleString()}
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-mono text-neutral-500">{inv.invoiceNumber}</span>
+                  <span className="text-sm font-mono font-semibold text-neutral-100">
+                    ${inv.total.toLocaleString()}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-600 mt-1">Due {inv.dueDate}</p>
               </button>
             ))
           )}

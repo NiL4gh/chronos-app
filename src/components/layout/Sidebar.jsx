@@ -11,6 +11,8 @@ import {
   HelpCircle,
   ChevronLeft,
   ChevronRight,
+  ShieldCheck,
+  User,
 } from 'lucide-react';
 import Avatar from '../ui/Avatar';
 
@@ -23,7 +25,7 @@ const NAV_ITEMS = [
   { label: 'My Time', icon: Clock, to: '/my-time', adminOnly: false },
 ];
 
-const Sidebar = ({ collapsed, onToggle, role = 'admin' }) => {
+const Sidebar = ({ collapsed, onToggle, role = 'admin', currentRole, onRoleChange }) => {
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || role === 'admin');
 
   const navLinkClass = ({ isActive }) =>
@@ -74,6 +76,46 @@ const Sidebar = ({ collapsed, onToggle, role = 'admin' }) => {
           <HelpCircle size={16} />
           {!collapsed && <span>Help &amp; Docs</span>}
         </a>
+
+        {/* Role Switcher */}
+        {!collapsed ? (
+          <div className="px-3 mb-3">
+            <p className="text-xs font-semibold uppercase tracking-widest text-neutral-600 mb-1.5">Viewing as</p>
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => onRoleChange('admin')}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 border ${
+                  currentRole === 'admin'
+                    ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                    : 'text-neutral-500 border-transparent hover:text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                <ShieldCheck size={14} />
+                Admin
+              </button>
+              <button
+                onClick={() => onRoleChange('employee')}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-150 border ${
+                  currentRole === 'employee'
+                    ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                    : 'text-neutral-500 border-transparent hover:text-neutral-300 hover:bg-neutral-800'
+                }`}
+              >
+                <User size={14} />
+                Employee
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center px-2 mb-3">
+            <button
+              title={currentRole === 'admin' ? 'Admin mode' : 'Employee mode'}
+              className="w-9 h-9 rounded-lg flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20"
+            >
+              {currentRole === 'admin' ? <ShieldCheck size={16} /> : <User size={16} />}
+            </button>
+          </div>
+        )}
 
         {/* User stub */}
         {!collapsed && (

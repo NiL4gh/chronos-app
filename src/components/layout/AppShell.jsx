@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import CommandPalette from './CommandPalette';
 import Toast from '../ui/Toast';
 import SlideOutDrawer from '../ui/SlideOutDrawer';
 import Button from '../ui/Button';
@@ -10,6 +11,7 @@ import Toggle from '../ui/Toggle';
 
 const AppShell = ({ role = 'admin', onRoleChange }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   // Toast state
   const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });
@@ -39,17 +41,68 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
     triggerToast('Time logged', 'Your manual entry has been saved.', 'success');
   };
 
+  // Timer state
+  const [timerRunning, setTimerRunning] = useState(false);
+  const [timerSeconds, setTimerSeconds] = useState(0);
+  const [timerTaskLabel, setTimerTaskLabel] = useState('');
+  const [timerProjectId, setTimerProjectId] = useState('');
+
+  useEffect(() => {
+    if (!timerRunning) return;
+    const interval = setInterval(() => {
+      setTimerSeconds((s) => s + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timerRunning]);
+
+  const startTimer = (taskLabel = '', projectId = '') => {
+    setTimerTaskLabel(taskLabel);
+    setTimerProjectId(projectId);
+    setTimerRunning(true);
+  };
+
+  const stopTimer = () => {
+    setTimerRunning(false);
+  };
+
+  const resetTimer = () => {
+    setTimerRunning(false);
+    setTimerSeconds(0);
+    setTimerTaskLabel('');
+    setTimerProjectId('');
+  };
+
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   return (
     <div className="flex h-screen bg-neutral-950 overflow-hidden">
-      <Sidebar collapsed={collapsed} onToggle={() => setCollapsed((prev) => !prev)} role={role} />
+      <Sidebar 
+        collapsed={collapsed} 
+        onToggle={() => setCollapsed((prev) => !prev)} 
+        role={role}
+        currentRole={role}
+        onRoleChange={onRoleChange}
+      />
 
       <div className="flex flex-col flex-1 min-w-0">
         <Topbar
           collapsed={collapsed}
           onLogTime={() => setManualTimeOpen(true)}
-          onStartTimer={() => triggerToast('Timer started', 'Your timer is running. Stop it anytime from My Time.', 'success')}
-          role={role}
-          onRoleChange={onRoleChange}
+          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          timerRunning={timerRunning}
+          timerSeconds={timerSeconds}
+          timerTaskLabel={timerTaskLabel}
+          startTimer={startTimer}
+          stopTimer={stopTimer}
         />
         <main className="flex-1 overflow-y-auto px-8 py-6">
           {role === 'employee' && (
@@ -67,7 +120,7 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
               </button>
             </div>
           )}
-          <Outlet context={{ triggerToast, role }} />
+          <Outlet context={{ triggerToast, role, timerRunning, timerSeconds, timerTaskLabel, timerProjectId, startTimer, stopTimer, resetTimer }} />
         </main>
       </div>
 
@@ -145,6 +198,11 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
           </div>
         </div>
       </SlideOutDrawer>
+
+      <CommandPalette
+        isOpen={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+      />
 
       {/* Global Toast */}
       <Toast

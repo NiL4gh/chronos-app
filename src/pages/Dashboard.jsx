@@ -18,7 +18,7 @@ function MetricCard({ icon: Icon, label, value, delta, unit = '', accentColor = 
   return (
     <Card padding="p-5" className="animate-fade-in">
       <div className="flex items-start justify-between mb-4">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-neutral-800`}>
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-neutral-800 border border-neutral-700`}>
           <Icon size={16} className={accentColor} />
         </div>
         <span className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
@@ -27,9 +27,9 @@ function MetricCard({ icon: Icon, label, value, delta, unit = '', accentColor = 
         </span>
       </div>
       <p className="text-2xl font-semibold text-neutral-100 font-mono tracking-tight">
-        {value}<span className="text-sm font-normal text-neutral-500 ml-1">{unit}</span>
+        {value}<span className="text-xs font-medium text-neutral-600 ml-1">{unit}</span>
       </p>
-      <p className="text-xs text-neutral-500 mt-1">{label}</p>
+      <p className="text-xs text-neutral-500 mt-1.5">{label}</p>
     </Card>
   )
 }
@@ -95,15 +95,15 @@ export default function Dashboard() {
                 <CardTitle>Team Pulse</CardTitle>
                 <CardDescription>Live activity — updates every 30s</CardDescription>
               </div>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                <span className="text-xs text-neutral-600">Live</span>
+                <span className="text-xs font-medium text-emerald-400">Live</span>
               </div>
             </div>
           </div>
           <div className="divide-y divide-neutral-800/60">
             {teamMembers.filter(m => m.status !== 'offline').map(member => (
-              <div key={member.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-neutral-800/30 transition-colors duration-100">
+              <div key={member.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-neutral-800/50 transition-colors duration-150 cursor-default">
                 <Avatar name={member.name} size="md" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -195,7 +195,7 @@ export default function Dashboard() {
           </TableHead>
           <TableBody>
             {(role === 'employee' ? recentLogs.filter(log => log.userId === 'u1') : recentLogs).map(log => (
-              <Tr key={log.id}>
+              <Tr key={log.id} className="group">
                 <Td>
                   <div className="flex items-center gap-2.5">
                     <Avatar name={log.userName} size="sm" />

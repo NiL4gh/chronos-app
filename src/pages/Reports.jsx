@@ -71,7 +71,7 @@ export default function Reports() {
     <div className="space-y-6 animate-fade-in">
 
       {/* ── Query / Filter Bar ──────────────────────────────────────────────── */}
-      <Card padding="p-4">
+      <Card padding="p-4" className="border-neutral-700/60">
         <div className="flex items-end gap-4 flex-wrap">
           <DateInput label="Start Date" value={startDate} onChange={setStartDate} />
           <div className="flex items-end pb-2 text-neutral-600">
@@ -109,13 +109,14 @@ export default function Reports() {
         ].map(s => (
           <Card key={s.label} padding="p-5">
             <div className="flex items-center gap-2 mb-3">
-              <div className="w-8 h-8 rounded-lg bg-neutral-800 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-neutral-800 border border-neutral-700 flex items-center justify-center">
                 <s.icon size={14} className="text-violet-400" />
               </div>
             </div>
-            <p className="text-2xl font-semibold font-mono text-neutral-100">{s.value}</p>
-            <p className="text-xs text-neutral-500 mt-1">{s.label}</p>
+            <p className="text-2xl font-semibold font-mono text-neutral-100 tracking-tight">{s.value}</p>
+            <p className="text-xs text-neutral-500 mt-1.5">{s.label}</p>
             <p className="text-xs text-neutral-600 mt-0.5">{s.sub}</p>
+            <div className="h-px w-8 bg-violet-500/30 rounded-full mt-2" />
           </Card>
         ))}
       </div>
@@ -137,10 +138,10 @@ export default function Reports() {
               return (
                 <div key={day} className="flex-1 flex flex-col items-center gap-2">
                   <span className="text-xs font-mono text-neutral-500">{hours.toFixed(1)}</span>
-                  <div className="w-full rounded-t-md overflow-hidden flex flex-col justify-end" style={{ height: '96px' }}>
+                  <div className="w-full rounded-md overflow-hidden flex flex-col justify-end bg-neutral-800/60" style={{ height: '96px' }}>
                     <div
                       className="w-full rounded-t-md bg-violet-500/70 hover:bg-violet-500 transition-colors duration-200"
-                      style={{ height: `${pct}%` }}
+                      style={{ height: `${pct}%`, minHeight: pct > 0 ? '4px' : '0px' }}
                     />
                   </div>
                   <span className="text-xs text-neutral-600">{day}</span>
@@ -220,7 +221,7 @@ export default function Reports() {
           </TableHead>
           <TableBody>
             {reportRows.map((row, i) => (
-              <Tr key={i}>
+              <Tr key={i} className="group">
                 <Td>
                   <button
                     onClick={() => {

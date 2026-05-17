@@ -16,6 +16,7 @@ function StatusDot({ status }) {
 
 export default function Team() {
   const [profileMember, setProfileMember] = useState(null);
+  const [drawerInitialTab, setDrawerInitialTab] = useState('Overview');
   const [search, setSearch] = useState('')
   const [view, setView] = useState('grid')
 
@@ -67,9 +68,10 @@ export default function Team() {
           { label: 'Idle', value: teamMembers.filter(m => m.status === 'idle').length },
           { label: 'Avg Hours / Week', value: (teamMembers.reduce((a, m) => a + m.hoursWeek, 0) / teamMembers.length).toFixed(1) + 'h' },
         ].map(stat => (
-          <Card key={stat.label} padding="p-4" className="flex flex-col gap-1">
-            <p className="text-2xl font-semibold font-mono text-neutral-100">{stat.value}</p>
+          <Card key={stat.label} padding="p-4" className="flex flex-col gap-1.5">
+            <p className="text-2xl font-semibold font-mono text-neutral-100 tracking-tight">{stat.value}</p>
             <p className="text-xs text-neutral-500">{stat.label}</p>
+            <div className="h-px w-8 bg-violet-500/30 rounded-full mt-0.5" />
           </Card>
         ))}
       </div>
@@ -78,7 +80,7 @@ export default function Team() {
       {view === 'grid' && (
         <div className="grid grid-cols-3 gap-4">
           {filtered.map(member => (
-            <Card key={member.id} padding="p-5" className="group hover:border-neutral-700 transition-colors duration-150">
+            <Card key={member.id} padding="p-5" className="group hover:border-neutral-700 hover:bg-neutral-800/30 transition-colors duration-200">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="relative">
@@ -87,7 +89,7 @@ export default function Team() {
                   </div>
                   <div>
                     <button
-                      onClick={() => setProfileMember(member)}
+                      onClick={() => { setDrawerInitialTab('Overview'); setProfileMember(member); }}
                       className="text-sm font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150 text-left"
                     >
                       {member.name}
@@ -127,11 +129,17 @@ export default function Team() {
               </div>
 
               <div className="mt-4 pt-4 border-t border-neutral-800 flex items-center gap-2">
-                <button className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150">
+                <button
+                  onClick={() => window.open(`mailto:${member.email}`, '_blank')}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150"
+                >
                   <Mail size={12} />
                   Message
                 </button>
-                <button className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150">
+                <button
+                  onClick={() => { setDrawerInitialTab('Time Logs'); setProfileMember(member); }}
+                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10 transition-colors duration-150"
+                >
                   <Clock size={12} />
                   View Logs
                 </button>
@@ -163,7 +171,7 @@ export default function Team() {
                       <Avatar name={member.name} size="sm" />
                       <div>
                         <button
-                          onClick={() => setProfileMember(member)}
+                          onClick={() => { setDrawerInitialTab('Overview'); setProfileMember(member); }}
                           className="font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150"
                         >
                           {member.name}
@@ -201,6 +209,7 @@ export default function Team() {
       <MemberProfileDrawer
         member={profileMember}
         context="team"
+        initialTab={drawerInitialTab}
         isOpen={profileMember !== null}
         onClose={() => setProfileMember(null)}
       />

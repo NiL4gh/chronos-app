@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import SlideOutDrawer from '../ui/SlideOutDrawer';
 import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';
@@ -24,8 +24,12 @@ const StatusColors = {
   offline: 'neutral',
 };
 
-const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('Overview');
+const MemberProfileDrawer = ({ member, context = 'team', initialTab = 'Overview', isOpen, onClose }) => {
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    setActiveTab(initialTab);
+  }, [initialTab, member]);
 
   if (!member) return null;
 
@@ -33,7 +37,8 @@ const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
 
   // Filter time logs for this member
   const memberLogs = timeLogs.filter((log) => log.userId === member.id);
-  const todayLogs = memberLogs.filter((log) => log.date === '2024-01-15');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayLogs = memberLogs.filter((log) => log.date === todayStr);
   const memberProjects = projects.filter((p) => p.members.includes(member.id));
 
   const totalHoursWeek = member.hoursWeek;
@@ -45,7 +50,13 @@ const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
     <SlideOutDrawer isOpen={isOpen} onClose={onClose} title="Member Profile">
       {/* Header — always shown */}
       <div className="flex items-start gap-4 pb-5 border-b border-neutral-800">
-        <Avatar name={member.name} size="lg" />
+        <div className="relative">
+          <Avatar name={member.name} size="lg" />
+          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-neutral-900 ${
+            member.status === 'active' ? 'bg-emerald-500' :
+            member.status === 'idle' ? 'bg-amber-500' : 'bg-neutral-600'
+          }`} />
+        </div>
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-semibold text-neutral-100">{member.name}</h3>
           <p className="text-sm text-neutral-400 mt-0.5">{member.role}</p>
@@ -83,26 +94,26 @@ const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
           <div className="space-y-4">
             {/* Stats row */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+              <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
                 <p className="text-xs text-neutral-500 mb-1">Today</p>
                 <p className="font-mono text-xl font-semibold text-neutral-100">{totalHoursToday.toFixed(1)}h</p>
               </div>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+              <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
                 <p className="text-xs text-neutral-500 mb-1">This Week</p>
                 <p className="font-mono text-xl font-semibold text-neutral-100">{totalHoursWeek.toFixed(1)}h</p>
               </div>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+              <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
                 <p className="text-xs text-neutral-500 mb-1">Billable (week)</p>
                 <p className="font-mono text-xl font-semibold text-neutral-100">{billableHours.toFixed(1)}h</p>
               </div>
-              <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+              <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
                 <p className="text-xs text-neutral-500 mb-1">Total Entries</p>
                 <p className="font-mono text-xl font-semibold text-neutral-100">{memberLogs.length}</p>
               </div>
             </div>
 
             {/* Activity level */}
-            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+            <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-medium text-neutral-400">Activity Level</p>
                 <span className="font-mono text-sm text-neutral-300">{member.activityLevel}%</span>
@@ -111,7 +122,7 @@ const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
             </div>
 
             {/* Current task */}
-            <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-4">
+            <div className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-4">
               <p className="text-xs text-neutral-500 mb-1">Currently working on</p>
               <p className="text-sm text-neutral-200">{member.currentTask}</p>
               <p className="text-xs text-violet-400 mt-1">{member.currentProject}</p>
@@ -125,7 +136,7 @@ const MemberProfileDrawer = ({ member, context = 'team', isOpen, onClose }) => {
             {memberLogs.length === 0 ? (
               <p className="text-sm text-neutral-500 text-center py-8">No time entries found.</p>
             ) : memberLogs.map((log) => (
-              <div key={log.id} className="rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+              <div key={log.id} className="rounded-lg border border-neutral-700/60 bg-neutral-800/60 p-3">
                 <div className="flex items-start justify-between gap-2 mb-1.5">
                   <p className="text-sm text-neutral-200 font-medium leading-tight">{log.task}</p>
                   <TrackingSourceBadge source={log.source} />
