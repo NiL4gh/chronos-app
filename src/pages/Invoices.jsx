@@ -8,7 +8,7 @@ import Button from '../components/ui/Button';
 import Toggle from '../components/ui/Toggle';
 import EmptyState from '../components/ui/EmptyState';
 import SlideOutDrawer from '../components/ui/SlideOutDrawer';
-import { Input, Select } from '../components/ui/Input';
+import Input, { Select } from '../components/ui/Input';
 import ProofOfWorkTab from '../components/invoices/ProofOfWorkTab';
 
 // ─── Tab config ───────────────────────────────────────────
