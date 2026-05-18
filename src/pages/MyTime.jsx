@@ -6,7 +6,7 @@ import {
 import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
-import { Input } from '../components/ui/Input'
+import Input from '../components/ui/Input'
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
 import { timeLogs, projects } from '../data/mockData'
