@@ -1,35 +1,40 @@
-export default function Card({ children, className = '', elevated = false, padding = 'p-6' }) {
-  const base = elevated
-    ? 'rounded-xl border border-neutral-700 bg-neutral-800 shadow-xl shadow-black/40'
-    : 'rounded-xl border border-neutral-800 bg-neutral-900'
+import React from 'react';
+
+export default function Card({ children, padding = 'p-6', className = '', interactive = false, onClick }) {
+  const interactiveClass = interactive
+    ? 'glass-interactive cursor-pointer'
+    : '';
 
   return (
-    <div className={`${base} ${padding} ${className}`}>
+    <div
+      className={`glass-card ${padding} ${interactiveClass} ${className}`}
+      onClick={onClick}
+    >
       {children}
     </div>
-  )
+  );
 }
 
 export function CardHeader({ children, className = '' }) {
   return (
-    <div className={`flex items-center justify-between mb-5 ${className}`}>
+    <div className={`flex items-center justify-between mb-4 ${className}`}>
       {children}
     </div>
-  )
+  );
 }
 
 export function CardTitle({ children, className = '' }) {
   return (
-    <h3 className={`text-base font-medium text-neutral-100 ${className}`}>
+    <h3 className={`text-base font-medium text-[var(--text-primary)] ${className}`}>
       {children}
     </h3>
-  )
+  );
 }
 
 export function CardDescription({ children, className = '' }) {
   return (
-    <p className={`text-xs text-neutral-500 mt-0.5 ${className}`}>
+    <p className={`text-sm text-[var(--text-muted)] mt-1 ${className}`}>
       {children}
     </p>
-  )
+  );
 }

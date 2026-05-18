@@ -2,57 +2,201 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * {
-    box-sizing: border-box;
-  }
+/* ============================================================
+   WARM CYBER-BENTO — CSS Custom Properties
+   ============================================================ */
+:root {
+  /* Background layers */
+  --bg-base:        #1a1410;
+  --bg-surface:     #211c16;
+  --bg-elevated:    #2a2218;
+  --bg-overlay:     rgba(33, 28, 22, 0.85);
 
-  html {
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-  }
+  /* Text */
+  --text-primary:   #f5efe6;
+  --text-secondary: #c4b5a5;
+  --text-muted:     #8a7a6e;
+  --text-disabled:  #5a4e44;
 
-  body {
-    @apply bg-neutral-950 text-neutral-200 font-sans;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  }
+  /* Borders */
+  --border-subtle:      rgba(255, 200, 120, 0.08);
+  --border-default:     rgba(255, 200, 120, 0.14);
+  --border-interactive: rgba(255, 200, 120, 0.28);
+  --border-focus:       rgba(245, 158, 11, 0.60);
 
-  ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-
-  ::-webkit-scrollbar-track {
-    @apply bg-transparent;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    @apply bg-neutral-700 rounded-full;
-  }
-
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-neutral-600;
-  }
-
-  ::selection {
-    @apply bg-violet-500/30 text-violet-200;
-  }
+  /* Accent — Amber */
+  --accent:         #f59e0b;
+  --accent-hover:   #fbbf24;
+  --accent-glow:    rgba(245, 158, 11, 0.15);
+  --accent-tint:    rgba(245, 158, 11, 0.10);
+  --accent-border:  rgba(245, 158, 11, 0.25);
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* ============================================================
+   BASE RESET
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
 
-  .animate-fade-in {
-    animation: fade-in 0.2s ease-out both;
-  }
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 
-  /* Staggered children animation */
-  .stagger-children > *:nth-child(1) { animation-delay: 0ms; }
-  .stagger-children > *:nth-child(2) { animation-delay: 60ms; }
-  .stagger-children > *:nth-child(3) { animation-delay: 120ms; }
-  .stagger-children > *:nth-child(4) { animation-delay: 180ms; }
-  .stagger-children > *:nth-child(5) { animation-delay: 240ms; }
-  .stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 200, 120, 0.15);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 200, 120, 0.28);
+}
+
+/* ============================================================
+   GLASSMORPHISM UTILITY CLASSES
+   ============================================================ */
+.glass-card {
+  background: var(--bg-overlay);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-default);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.20), inset 0 1px 0 rgba(255, 200, 120, 0.06);
+}
+
+.glass-elevated {
+  background: rgba(42, 34, 26, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-interactive);
+  border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.40), inset 0 1px 0 rgba(255, 200, 120, 0.08);
+}
+
+.glass-subtle {
+  background: rgba(26, 20, 16, 0.80);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.glass-interactive {
+  transition: border-color 200ms ease, box-shadow 200ms ease;
+}
+
+.glass-interactive:hover {
+  border-color: var(--border-interactive) !important;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.20), 0 0 24px var(--accent-glow), inset 0 1px 0 rgba(255, 200, 120, 0.06);
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.20); }
+  50%       { box-shadow: 0 0 28px rgba(245, 158, 11, 0.50); }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes calendar-slide-next {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes calendar-slide-prev {
+  from { opacity: 0; transform: translateX(-20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% center; }
+  to   { background-position: 200% center; }
+}
+
+@keyframes shrink-bar {
+  from { width: 100%; }
+  to   { width: 0%; }
+}
+
+/* ============================================================
+   ANIMATION UTILITY CLASSES
+   ============================================================ */
+.animate-fade-in        { animation: fade-in 0.20s ease-out forwards; }
+.animate-slide-up       { animation: slide-up 0.25s ease-out forwards; }
+.animate-slide-in-right { animation: slide-in-right 0.20s ease-out forwards; }
+.animate-slide-in-left  { animation: slide-in-left 0.20s ease-out forwards; }
+.animate-glow-pulse     { animation: glow-pulse 2s ease-in-out infinite; }
+.animate-pulse-dot      { animation: pulse-dot 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+.animate-calendar-next  { animation: calendar-slide-next 0.12s ease-out forwards; }
+.animate-calendar-prev  { animation: calendar-slide-prev 0.12s ease-out forwards; }
+
+/* ============================================================
+   NATIVE INPUT OVERRIDES
+   ============================================================ */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"] {
+  color-scheme: dark;
+}
+
+/* Remove native date picker icon in WebKit */
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  display: none;
+  -webkit-appearance: none;
+}
+
+/* ============================================================
+   SELECTION & FOCUS
+   ============================================================ */
+::selection {
+  background: rgba(245, 158, 11, 0.20);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

@@ -1,72 +1,76 @@
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Download, ChevronDown, FileText, FileDown, Table2 } from 'lucide-react';
 
-const SplitButton = ({ onExport }) => {
+export default function SplitButton({ onExport }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const handleOption = (format) => {
+  const handle = (label) => {
     setOpen(false);
-    if (onExport) onExport(format);
+    onExport?.(label);
   };
 
+  const btnBase = [
+    'inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold',
+    'bg-amber-400 hover:bg-amber-300 text-neutral-950',
+    'transition-all duration-150',
+    'shadow-[0_0_16px_rgba(245,158,11,0.25)] hover:shadow-[0_0_24px_rgba(245,158,11,0.40)]',
+  ].join(' ');
+
   return (
-    <div ref={ref} className="relative inline-flex rounded-lg overflow-visible">
-      {/* Main action */}
+    <div ref={ref} className="relative inline-flex rounded-xl overflow-visible">
+      {/* Primary action */}
       <button
-        onClick={() => handleOption('csv')}
-        className="inline-flex items-center gap-2 px-4 py-2 rounded-l-lg bg-violet-500 hover:bg-violet-400 text-white text-sm font-medium transition-colors duration-150 border-r border-violet-400/40"
+        className={`${btnBase} rounded-l-xl border-r border-amber-300/30`}
+        onClick={() => handle('CSV')}
       >
         <Download size={14} />
         Export to CSV
       </button>
 
-      {/* Dropdown trigger */}
+      {/* Chevron trigger */}
       <button
-        onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center px-2.5 py-2 rounded-r-lg bg-violet-500 hover:bg-violet-400 text-white transition-colors duration-150"
+        className={`${btnBase} rounded-r-xl px-2.5`}
+        onClick={() => setOpen((v) => !v)}
+        aria-label="More export options"
       >
         <ChevronDown size={14} />
       </button>
 
-      {/* Dropdown menu */}
+      {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-full mt-1 w-48 rounded-lg border border-neutral-700 bg-neutral-800 shadow-xl shadow-black/40 z-20 overflow-hidden">
-          <button
-            onClick={() => handleOption('csv')}
-            className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:bg-neutral-700 flex items-center gap-2.5 transition-colors duration-100"
-          >
-            <FileText size={13} className="text-neutral-500" />
-            Export to CSV
-          </button>
-          <button
-            onClick={() => handleOption('pdf')}
-            className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:bg-neutral-700 flex items-center gap-2.5 transition-colors duration-100"
-          >
-            <FileDown size={13} className="text-neutral-500" />
-            Export to PDF
-          </button>
-          <button
-            onClick={() => handleOption('excel')}
-            className="w-full text-left px-3 py-2.5 text-sm text-neutral-300 hover:bg-neutral-700 flex items-center gap-2.5 transition-colors duration-100"
-          >
-            <Table2 size={13} className="text-neutral-500" />
-            Export to Excel
-          </button>
+        <div
+          className="absolute right-0 top-full mt-1 w-48 z-20 overflow-hidden animate-slide-up"
+          style={{
+            background: 'rgba(42, 34, 26, 0.96)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid var(--border-interactive)',
+            borderRadius: '12px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.40)',
+          }}
+        >
+          {[
+            { icon: FileText, label: 'Export to CSV' },
+            { icon: FileDown, label: 'Export to PDF' },
+            { icon: Table2,   label: 'Export to Excel' },
+          ].map(({ icon: Icon, label }) => (
+            <button
+              key={label}
+              onClick={() => handle(label)}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/5 transition-colors duration-100"
+            >
+              <Icon size={13} style={{ color: 'var(--text-muted)' }} />
+              {label}
+            </button>
+          ))}
         </div>
       )}
     </div>
-  );
-};
-
-export default SplitButton;
+  );}

@@ -1,47 +1,47 @@
-import { useState, useEffect } from 'react';
-import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import Topbar from './Topbar';
-import CommandPalette from './CommandPalette';
-import Toast from '../ui/Toast';
-import SlideOutDrawer from '../ui/SlideOutDrawer';
-import Button from '../ui/Button';
-import { Input, Select } from '../ui/Input';
-import Toggle from '../ui/Toggle';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar.jsx';
+import Topbar from './Topbar.jsx';
+import SlideOutDrawer from '../ui/SlideOutDrawer.jsx';
+import Toast from '../ui/Toast.jsx';
+import CommandPalette from './CommandPalette.jsx';
+import Input, { Select } from '../ui/Input.jsx';
+import Button from '../ui/Button.jsx';
+import Toggle from '../ui/Toggle.jsx';
+import { projects } from '../../data/mockData.js';
+import { AlertTriangle } from 'lucide-react';
 
-const AppShell = ({ role = 'admin', onRoleChange }) => {
-  const [collapsed, setCollapsed] = useState(false);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+// ─── Role ───────────────────────────────────────────────
+const ROLES = ['admin', 'employee'];
 
-  // Toast state
-  const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });
+export default function AppShell() {
+  const navigate = useNavigate();
 
-  const triggerToast = (title, message, variant = 'success') => {
-    setToast({ visible: true, title, message, variant });
-  };
+  // Role
+  const [activeRole, setActiveRole] = useState('admin');
 
-  const dismissToast = () => {
-    setToast((prev) => ({ ...prev, visible: false }));
-  };
+  // Sidebar collapse
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // "Add Manual Time" drawer state
-  const [manualTimeOpen, setManualTimeOpen] = useState(false);
-  const [manualTimeForm, setManualTimeForm] = useState({
-    task: '',
-    project: '',
-    date: '',
-    startTime: '',
-    endTime: '',
-    billable: false,
+  // Manual time drawer
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerEntry, setDrawerEntry] = useState({
+    task: '', projectId: '', date: '', startTime: '', endTime: '', billable: false,
   });
 
-  const handleManualTimeSave = () => {
-    setManualTimeOpen(false);
-    setManualTimeForm({ task: '', project: '', date: '', startTime: '', endTime: '', billable: false });
-    triggerToast('Time logged', 'Your manual entry has been saved.', 'success');
-  };
+  // Toast
+  const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });
+  const triggerToast = useCallback((title, message = '', variant = 'success') => {
+    setToast({ visible: true, title, message, variant });
+  }, []);
+  const dismissToast = useCallback(() => {
+    setToast(prev => ({ ...prev, visible: false }));
+  }, []);
 
-  // Timer state
+  // Command palette
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  // Live timer
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [timerTaskLabel, setTimerTaskLabel] = useState('');
@@ -49,162 +49,241 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
 
   useEffect(() => {
     if (!timerRunning) return;
-    const interval = setInterval(() => {
-      setTimerSeconds((s) => s + 1);
-    }, 1000);
-    return () => clearInterval(interval);
+    const id = setInterval(() => setTimerSeconds(s => s + 1), 1000);
+    return () => clearInterval(id);
   }, [timerRunning]);
 
-  const startTimer = (taskLabel = '', projectId = '') => {
-    setTimerTaskLabel(taskLabel);
+  const startTimer = useCallback((task = '', projectId = '') => {
+    setTimerTaskLabel(task);
     setTimerProjectId(projectId);
     setTimerRunning(true);
-  };
+  }, []);
 
-  const stopTimer = () => {
+  const stopTimer = useCallback(() => {
     setTimerRunning(false);
-  };
+  }, []);
 
-  const resetTimer = () => {
+  const resetTimer = useCallback(() => {
     setTimerRunning(false);
     setTimerSeconds(0);
     setTimerTaskLabel('');
     setTimerProjectId('');
-  };
-
-  useEffect(() => {
-    const handler = (e) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCommandPaletteOpen(true);
-      }
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  // ─── Global keyboard shortcuts ───────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      // Ignore when typing in an input/textarea/select
+      const tag = e.target.tagName;
+      const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable;
+
+      // ⌘K / Ctrl+K — command palette (always)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(v => !v);
+        return;
+      }
+
+      if (inField) return;
+
+      switch (e.key) {
+        case 't':
+        case 'T':
+          // Toggle timer
+          if (timerRunning) stopTimer();
+          else startTimer();
+          break;
+        case 'n':
+        case 'N':
+          // Open new time entry drawer
+          setDrawerOpen(true);
+          break;
+        case 'p':
+        case 'P':
+          // Open command palette focused on projects
+          setCommandPaletteOpen(true);
+          break;
+        case ' ':
+          // Space — toggle timer
+          e.preventDefault();
+          if (timerRunning) stopTimer();
+          else startTimer();
+          break;
+        case 'Escape':
+          setDrawerOpen(false);
+          setCommandPaletteOpen(false);
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [timerRunning, startTimer, stopTimer]);
+
+  // ─── Outlet context ──────────────────────────────────
+  const outletContext = {
+    timerRunning, timerSeconds, timerTaskLabel, timerProjectId,
+    startTimer, stopTimer, resetTimer,
+    triggerToast,
+    activeRole,
+  };
+
+  const isEmployee = activeRole === 'employee';
+
   return (
-    <div className="flex h-screen bg-neutral-950 overflow-hidden">
-      <Sidebar 
-        collapsed={collapsed} 
-        onToggle={() => setCollapsed((prev) => !prev)} 
-        role={role}
-        currentRole={role}
-        onRoleChange={onRoleChange}
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: 'var(--bg-base)' }}
+    >
+      {/* Sidebar */}
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
+        activeRole={activeRole}
+        onRoleSwitch={() => setActiveRole(r => r === 'admin' ? 'employee' : 'admin')}
       />
 
-      <div className="flex flex-col flex-1 min-w-0">
+      {/* Main area */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+
+        {/* Employee warning banner */}
+        {isEmployee && (
+          <div
+            className="flex items-center gap-2 px-6 py-2 text-xs font-medium shrink-0"
+            style={{
+              background: 'rgba(245, 158, 11, 0.08)',
+              borderBottom: '1px solid rgba(245,158,11,0.20)',
+              color: 'var(--accent)',
+            }}
+          >
+            <AlertTriangle size={12} />
+            Viewing as Employee — some sections are hidden
+          </div>
+        )}
+
+        {/* Topbar */}
         <Topbar
-          collapsed={collapsed}
-          onLogTime={() => setManualTimeOpen(true)}
           onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+          onOpenDrawer={() => setDrawerOpen(true)}
           timerRunning={timerRunning}
           timerSeconds={timerSeconds}
           timerTaskLabel={timerTaskLabel}
-          startTimer={startTimer}
-          stopTimer={stopTimer}
+          onStopTimer={stopTimer}
+          onStartTimer={() => startTimer()}
         />
-        <main className="flex-1 overflow-y-auto px-8 py-6">
-          {role === 'employee' && (
-            <div className="mb-6 flex items-center justify-between px-4 py-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot" />
-                <p className="text-xs font-medium text-amber-400">Viewing as Employee — Niloy Pal</p>
-                <p className="text-xs text-neutral-500">You are seeing the restricted employee interface.</p>
-              </div>
-              <button
-                onClick={() => onRoleChange('admin')}
-                className="text-xs text-amber-400 hover:text-amber-300 font-medium transition-colors duration-150"
-              >
-                Switch back to Admin
-              </button>
-            </div>
-          )}
-          <Outlet context={{ triggerToast, role, timerRunning, timerSeconds, timerTaskLabel, timerProjectId, startTimer, stopTimer, resetTimer }} />
+
+        {/* Page content */}
+        <main className="flex-1 overflow-y-auto px-6 py-5">
+          <Outlet context={outletContext} />
         </main>
       </div>
 
-      {/* Add Manual Time Drawer */}
+      {/* Manual Time Entry Drawer */}
       <SlideOutDrawer
-        isOpen={manualTimeOpen}
-        onClose={() => setManualTimeOpen(false)}
-        title="Add Manual Time"
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        title="Log Time Entry"
         footer={
           <>
-            <Button variant="secondary" onClick={() => setManualTimeOpen(false)}>Cancel</Button>
-            <Button variant="primary" onClick={handleManualTimeSave}>Save Entry</Button>
+            <Button variant="ghost" size="sm" onClick={() => setDrawerOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setDrawerOpen(false);
+                triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
+              }}
+            >
+              Save Entry
+            </Button>
           </>
         }
       >
-        <div className="space-y-5">
+        <div className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Task Description</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Task Description
+            </label>
             <Input
-              placeholder="What were you working on?"
-              value={manualTimeForm.task}
-              onChange={(e) => setManualTimeForm((prev) => ({ ...prev, task: e.target.value }))}
+              placeholder="What did you work on?"
+              value={drawerEntry.task}
+              onChange={e => setDrawerEntry(prev => ({ ...prev, task: e.target.value }))}
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Project</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Project
+            </label>
             <Select
-              value={manualTimeForm.project}
-              onChange={(e) => setManualTimeForm((prev) => ({ ...prev, project: e.target.value }))}
+              className="w-full"
+              value={drawerEntry.projectId}
+              onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
             >
-              <option value="">Select a project...</option>
-              <option value="p1">Acme Corp Rebrand</option>
-              <option value="p2">FinTrack Dashboard</option>
-              <option value="p3">Mobile App v3</option>
-              <option value="p4">Marketing Site</option>
-              <option value="p5">API Integration</option>
+              <option value="">Select project…</option>
+              {projects.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
             </Select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-neutral-400 mb-1.5">Date</label>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              Date
+            </label>
             <Input
               type="date"
-              value={manualTimeForm.date}
-              onChange={(e) => setManualTimeForm((prev) => ({ ...prev, date: e.target.value }))}
+              value={drawerEntry.date}
+              onChange={e => setDrawerEntry(prev => ({ ...prev, date: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">Start Time</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                Start Time
+              </label>
               <Input
                 type="time"
-                value={manualTimeForm.startTime}
-                onChange={(e) => setManualTimeForm((prev) => ({ ...prev, startTime: e.target.value }))}
+                value={drawerEntry.startTime}
+                onChange={e => setDrawerEntry(prev => ({ ...prev, startTime: e.target.value }))}
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-neutral-400 mb-1.5">End Time</label>
+              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                End Time
+              </label>
               <Input
                 type="time"
-                value={manualTimeForm.endTime}
-                onChange={(e) => setManualTimeForm((prev) => ({ ...prev, endTime: e.target.value }))}
+                value={drawerEntry.endTime}
+                onChange={e => setDrawerEntry(prev => ({ ...prev, endTime: e.target.value }))}
               />
             </div>
           </div>
-          <div className="flex items-center justify-between py-1">
+          <div className="flex items-center justify-between pt-1">
             <div>
-              <p className="text-sm font-medium text-neutral-300">Billable</p>
-              <p className="text-xs text-neutral-500 mt-0.5">Include in client invoices</p>
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Billable</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Count toward client invoice</p>
             </div>
             <Toggle
-              checked={manualTimeForm.billable}
-              onChange={(val) => setManualTimeForm((prev) => ({ ...prev, billable: val }))}
-              size="sm"
+              checked={drawerEntry.billable}
+              onChange={v => setDrawerEntry(prev => ({ ...prev, billable: v }))}
+              size="md"
             />
           </div>
         </div>
       </SlideOutDrawer>
 
-      <CommandPalette
-        isOpen={commandPaletteOpen}
-        onClose={() => setCommandPaletteOpen(false)}
-      />
+      {/* Command Palette */}
+      {commandPaletteOpen && (
+        <CommandPalette
+          onClose={() => setCommandPaletteOpen(false)}
+          onNavigate={(path) => { navigate(path); setCommandPaletteOpen(false); }}
+        />
+      )}
 
-      {/* Global Toast */}
+      {/* Toast */}
       <Toast
         visible={toast.visible}
         title={toast.title}
@@ -214,6 +293,4 @@ const AppShell = ({ role = 'admin', onRoleChange }) => {
       />
     </div>
   );
-};
-
-export default AppShell;
+}
