@@ -7,6 +7,7 @@ import Button from '../components/ui/Button';
 import SplitButton from '../components/ui/SplitButton';
 import Badge from '../components/ui/Badge';
 import Input, { Select } from '../components/ui/Input';
+import DateTimePicker from '../components/ui/DateTimePicker';
 import { useOutletContext } from 'react-router-dom';
 
 import { teamMembers, projects, timeLogs, billingRates } from '../data/mockData';
@@ -136,11 +137,11 @@ export default function Reports() {
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">From</label>
-              <Input type="date" value={filterStart} onChange={e => setFilterStart(e.target.value)} />
+              <DateTimePicker value={filterStart} onChange={setFilterStart} placeholder="From date" />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">To</label>
-              <Input type="date" value={filterEnd} onChange={e => setFilterEnd(e.target.value)} />
+              <DateTimePicker value={filterEnd} onChange={setFilterEnd} placeholder="To date" />
             </div>
             
             <div className="w-px h-8 bg-[var(--border-default)] hidden md:block mb-1" />
