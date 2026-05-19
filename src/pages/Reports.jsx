@@ -133,7 +133,7 @@ export default function Reports() {
       <div className="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'var(--bg-base)' }}>
         
         {/* FILTER BAR */}
-        <div className="glass-card p-4">
+        <div className="glass-card p-4 relative z-30">
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">From</label>
