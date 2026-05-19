@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/ui/Toggle';
 import { ProgressBar } from '../components/ui/ProgressBar';
@@ -178,7 +178,7 @@ export default function Settings() {
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Role</label>
-                <div className="px-3 py-2 bg-neutral-100 dark:bg-neutral-800 rounded-md text-sm text-neutral-500 cursor-not-allowed">
+                <div className="px-3 py-2 bg-[var(--bg-sunken)] dark:bg-[var(--bg-sunken)] rounded-md text-sm text-[var(--text-secondary)] cursor-not-allowed">
                   Admin
                 </div>
               </div>

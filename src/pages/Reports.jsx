@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { 
   Download, Filter, TrendingUp, Clock, DollarSign, Users, 
   ChevronDown, ChevronUp, X, CheckCircle2 
@@ -181,8 +181,8 @@ export default function Reports() {
                   <metric.icon size={16} />
                 </div>
               </div>
-              <p className="font-mono text-3xl font-black text-neutral-900 dark:text-white tracking-tight">{metric.val}</p>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">{metric.label}</p>
+              <p className="font-mono text-3xl font-black text-[var(--text-primary)] tracking-tight">{metric.val}</p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1">{metric.label}</p>
             </div>
           ))}
         </div>
@@ -190,7 +190,7 @@ export default function Reports() {
         {/* INLINE METRIC EXPANSION */}
         {expandedMetric && (
           <div className="glass-card p-4 animate-fade-in -mt-2">
-            <p className="text-sm text-neutral-600 dark:text-neutral-300">
+            <p className="text-sm text-[var(--text-secondary)]">
               {expandedMetric === 'total' && "Total hours logged across all applied filters in the specified period."}
               {expandedMetric === 'billable' && `This represents ${billablePct}% of total logged time.`}
               {expandedMetric === 'rev' && "Calculated using the default blended rate of $" + (billingRates?.default || 95) + "/hr."}
@@ -204,11 +204,11 @@ export default function Reports() {
           
           {/* BAR CHART */}
           <div className="glass-card lg:col-span-2 p-6 flex flex-col relative">
-            <h3 className="text-base font-medium text-neutral-900 dark:text-white mb-6">Daily Hours</h3>
+            <h3 className="text-base font-medium text-[var(--text-primary)] mb-6">Daily Hours</h3>
             
             <div className="flex-1 flex items-end gap-2 h-48 border-b border-[var(--border-default)] pb-2 relative">
               {dailyData.length === 0 ? (
-                <div className="absolute inset-0 flex items-center justify-center text-sm text-neutral-500">No data for selected period</div>
+                <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--text-secondary)]">No data for selected period</div>
               ) : dailyData.map((d, i) => (
                 <div 
                   key={d.date}
@@ -216,7 +216,7 @@ export default function Reports() {
                   onClick={() => setSelectedChartDate(selectedChartDate === d.date ? null : d.date)}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform origin-bottom bg-neutral-900 dark:bg-white text-white dark:text-black text-xs px-2 py-1 rounded shadow-xl whitespace-nowrap z-20 pointer-events-none">
+                  <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform origin-bottom bg-[var(--text-primary)] dark:bg-white text-white dark:text-black text-xs px-2 py-1 rounded shadow-xl whitespace-nowrap z-20 pointer-events-none">
                     {d.date} — {d.hours.toFixed(1)}h logged by {d.membersCount} members
                   </div>
                   
@@ -230,7 +230,7 @@ export default function Reports() {
                       animationDelay: `${i * 40}ms`
                     }}
                   />
-                  <div className="mt-3 text-[10px] text-neutral-500 opacity-70 group-hover:opacity-100 truncate w-full text-center">
+                  <div className="mt-3 text-[10px] text-[var(--text-secondary)] opacity-70 group-hover:opacity-100 truncate w-full text-center">
                     {d.date.substring(5)}
                   </div>
                 </div>
@@ -239,10 +239,10 @@ export default function Reports() {
 
             {/* INLINE DAY DETAIL PANEL */}
             {selectedChartDate && (
-              <div className="mt-6 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 animate-fade-in glass-elevated">
+              <div className="mt-6 p-4 rounded-xl bg-[var(--bg-sunken)] border border-[var(--border-default)] animate-fade-in glass-elevated">
                 <div className="flex justify-between items-center mb-4">
-                  <h3 className="font-bold text-sm text-neutral-900 dark:text-white">Activity for {selectedChartDate}</h3>
-                  <button onClick={() => setSelectedChartDate(null)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+                  <h3 className="font-bold text-sm text-[var(--text-primary)]">Activity for {selectedChartDate}</h3>
+                  <button onClick={() => setSelectedChartDate(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -251,17 +251,17 @@ export default function Reports() {
                     const proj = projects.find(p => p.id === log.projectId);
                     const mem = teamMembers.find(m => m.id === log.userId);
                     return (
-                      <div key={log.id} className="flex justify-between items-center text-sm p-2 bg-white dark:bg-black/20 rounded-md border border-[var(--border-default)]">
+                      <div key={log.id} className="flex justify-between items-center text-sm p-2 bg-white rounded-md border border-[var(--border-default)]">
                         <div className="flex items-center gap-3">
-                          <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-bold shrink-0">
+                          <div className="w-6 h-6 rounded-full bg-[var(--border-default)] flex items-center justify-center text-[10px] font-bold shrink-0">
                             {mem?.name.split(' ').map(n=>n[0]).join('')}
                           </div>
                           <div>
-                            <p className="font-medium text-neutral-900 dark:text-white flex items-center gap-2">
+                            <p className="font-medium text-[var(--text-primary)] flex items-center gap-2">
                               {log.task}
                               {log.billable && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>}
                             </p>
-                            <p className="text-xs text-neutral-500 flex items-center gap-1">
+                            <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1">
                               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proj?.color || '#ccc' }}></span>
                               {proj?.name || log.projectName} • {mem?.name || log.userName}
                             </p>
@@ -269,7 +269,7 @@ export default function Reports() {
                         </div>
                         <div className="flex items-center gap-3">
                           <TrackingSourceBadge source={log.source} />
-                          <span className="font-mono font-semibold text-neutral-900 dark:text-white">{log.duration.toFixed(1)}h</span>
+                          <span className="font-mono font-semibold text-[var(--text-primary)]">{log.duration.toFixed(1)}h</span>
                         </div>
                       </div>
                     );
@@ -281,7 +281,7 @@ export default function Reports() {
 
           {/* DONUT CHART */}
           <div className="glass-card p-6 flex flex-col items-center">
-            <h3 className="text-base font-medium text-neutral-900 dark:text-white w-full text-left mb-6">Billable Split</h3>
+            <h3 className="text-base font-medium text-[var(--text-primary)] w-full text-left mb-6">Billable Split</h3>
             <div className="relative w-40 h-40 mb-6">
               <svg viewBox="0 0 100 100" className="-rotate-90 w-40 h-40">
                 {/* Non-billable Segment */}
@@ -304,31 +304,31 @@ export default function Reports() {
                 />
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-mono font-black text-neutral-900 dark:text-white">{billablePct}%</span>
-                <span className="text-xs text-neutral-500">billable</span>
+                <span className="text-2xl font-mono font-black text-[var(--text-primary)]">{billablePct}%</span>
+                <span className="text-xs text-[var(--text-secondary)]">billable</span>
               </div>
             </div>
             
             <div className="w-full space-y-3">
               <div 
-                className={`flex items-center justify-between cursor-pointer p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 ${selectedDonutSegment === 'billable' ? 'bg-black/5 dark:bg-white/5 font-semibold' : ''}`}
+                className={`flex items-center justify-between cursor-pointer p-1 rounded hover:bg-[var(--bg-sunken)] ${selectedDonutSegment === 'billable' ? 'bg-black/5 dark:bg-white/5 font-semibold' : ''}`}
                 onClick={() => setSelectedDonutSegment(s => s === 'billable' ? null : 'billable')}
               >
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span className="text-sm text-neutral-600 dark:text-neutral-300">Billable</span>
+                  <span className="text-sm text-[var(--text-secondary)]">Billable</span>
                 </div>
-                <span className="text-sm font-mono text-neutral-900 dark:text-white">{billableHours.toFixed(1)}h</span>
+                <span className="text-sm font-mono text-[var(--text-primary)]">{billableHours.toFixed(1)}h</span>
               </div>
               <div 
-                className={`flex items-center justify-between cursor-pointer p-1 rounded hover:bg-black/5 dark:hover:bg-white/5 ${selectedDonutSegment === 'non-billable' ? 'bg-black/5 dark:bg-white/5 font-semibold' : ''}`}
+                className={`flex items-center justify-between cursor-pointer p-1 rounded hover:bg-[var(--bg-sunken)] ${selectedDonutSegment === 'non-billable' ? 'bg-black/5 dark:bg-white/5 font-semibold' : ''}`}
                 onClick={() => setSelectedDonutSegment(s => s === 'non-billable' ? null : 'non-billable')}
               >
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-[#d4cdc4]" />
-                  <span className="text-sm text-neutral-600 dark:text-neutral-300">Internal</span>
+                  <span className="text-sm text-[var(--text-secondary)]">Internal</span>
                 </div>
-                <span className="text-sm font-mono text-neutral-900 dark:text-white">{nonBillableHours.toFixed(1)}h</span>
+                <span className="text-sm font-mono text-[var(--text-primary)]">{nonBillableHours.toFixed(1)}h</span>
               </div>
             </div>
 
@@ -343,7 +343,7 @@ export default function Reports() {
         {/* DETAILED BREAKDOWN TABLE */}
         <div className="glass-card p-0 overflow-hidden flex flex-col">
           <div className="px-6 py-4 flex justify-between items-center border-b border-[var(--border-default)]">
-            <h3 className="font-bold text-neutral-900 dark:text-white">Detailed Breakdown</h3>
+            <h3 className="font-bold text-[var(--text-primary)]">Detailed Breakdown</h3>
             <SplitButton onExport={(format) => triggerToast('Export started', `Your ${format.toUpperCase()} file will download shortly.`, 'success')} />
           </div>
           
@@ -356,13 +356,13 @@ export default function Reports() {
               return (
                 <div key={mem?.id || 'unknown'} className="flex flex-col text-sm">
                   {/* Member Section Header */}
-                  <div className="flex items-center justify-between px-6 py-3 bg-[var(--bg-sunken)] hover:bg-black/5 dark:hover:bg-white/5 transition-colors cursor-pointer group" onClick={() => toggleMemberTable(mem?.id)}>
+                  <div className="flex items-center justify-between px-6 py-3 bg-[var(--bg-sunken)] hover:bg-[var(--bg-sunken)] transition-colors cursor-pointer group" onClick={() => toggleMemberTable(mem?.id)}>
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-neutral-500 text-xs shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-[var(--text-secondary)] text-xs shrink-0">
                         {mem?.name.split(' ').map(n=>n[0]).join('')}
                       </div>
                       <div 
-                        className="font-semibold text-neutral-900 dark:text-white hover:text-amber-500 transition-colors"
+                        className="font-semibold text-[var(--text-primary)] hover:text-amber-500 transition-colors"
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedReportsMember(selectedReportsMember === mem?.id ? null : mem?.id);
@@ -373,14 +373,14 @@ export default function Reports() {
                     </div>
                     <div className="flex items-center gap-6">
                       <div className="flex flex-col items-end">
-                        <span className="font-mono font-bold text-neutral-900 dark:text-white">{group.totalHours.toFixed(1)}h</span>
-                        <span className="text-[10px] text-neutral-500 uppercase">Logged</span>
+                        <span className="font-mono font-bold text-[var(--text-primary)]">{group.totalHours.toFixed(1)}h</span>
+                        <span className="text-[10px] text-[var(--text-secondary)] uppercase">Logged</span>
                       </div>
                       <div className="hidden sm:flex flex-col items-end">
-                        <span className="font-mono text-neutral-900 dark:text-white">{utilPct.toFixed(0)}%</span>
-                        <span className="text-[10px] text-neutral-500 uppercase">Utilization</span>
+                        <span className="font-mono text-[var(--text-primary)]">{utilPct.toFixed(0)}%</span>
+                        <span className="text-[10px] text-[var(--text-secondary)] uppercase">Utilization</span>
                       </div>
-                      <div className="text-neutral-400">
+                      <div className="text-[var(--text-muted)]">
                         {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </div>
                     </div>
@@ -392,17 +392,17 @@ export default function Reports() {
                       {group.logs.map(log => {
                         const proj = projects.find(p => p.id === log.projectId);
                         return (
-                          <div key={log.id} className="flex items-center justify-between px-8 py-3 hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                          <div key={log.id} className="flex items-center justify-between px-8 py-3 hover:bg-[var(--bg-sunken)] transition-colors">
                             <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
                               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: proj?.color || '#ccc' }}></span>
-                              <span className="truncate text-neutral-900 dark:text-white font-medium">{log.task}</span>
+                              <span className="truncate text-[var(--text-primary)] font-medium">{log.task}</span>
                             </div>
                             <div className="flex items-center gap-6 shrink-0">
-                              <span className="text-neutral-500 hidden md:block">{log.date}</span>
-                              <span className="font-mono text-neutral-500 hidden sm:block">{log.startTime}-{log.endTime}</span>
+                              <span className="text-[var(--text-secondary)] hidden md:block">{log.date}</span>
+                              <span className="font-mono text-[var(--text-secondary)] hidden sm:block">{log.startTime}-{log.endTime}</span>
                               <TrackingSourceBadge source={log.source} />
                               <div className="flex items-center gap-2 w-16 justify-end">
-                                <span className="font-mono font-semibold text-neutral-900 dark:text-white">{log.duration.toFixed(1)}h</span>
+                                <span className="font-mono font-semibold text-[var(--text-primary)]">{log.duration.toFixed(1)}h</span>
                                 <span className={`w-1.5 h-1.5 rounded-full ${log.billable ? 'bg-emerald-500' : 'bg-transparent'}`}></span>
                               </div>
                             </div>
@@ -434,17 +434,17 @@ export default function Reports() {
         <div className="w-80 flex-shrink-0 border-l border-[var(--border-default)] bg-[var(--bg-surface)] overflow-y-auto animate-fade-in flex flex-col z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] relative">
           <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center sticky top-0 bg-[var(--bg-surface)] z-10">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-neutral-600 dark:text-neutral-300 shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-[var(--text-secondary)] shrink-0">
                 {selectedMemberData.name.split(' ').map(n=>n[0]).join('')}
               </div>
               <div>
-                <h3 className="font-bold text-neutral-900 dark:text-white">{selectedMemberData.name}</h3>
-                <p className="text-xs text-neutral-500">{selectedMemberData.role}</p>
+                <h3 className="font-bold text-[var(--text-primary)]">{selectedMemberData.name}</h3>
+                <p className="text-xs text-[var(--text-secondary)]">{selectedMemberData.role}</p>
               </div>
             </div>
             <button 
               onClick={() => setSelectedReportsMember(null)}
-              className="p-1.5 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 transition-colors"
+              className="p-1.5 rounded-full hover:bg-[var(--border-default)] dark:hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] transition-colors"
             >
               <X size={16} />
             </button>
@@ -453,13 +453,13 @@ export default function Reports() {
           {/* Tabs */}
           <div className="flex border-b border-[var(--border-default)]">
             <button 
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Overview' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'}`}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Overview' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
               onClick={() => setActiveTab('Overview')}
             >
               Overview
             </button>
             <button 
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Time' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200'}`}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Time' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
               onClick={() => setActiveTab('Time')}
             >
               Time Breakdown
@@ -471,18 +471,18 @@ export default function Reports() {
               <div className="space-y-6">
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500">Total Filtered Hours</span>
-                    <span className="font-mono font-semibold text-neutral-900 dark:text-white">{selectedMemberLogs.reduce((a,l)=>a+l.duration,0).toFixed(1)}h</span>
+                    <span className="text-[var(--text-secondary)]">Total Filtered Hours</span>
+                    <span className="font-mono font-semibold text-[var(--text-primary)]">{selectedMemberLogs.reduce((a,l)=>a+l.duration,0).toFixed(1)}h</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-neutral-500">Billable Hours</span>
+                    <span className="text-[var(--text-secondary)]">Billable Hours</span>
                     <span className="font-mono font-semibold text-emerald-500">{selectedMemberLogs.filter(l=>l.billable).reduce((a,l)=>a+l.duration,0).toFixed(1)}h</span>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Capacity Utilization</h4>
-                  <div className="w-full h-2 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden">
+                  <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Capacity Utilization</h4>
+                  <div className="w-full h-2 rounded-full bg-[var(--border-default)] overflow-hidden">
                     <div 
                       className="h-full bg-amber-500 rounded-full" 
                       style={{ width: `${Math.min(100, (selectedMemberLogs.reduce((a,l)=>a+l.duration,0) / (selectedMemberData.availableHoursPerWeek || 40)) * 100)}%` }}
@@ -491,7 +491,7 @@ export default function Reports() {
                 </div>
 
                 <div>
-                  <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Projects in Period</h4>
+                  <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Projects in Period</h4>
                   <div className="space-y-2">
                     {Array.from(new Set(selectedMemberLogs.map(l => l.projectId))).map(pid => {
                       const proj = projects.find(p => p.id === pid);
@@ -500,9 +500,9 @@ export default function Reports() {
                         <div key={pid} className="flex items-center justify-between text-sm">
                           <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proj?.color || '#ccc' }}></span>
-                            <span className="text-neutral-700 dark:text-neutral-300">{proj?.name || pid}</span>
+                            <span className="text-[var(--text-secondary)]">{proj?.name || pid}</span>
                           </div>
-                          <span className="font-mono text-neutral-900 dark:text-white">{projHours.toFixed(1)}h</span>
+                          <span className="font-mono text-[var(--text-primary)]">{projHours.toFixed(1)}h</span>
                         </div>
                       );
                     })}
@@ -512,9 +512,9 @@ export default function Reports() {
             ) : (
               <div className="space-y-3">
                 {selectedMemberLogs.map(log => (
-                  <div key={log.id} className="p-3 bg-neutral-50 dark:bg-white/5 rounded-lg border border-[var(--border-default)]">
-                    <p className="font-medium text-sm text-neutral-900 dark:text-white mb-1">{log.task}</p>
-                    <div className="flex justify-between items-center text-xs text-neutral-500">
+                  <div key={log.id} className="p-3 bg-[var(--bg-sunken)] rounded-lg border border-[var(--border-default)]">
+                    <p className="font-medium text-sm text-[var(--text-primary)] mb-1">{log.task}</p>
+                    <div className="flex justify-between items-center text-xs text-[var(--text-secondary)]">
                       <span>{log.date}</span>
                       <span className="font-mono">{log.duration}h</span>
                     </div>

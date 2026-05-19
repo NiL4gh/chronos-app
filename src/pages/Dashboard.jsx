@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+﻿import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { 
   BarChart3, Clock, DollarSign, AlertCircle, ChevronDown, 
@@ -83,16 +83,16 @@ export default function Dashboard() {
       {/* HEADER SECTION */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
             Command Center
           </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+          <p className="text-sm text-[var(--text-secondary)] mt-1">
             Overview of team performance and financial health.
           </p>
         </div>
         
         {/* CADENCE TOGGLE */}
-        <div className="glass-interactive flex items-center p-1 rounded-full border border-neutral-200 dark:border-white/10">
+        <div className="glass-interactive flex items-center p-1 rounded-full border border-[var(--border-default)]">
           {['Today', 'Week', 'Month'].map(t => (
             <button
               key={t}
@@ -100,7 +100,7 @@ export default function Dashboard() {
               className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${
                 cadence === t 
                   ? 'bg-amber-500 text-white shadow-sm' 
-                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
               }`}
             >
               {t}
@@ -114,7 +114,7 @@ export default function Dashboard() {
         {/* Total Hours */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
           <div 
-            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            className="p-5 flex-1 cursor-pointer hover:bg-[var(--bg-sunken)] transition-colors"
             onClick={() => handleKpiClick('hours')}
           >
             <div className="flex justify-between items-start mb-4">
@@ -125,27 +125,27 @@ export default function Dashboard() {
                 <TrendingUp className="w-3 h-3 mr-1" /> +12%
               </span>
             </div>
-            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Total Hours</h3>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Total Hours</h3>
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               {metrics.hours}
             </div>
           </div>
           
           {expandedKpi === 'hours' && (
-            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
-              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Project Breakdown</h4>
+            <div className="border-t border-[var(--border-default)] p-4 bg-[var(--bg-sunken)] animate-fade-in">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Project Breakdown</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Brand Redesign</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">45h</span>
+                  <span className="text-[var(--text-secondary)]">Brand Redesign</span>
+                  <span className="font-medium text-[var(--text-primary)]">45h</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">API Gateway</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">32h</span>
+                  <span className="text-[var(--text-secondary)]">API Gateway</span>
+                  <span className="font-medium text-[var(--text-primary)]">32h</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Internal Comms</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">12h</span>
+                  <span className="text-[var(--text-secondary)]">Internal Comms</span>
+                  <span className="font-medium text-[var(--text-primary)]">12h</span>
                 </div>
               </div>
             </div>
@@ -155,7 +155,7 @@ export default function Dashboard() {
         {/* Utilization Rate */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
           <div 
-            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            className="p-5 flex-1 cursor-pointer hover:bg-[var(--bg-sunken)] transition-colors"
             onClick={() => handleKpiClick('utilization')}
           >
             <div className="flex justify-between items-start mb-4">
@@ -166,26 +166,26 @@ export default function Dashboard() {
                 <TrendingUp className="w-3 h-3 mr-1" /> +5%
               </span>
             </div>
-            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Utilization Rate</h3>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Utilization Rate</h3>
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               {metrics.utilization}%
             </div>
           </div>
           
           {expandedKpi === 'utilization' && (
-            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
-              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Top Performers</h4>
+            <div className="border-t border-[var(--border-default)] p-4 bg-[var(--bg-sunken)] animate-fade-in">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Top Performers</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Daniel Osei</span>
+                  <span className="text-[var(--text-secondary)]">Daniel Osei</span>
                   <span className="font-medium text-emerald-500">95%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Priya Sharma</span>
+                  <span className="text-[var(--text-secondary)]">Priya Sharma</span>
                   <span className="font-medium text-emerald-500">88%</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Marcus Webb</span>
+                  <span className="text-[var(--text-secondary)]">Marcus Webb</span>
                   <span className="font-medium text-amber-500">71%</span>
                 </div>
               </div>
@@ -196,7 +196,7 @@ export default function Dashboard() {
         {/* Est. Revenue */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
           <div 
-            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            className="p-5 flex-1 cursor-pointer hover:bg-[var(--bg-sunken)] transition-colors"
             onClick={() => handleKpiClick('revenue')}
           >
             <div className="flex justify-between items-start mb-4">
@@ -204,27 +204,27 @@ export default function Dashboard() {
                 <DollarSign className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Est. Revenue</h3>
-            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Est. Revenue</h3>
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               ${metrics.revenue}
             </div>
           </div>
           
           {expandedKpi === 'revenue' && (
-            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
-              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Top Clients</h4>
+            <div className="border-t border-[var(--border-default)] p-4 bg-[var(--bg-sunken)] animate-fade-in">
+              <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-3">Top Clients</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">CloudScale Inc</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">$8,500</span>
+                  <span className="text-[var(--text-secondary)]">CloudScale Inc</span>
+                  <span className="font-medium text-[var(--text-primary)]">$8,500</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">Acme Corp</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">$3,200</span>
+                  <span className="text-[var(--text-secondary)]">Acme Corp</span>
+                  <span className="font-medium text-[var(--text-primary)]">$3,200</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-neutral-600 dark:text-neutral-300">DataStream</span>
-                  <span className="font-medium text-neutral-900 dark:text-white">$700</span>
+                  <span className="text-[var(--text-secondary)]">DataStream</span>
+                  <span className="font-medium text-[var(--text-primary)]">$700</span>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function Dashboard() {
         {/* Uninvoiced Hours */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300 border-red-500/20">
           <div 
-            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            className="p-5 flex-1 cursor-pointer hover:bg-[var(--bg-sunken)] transition-colors"
             onClick={() => handleKpiClick('uninvoiced')}
           >
             <div className="flex justify-between items-start mb-4">
@@ -242,20 +242,20 @@ export default function Dashboard() {
                 <AlertCircle className="w-5 h-5" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Uninvoiced Hours</h3>
+            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Uninvoiced Hours</h3>
             <div className="text-3xl font-bold text-red-500 tracking-tight">
               {metrics.uninvoiced}
             </div>
           </div>
           
           {expandedKpi === 'uninvoiced' && (
-            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
+            <div className="border-t border-[var(--border-default)] p-4 bg-[var(--bg-sunken)] animate-fade-in">
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
                   handleToast("Generating invoice draft...", "success");
                 }}
-                className="w-full py-2 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium lift-on-hover press-on-click"
+                className="w-full py-2 bg-[var(--text-primary)] dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium lift-on-hover press-on-click"
               >
                 Create Invoice
               </button>
@@ -270,20 +270,20 @@ export default function Dashboard() {
         {/* BAR CHART SECTION */}
         <div className="glass-card lg:col-span-2 p-6 flex flex-col">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Activity Overview</h2>
-            <div className="flex items-center gap-4 text-sm text-neutral-500">
+            <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Activity Overview</h2>
+            <div className="flex items-center gap-4 text-sm text-[var(--text-secondary)]">
               <div className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-sm bg-amber-500"></div>
                 Billable
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-neutral-300 dark:bg-neutral-600"></div>
+                <div className="w-3 h-3 rounded-sm bg-neutral-300"></div>
                 Internal
               </div>
             </div>
           </div>
           
-          <div className="flex-1 flex items-end gap-2 h-48 relative border-b border-neutral-200 dark:border-white/10 pb-2">
+          <div className="flex-1 flex items-end gap-2 h-48 relative border-b border-[var(--border-default)] pb-2">
             {chartBars.map((bar, idx) => (
               <div 
                 key={idx} 
@@ -296,7 +296,7 @@ export default function Dashboard() {
                   }`}
                   style={{ height: `${(bar.value / maxChartValue) * 100}%`, animationDelay: `${idx * 0.05}s` }}
                 ></div>
-                <div className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 opacity-70 group-hover:opacity-100">
+                <div className="mt-3 text-xs text-[var(--text-secondary)] opacity-70 group-hover:opacity-100">
                   {bar.label}
                 </div>
               </div>
@@ -305,19 +305,19 @@ export default function Dashboard() {
 
           {/* INLINE CHART DETAILS */}
           {selectedChartDay && (
-            <div className="mt-6 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 animate-fade-in">
+            <div className="mt-6 p-4 rounded-xl bg-[var(--bg-sunken)] border border-[var(--border-default)] animate-fade-in">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-sm text-neutral-900 dark:text-white">Activity for {selectedChartDay}</h3>
-                <button onClick={() => setSelectedChartDay(null)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+                <h3 className="font-bold text-sm text-[var(--text-primary)]">Activity for {selectedChartDay}</h3>
+                <button onClick={() => setSelectedChartDay(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
                   <AlertCircle className="w-4 h-4" /> {/* Just a visual close icon placeholder */}
                 </button>
               </div>
               <div className="space-y-3">
                 {timeLogs.slice(0, 3).map(log => (
-                  <div key={log.id} className="flex justify-between items-center text-sm p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors">
+                  <div key={log.id} className="flex justify-between items-center text-sm p-2 hover:bg-[var(--bg-sunken)] rounded-md transition-colors">
                     <div>
-                      <p className="font-medium text-neutral-900 dark:text-white">{log.task}</p>
-                      <p className="text-xs text-neutral-500">{log.projectName} • {log.userName}</p>
+                      <p className="font-medium text-[var(--text-primary)]">{log.task}</p>
+                      <p className="text-xs text-[var(--text-secondary)]">{log.projectName} • {log.userName}</p>
                     </div>
                     <div className="font-medium text-amber-500">{log.duration}h</div>
                   </div>
@@ -331,23 +331,23 @@ export default function Dashboard() {
         <div className="glass-card p-6 flex flex-col">
           <div className="flex items-center gap-2 mb-6">
             <AlertTriangle className="w-5 h-5 text-red-500 animate-status-pulse" />
-            <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Needs Attention</h2>
+            <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Needs Attention</h2>
           </div>
           
           <div className="space-y-4 flex-1">
             <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 lift-on-hover cursor-pointer transition-all duration-300">
               <h3 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Overdue Invoice</h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">Meridian Finance (INV-2025-040) is 15 days overdue.</p>
+              <p className="text-xs text-[var(--text-secondary)]">Meridian Finance (INV-2025-040) is 15 days overdue.</p>
             </div>
             
             <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 lift-on-hover cursor-pointer transition-all duration-300">
               <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-1">Budget Alert</h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">Brand Redesign project has consumed 85% of allocated hours.</p>
+              <p className="text-xs text-[var(--text-secondary)]">Brand Redesign project has consumed 85% of allocated hours.</p>
             </div>
 
             <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 lift-on-hover cursor-pointer transition-all duration-300">
               <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 mb-1">Missing Time Logs</h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-300">Aiko Tanaka has 0 logged hours this week.</p>
+              <p className="text-xs text-[var(--text-secondary)]">Aiko Tanaka has 0 logged hours this week.</p>
             </div>
           </div>
         </div>
@@ -355,39 +355,39 @@ export default function Dashboard() {
 
       {/* TEAM PULSE SECTION */}
       <div className="glass-card flex flex-col overflow-hidden">
-        <div className="p-6 border-b border-neutral-200 dark:border-white/10">
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Team Pulse</h2>
+        <div className="p-6 border-b border-[var(--border-default)]">
+          <h2 className="text-lg font-bold text-[var(--text-primary)] tracking-tight">Team Pulse</h2>
         </div>
-        <div className="divide-y divide-neutral-200 dark:divide-white/10">
+        <div className="divide-y divide-[var(--border-default)]">
           {teamMembers.map((member) => (
-            <div key={member.id} className="flex flex-col hover:bg-neutral-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={() => handleMemberClick(member.id)}>
+            <div key={member.id} className="flex flex-col hover:bg-[var(--bg-sunken)] transition-colors cursor-pointer" onClick={() => handleMemberClick(member.id)}>
               <div className="p-4 sm:p-6 flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-neutral-500 dark:text-neutral-400 shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-[var(--text-secondary)] shrink-0">
                       {member.name.split(' ').map(n => n[0]).join('')}
                     </div>
                     {member.status === 'active' && (
-                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-[#1a1a1a] bg-emerald-500 animate-status-pulse"></span>
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-emerald-500 animate-status-pulse"></span>
                     )}
                     {member.status === 'idle' && (
-                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-[#1a1a1a] bg-amber-500"></span>
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white bg-amber-500"></span>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white">{member.name}</h3>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{member.role}</p>
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">{member.name}</h3>
+                    <p className="text-xs text-[var(--text-secondary)]">{member.role}</p>
                   </div>
                 </div>
                 
                 <div className="hidden md:block flex-1 max-w-xs mx-8">
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-neutral-500">Utilization</span>
+                    <span className="text-[var(--text-secondary)]">Utilization</span>
                     <span className={`font-medium ${member.activityLevel > 80 ? 'text-emerald-500' : member.activityLevel > 40 ? 'text-amber-500' : 'text-red-500'}`}>
                       {member.activityLevel}%
                     </span>
                   </div>
-                  <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-[var(--border-default)] rounded-full h-1.5 overflow-hidden">
                     <div 
                       className={`h-full rounded-full ${member.activityLevel > 80 ? 'bg-emerald-500' : member.activityLevel > 40 ? 'bg-amber-500' : 'bg-red-500'}`} 
                       style={{ width: `${member.activityLevel}%` }}
@@ -397,32 +397,32 @@ export default function Dashboard() {
                 
                 <div className="text-right flex items-center gap-4">
                   <div className="hidden sm:block">
-                    <div className="text-sm font-medium text-neutral-900 dark:text-white">{member.hoursWeek}h</div>
-                    <div className="text-xs text-neutral-500 dark:text-neutral-400">this week</div>
+                    <div className="text-sm font-medium text-[var(--text-primary)]">{member.hoursWeek}h</div>
+                    <div className="text-xs text-[var(--text-secondary)]">this week</div>
                   </div>
-                  {expandedMemberId === member.id ? <ChevronUp className="w-5 h-5 text-neutral-400" /> : <ChevronDown className="w-5 h-5 text-neutral-400" />}
+                  {expandedMemberId === member.id ? <ChevronUp className="w-5 h-5 text-[var(--text-muted)]" /> : <ChevronDown className="w-5 h-5 text-[var(--text-muted)]" />}
                 </div>
               </div>
               
               {/* INLINE EXPANSION PANEL */}
               {expandedMemberId === member.id && (
-                <div className="px-6 py-4 bg-neutral-50 dark:bg-black/20 animate-fade-in border-t border-neutral-200/50 dark:border-white/5">
+                <div className="px-6 py-4 bg-[var(--bg-sunken)] animate-fade-in border-t border-[var(--border-default)]">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div>
-                      <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Current Activity</h4>
-                      <p className="text-sm text-neutral-900 dark:text-white">{member.currentTask || 'No active task'}</p>
-                      <p className="text-xs text-neutral-500 mt-1">{member.currentProject || 'N/A'}</p>
+                      <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Current Activity</h4>
+                      <p className="text-sm text-[var(--text-primary)]">{member.currentTask || 'No active task'}</p>
+                      <p className="text-xs text-[var(--text-secondary)] mt-1">{member.currentProject || 'N/A'}</p>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Metrics</h4>
+                      <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Metrics</h4>
                       <div className="space-y-1">
                         <div className="flex justify-between text-sm">
-                          <span className="text-neutral-500">Hourly Rate</span>
-                          <span className="font-medium text-neutral-900 dark:text-white">${member.hourlyRate || 0}/hr</span>
+                          <span className="text-[var(--text-secondary)]">Hourly Rate</span>
+                          <span className="font-medium text-[var(--text-primary)]">${member.hourlyRate || 0}/hr</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-neutral-500">Capacity</span>
-                          <span className="font-medium text-neutral-900 dark:text-white">{member.availableHoursPerWeek || 40}h/week</span>
+                          <span className="text-[var(--text-secondary)]">Capacity</span>
+                          <span className="font-medium text-[var(--text-primary)]">{member.availableHoursPerWeek || 40}h/week</span>
                         </div>
                       </div>
                     </div>
@@ -432,7 +432,7 @@ export default function Dashboard() {
                           e.stopPropagation();
                           handleToast(`Message sent to ${member.name}`, "success");
                         }}
-                        className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-lg text-sm font-medium lift-on-hover press-on-click"
+                        className="px-4 py-2 bg-[var(--border-default)] text-[var(--text-primary)] rounded-lg text-sm font-medium lift-on-hover press-on-click"
                       >
                         Ping {member.name.split(' ')[0]}
                       </button>
