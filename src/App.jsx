@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import Dashboard from './pages/Dashboard';
@@ -9,12 +8,10 @@ import Invoices from './pages/Invoices';
 import MyTime from './pages/MyTime';
 import Settings from './pages/Settings';
 
-const App = () => {
-  const [role, setRole] = useState('admin');
-
+export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<AppShell role={role} onRoleChange={setRole} />}>
+      <Route path="/" element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="team" element={<Team />} />
@@ -26,6 +23,4 @@ const App = () => {
       </Route>
     </Routes>
   );
-};
-
-export default App;
+}

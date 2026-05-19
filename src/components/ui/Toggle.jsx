@@ -19,6 +19,7 @@ export default function Toggle({
   return (
     <label className={`flex items-start gap-3 ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}>
       <button
+        type="button"
         role="switch"
         aria-checked={checked}
         disabled={disabled}
@@ -27,28 +28,29 @@ export default function Toggle({
           s.track,
           'relative rounded-full shrink-0 mt-0.5',
           'transition-all duration-200',
-          'focus-visible:ring-2 focus-visible:ring-amber-400/40 focus-visible:ring-offset-1',
-          checked
-            ? 'bg-amber-400 shadow-[0_0_12px_rgba(245,158,11,0.35)]'
-            : 'bg-white/10 border border-[var(--border-default)]',
+          'focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1',
         ].join(' ')}
+        style={{
+          background: checked ? 'var(--accent)' : 'var(--border-strong)',
+        }}
       >
         <span
           className={[
             s.thumb,
             'absolute top-1/2 -translate-y-1/2 left-1 rounded-full transition-transform duration-200',
-            checked ? `${s.translate} bg-neutral-950` : 'bg-[var(--text-muted)]',
+            checked ? s.translate : '',
           ].join(' ')}
+          style={{ background: 'white', boxShadow: 'var(--shadow-sm)' }}
         />
       </button>
 
       {(label || description) && (
         <div>
           {label && (
-            <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">{label}</p>
+            <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text-primary)' }}>{label}</p>
           )}
           {description && (
-            <p className="text-xs text-[var(--text-muted)] mt-0.5 leading-snug">{description}</p>
+            <p className="text-xs mt-0.5 leading-snug" style={{ color: 'var(--text-tertiary)' }}>{description}</p>
           )}
         </div>
       )}

@@ -40,7 +40,8 @@ export default function Avatar({ name = '', size = 'md', className = '' }) {
 
   return (
     <div
-      className={`${sizeClass} ${colorClass} rounded-full border flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
+      className={`${sizeClass} ${colorClass} rounded-full flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
+      style={{ border: '1px solid var(--border-default)' }}
       aria-label={name}
     >
       {getInitials(name)}

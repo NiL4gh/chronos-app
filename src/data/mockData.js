@@ -12,6 +12,8 @@ export const teamMembers = [
     hoursToday: 5.5,
     hoursWeek: 32.5,
     avatar: null,
+    hourlyRate: 95,
+    availableHoursPerWeek: 40,
   },
   {
     id: 'u2',
@@ -25,6 +27,8 @@ export const teamMembers = [
     hoursToday: 4.25,
     hoursWeek: 28.0,
     avatar: null,
+    hourlyRate: 85,
+    availableHoursPerWeek: 40,
   },
   {
     id: 'u3',
@@ -38,6 +42,8 @@ export const teamMembers = [
     hoursToday: 3.0,
     hoursWeek: 19.5,
     avatar: null,
+    hourlyRate: 75,
+    availableHoursPerWeek: 40,
   },
   {
     id: 'u4',
@@ -51,6 +57,8 @@ export const teamMembers = [
     hoursToday: 6.75,
     hoursWeek: 38.25,
     avatar: null,
+    hourlyRate: 110,
+    availableHoursPerWeek: 40,
   },
   {
     id: 'u5',
@@ -64,6 +72,8 @@ export const teamMembers = [
     hoursToday: 4.0,
     hoursWeek: 24.0,
     avatar: null,
+    hourlyRate: 80,
+    availableHoursPerWeek: 40,
   },
   {
     id: 'u6',
@@ -77,8 +87,45 @@ export const teamMembers = [
     hoursToday: 0,
     hoursWeek: 12.0,
     avatar: null,
+    hourlyRate: 65,
+    availableHoursPerWeek: 40,
   },
-]
+  {
+    id: 'u7',
+    name: 'Priya Sharma',
+    role: 'Designer',
+    email: 'priya.sharma@acme.io',
+    status: 'active',
+    activityLevel: 88,
+    currentProject: 'Brand Redesign',
+    currentTask: 'Creating component library',
+    hoursToday: 5.5,
+    hoursWeek: 28,
+    avatar: null,
+    hourlyRate: 90,
+    availableHoursPerWeek: 40,
+  },
+  {
+    id: 'u8',
+    name: 'James Liu',
+    role: 'QA Engineer',
+    email: 'james@acme.io',
+    status: 'idle',
+    activityLevel: 22,
+    currentProject: 'API Integration',
+    currentTask: 'Reviewing test cases',
+    hoursToday: 1.0,
+    hoursWeek: 12,
+    avatar: null,
+    hourlyRate: 70,
+    availableHoursPerWeek: 40,
+  },
+];
+
+// ─── BILLING RATES ────────────────────────────────────────────────────────────
+export const billingRates = {
+  default: 95,
+};
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
 export const projects = [
@@ -162,123 +209,130 @@ export const projects = [
     description: 'Self-service portal for Meridian Finance customers.',
     tags: ['frontend', 'backend'],
   },
-]
+  {
+    id: 'p6',
+    name: 'Brand Redesign',
+    client: 'Internal',
+    status: 'active',
+    color: '#8b5cf6',
+    goalType: 'monthly',
+    goalHours: 60,
+    loggedHours: 51,
+    budget: 8000,
+    spent: 7200,
+    dueDate: '2026-05-28',
+    members: ['u7'],
+    tags: ['design'],
+    description: 'Complete brand identity overhaul',
+  },
+  {
+    id: 'p7',
+    name: 'API Integration',
+    client: 'DataStream Inc',
+    status: 'active',
+    color: '#0ea5e9',
+    goalType: 'project',
+    goalHours: 120,
+    loggedHours: 44,
+    budget: 15000,
+    spent: 5800,
+    dueDate: '2026-07-01',
+    members: ['u8', 'u3'],
+    tags: ['backend'],
+    description: 'REST API integration with DataStream platform',
+  },
+];
 
 // ─── TIME LOGS ────────────────────────────────────────────────────────────────
-export const timeLogs = [
-  {
-    id: 'tl1',
-    userId: 'u1',
-    userName: 'Priya Sharma',
-    projectId: 'p1',
-    projectName: 'Redesign Landing Page',
-    task: 'Hero section — responsive layout',
-    date: '2025-05-12',
-    startTime: '09:02',
-    endTime: '11:44',
-    duration: 2.7,
-    source: 'auto',
-    billable: true,
-  },
-  {
-    id: 'tl2',
-    userId: 'u2',
-    userName: 'Marcus Webb',
-    projectId: 'p2',
-    projectName: 'API Gateway v2',
-    task: 'JWT validation middleware',
-    date: '2025-05-12',
-    startTime: '09:15',
-    endTime: '12:00',
-    duration: 2.75,
-    source: 'auto',
-    billable: true,
-  },
-  {
-    id: 'tl3',
-    userId: 'u4',
-    userName: 'Daniel Osei',
-    projectId: 'p4',
-    projectName: 'Infrastructure Migration',
-    task: 'Helm chart for staging env',
-    date: '2025-05-12',
-    startTime: '08:30',
-    endTime: '11:00',
-    duration: 2.5,
-    source: 'auto',
-    billable: true,
-  },
-  {
-    id: 'tl4',
-    userId: 'u3',
-    userName: 'Aiko Tanaka',
-    projectId: 'p3',
-    projectName: 'Design System v3',
-    task: 'Token documentation',
-    date: '2025-05-12',
-    startTime: '10:00',
-    endTime: '13:00',
-    duration: 3.0,
-    source: 'manual',
-    billable: false,
-  },
-  {
-    id: 'tl5',
-    userId: 'u1',
-    userName: 'Priya Sharma',
-    projectId: 'p1',
-    projectName: 'Redesign Landing Page',
-    task: 'Navigation component — mobile',
-    date: '2025-05-11',
-    startTime: '14:00',
-    endTime: '16:30',
-    duration: 2.5,
-    source: 'auto',
-    billable: true,
-  },
-  {
-    id: 'tl6',
-    userId: 'u5',
-    userName: 'Sofia Reyes',
-    projectId: 'p1',
-    projectName: 'Redesign Landing Page',
-    task: 'E2E test suite — homepage',
-    date: '2025-05-11',
-    startTime: '13:00',
-    endTime: '17:00',
-    duration: 4.0,
-    source: 'manual',
-    billable: true,
-  },
-  {
-    id: 'tl7',
-    userId: 'u2',
-    userName: 'Marcus Webb',
-    projectId: 'p2',
-    projectName: 'API Gateway v2',
-    task: 'Rate limiter — Redis integration',
-    date: '2025-05-11',
-    startTime: '09:00',
-    endTime: '13:30',
-    duration: 4.5,
-    source: 'auto',
-    billable: true,
-  },
-  {
-    id: 'tl8',
-    userId: 'u4',
-    userName: 'Daniel Osei',
-    projectId: 'p4',
-    projectName: 'Infrastructure Migration',
-    task: 'GCP IAM role configuration',
-    date: '2025-05-10',
-    startTime: '08:00',
-    endTime: '12:00',
-    duration: 4.0,
-    source: 'manual',
-    billable: true,
-  },
-]
+// The requirement is 24 entries spanning the last 14 days, with at least 3 entries
+// per day for the last 5 weekdays.
+const generateMockLogs = () => {
+  const logs = [];
+  const today = new Date();
+  let idCount = 1;
+  const users = [
+    { id: 'u1', name: 'Priya Sharma' },
+    { id: 'u2', name: 'Marcus Webb' },
+    { id: 'u3', name: 'Aiko Tanaka' },
+    { id: 'u4', name: 'Daniel Osei' },
+    { id: 'u5', name: 'Sofia Reyes' },
+    { id: 'u6', name: 'Tom Eriksson' },
+    { id: 'u7', name: 'Priya Sharma' }, // another Priya
+    { id: 'u8', name: 'James Liu' },
+  ];
+  const projs = [
+    { id: 'p1', name: 'Redesign Landing Page' },
+    { id: 'p2', name: 'API Gateway v2' },
+    { id: 'p3', name: 'Design System v3' },
+    { id: 'p4', name: 'Infrastructure Migration' },
+    { id: 'p5', name: 'Client Portal' },
+    { id: 'p6', name: 'Brand Redesign' },
+    { id: 'p7', name: 'API Integration' },
+  ];
+  
+  // Create 3 entries per day for the last 5 weekdays
+  let daysAdded = 0;
+  for (let i = 0; i < 14 && logs.length < 24; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    
+    let entriesForDay = 1;
+    if (!isWeekend && daysAdded < 5) {
+      entriesForDay = 3;
+      daysAdded++;
+    } else if (isWeekend) {
+      entriesForDay = i % 2 === 0 ? 1 : 0;
+    }
+
+    for (let j = 0; j < entriesForDay && logs.length < 24; j++) {
+      const u = users[(i + j) % users.length];
+      const p = projs[(i * j + 1) % projs.length];
+      logs.push({
+        id: 'tl' + idCount++,
+        userId: u.id,
+        userName: u.name,
+        projectId: p.id,
+        projectName: p.name,
+        task: 'Development task ' + idCount,
+        date: dateStr,
+        startTime: '09:00',
+        endTime: '11:00',
+        duration: 2,
+        source: j % 2 === 0 ? 'auto' : 'manual',
+        billable: j !== 2, // 2 out of 3 are billable
+      });
+    }
+  }
+  
+  // Fill the rest if not 24
+  while (logs.length < 24) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - 10);
+    const dateStr = d.toISOString().split('T')[0];
+    const u = users[logs.length % users.length];
+    const p = projs[logs.length % projs.length];
+    logs.push({
+      id: 'tl' + idCount++,
+      userId: u.id,
+      userName: u.name,
+      projectId: p.id,
+      projectName: p.name,
+      task: 'Development task ' + idCount,
+      date: dateStr,
+      startTime: '13:00',
+      endTime: '14:30',
+      duration: 1.5,
+      source: 'auto',
+      billable: true,
+    });
+  }
+
+  return logs;
+};
+
+export const timeLogs = generateMockLogs();
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
 export const invoices = [
@@ -352,7 +406,7 @@ export const invoices = [
     total: 10464,
     notes: 'Paid via ACH on May 10, 2025. Thank you.',
   },
-]
+];
 
 // ─── DASHBOARD METRICS ────────────────────────────────────────────────────────
 export const dashboardMetrics = {
@@ -369,7 +423,7 @@ export const dashboardMetrics = {
     { day: 'Thu', hours: 44.5 },
     { day: 'Fri', hours: 19.2 },
   ],
-}
+};
 
 // ─── REPORTS (weekly summary) ─────────────────────────────────────────────────
 export const reportRows = [
@@ -378,4 +432,4 @@ export const reportRows = [
   { member: 'Aiko Tanaka', project: 'Design System v3', mon: 4.0, tue: 5.0, wed: 4.5, thu: 3.5, fri: 3.0, total: 20.0, billable: 0 },
   { member: 'Daniel Osei', project: 'Infrastructure Migration', mon: 8.5, tue: 9.0, wed: 7.5, thu: 8.5, fri: 6.75, total: 40.25, billable: 40.25 },
   { member: 'Sofia Reyes', project: 'Redesign Landing Page', mon: 5.0, tue: 6.0, wed: 5.5, thu: 5.5, fri: 4.0, total: 26.0, billable: 26.0 },
-]
+];

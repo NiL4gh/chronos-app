@@ -1,246 +1,449 @@
-import { useState } from 'react'
-import { useOutletContext } from 'react-router-dom'
-import {
-  Clock, TrendingUp, TrendingDown, Layers, DollarSign,
-  ArrowUpRight, ArrowDownRight, MoreHorizontal, Zap,
-} from 'lucide-react'
-import Card, { CardHeader, CardTitle, CardDescription } from '../components/ui/Card'
-import Badge from '../components/ui/Badge'
-import Avatar from '../components/ui/Avatar'
-import { ActivityBar } from '../components/ui/ProgressBar'
-import TrackingSourceBadge from '../components/ui/TrackingSourceBadge'
-import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
-import { dashboardMetrics, teamMembers, timeLogs } from '../data/mockData'
-import MemberProfileDrawer from '../components/team/MemberProfileDrawer';
+import React, { useState, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import { 
+  BarChart3, Clock, DollarSign, AlertCircle, ChevronDown, 
+  ChevronUp, CheckCircle2, TrendingUp, Calendar, AlertTriangle
+} from 'lucide-react';
 
-function MetricCard({ icon: Icon, label, value, delta, unit = '', accentColor = 'text-violet-400' }) {
-  const isPositive = delta >= 0
-  return (
-    <Card padding="p-5" className="animate-fade-in">
-      <div className="flex items-start justify-between mb-4">
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-neutral-800 border border-neutral-700`}>
-          <Icon size={16} className={accentColor} />
-        </div>
-        <span className={`flex items-center gap-1 text-xs font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-          {isPositive ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-          {Math.abs(delta)}{typeof delta === 'number' && delta % 1 !== 0 ? '' : ''}
-        </span>
-      </div>
-      <p className="text-2xl font-semibold text-neutral-100 font-mono tracking-tight">
-        {value}<span className="text-xs font-medium text-neutral-600 ml-1">{unit}</span>
-      </p>
-      <p className="text-xs text-neutral-500 mt-1.5">{label}</p>
-    </Card>
-  )
-}
-
-function StatusDot({ status }) {
-  const map = {
-    active: 'bg-emerald-500 animate-pulse-dot',
-    idle: 'bg-amber-500',
-    offline: 'bg-neutral-700',
-  }
-  return <span className={`inline-block w-1.5 h-1.5 rounded-full ${map[status] ?? map.offline}`} />
-}
-
-function StatusBadge({ status }) {
-  const map = { active: 'success', idle: 'warning', offline: 'neutral' }
-  return <Badge variant={map[status] ?? 'neutral'}><StatusDot status={status} />{status.charAt(0).toUpperCase() + status.slice(1)}</Badge>
-}
+import { 
+  teamMembers, 
+  projects, 
+  timeLogs, 
+  invoices 
+} from '../data/mockData';
 
 export default function Dashboard() {
-  const { role } = useOutletContext();
-  const [profileMember, setProfileMember] = useState(null);
-  const m = dashboardMetrics
-  const recentLogs = timeLogs.slice(0, 7)
+  const { role, handleToast } = useOutletContext();
+  const [cadence, setCadence] = useState('Week');
+  
+  // KPI Expansion State
+  const [expandedKpi, setExpandedKpi] = useState(null);
+  
+  // Chart Selection State
+  const [selectedChartDay, setSelectedChartDay] = useState(null);
+  
+  // Team Pulse Selection State
+  const [expandedMemberId, setExpandedMemberId] = useState(null);
+
+  // Helper functions
+  const handleKpiClick = (kpiId) => {
+    setExpandedKpi(expandedKpi === kpiId ? null : kpiId);
+  };
+
+  const handleMemberClick = (memberId) => {
+    setExpandedMemberId(expandedMemberId === memberId ? null : memberId);
+  };
+
+  const handleBarClick = (dayStr) => {
+    setSelectedChartDay(selectedChartDay === dayStr ? null : dayStr);
+  };
+
+  // Process data based on cadence
+  // (In a real app, this would dynamically calculate based on 'Today', 'Week', 'Month')
+  // For the UI simulation, we will compute some base values and scale them based on cadence.
+  const cadenceMultiplier = cadence === 'Today' ? 0.2 : cadence === 'Week' ? 1 : 4.2;
+  
+  const metrics = {
+    hours: (142.5 * cadenceMultiplier).toFixed(1),
+    utilization: 82, // percentage
+    revenue: (12400 * cadenceMultiplier).toFixed(0),
+    uninvoiced: (32 * cadenceMultiplier).toFixed(1)
+  };
+
+  // Generate chart data dynamically (7 days for week, 30 for month, 24 for today (hourly))
+  const chartBars = useMemo(() => {
+    const bars = [];
+    const count = cadence === 'Today' ? 12 : cadence === 'Week' ? 7 : 30;
+    const today = new Date();
+    for (let i = count - 1; i >= 0; i--) {
+      const d = new Date(today);
+      if (cadence === 'Today') {
+        d.setHours(d.getHours() - i);
+        bars.push({
+          label: `${d.getHours()}:00`,
+          value: Math.random() * 5 + 1,
+          dateStr: d.toISOString(),
+        });
+      } else {
+        d.setDate(d.getDate() - i);
+        bars.push({
+          label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+          value: Math.random() * 8 + 2,
+          dateStr: d.toISOString().split('T')[0],
+        });
+      }
+    }
+    return bars;
+  }, [cadence]);
+
+  const maxChartValue = Math.max(...chartBars.map(b => b.value), 10);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-
-      {/* ── Metric Row ─────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-3 gap-6">
-        <MetricCard
-          icon={Clock}
-          label="Total Team Hours Today"
-          value={m.totalHoursToday}
-          delta={m.totalHoursTodayDelta}
-          unit="hrs"
-          accentColor="text-violet-400"
-        />
-        <MetricCard
-          icon={Layers}
-          label="Active Projects"
-          value={m.activeProjects}
-          delta={m.activeProjectsDelta}
-          accentColor="text-sky-400"
-        />
-        <MetricCard
-          icon={DollarSign}
-          label="Project Profitability Margin"
-          value={`${m.profitabilityMargin}%`}
-          delta={m.profitabilityDelta}
-          accentColor="text-emerald-400"
-        />
-      </div>
-
-      {/* ── Team Pulse + Weekly Bar Chart ──────────────────────────────────── */}
-      <div className="grid grid-cols-5 gap-6">
-
-        {/* Team Pulse — admin only */}
-        {role === 'admin' && (
-        <Card className="col-span-3" padding="p-0">
-          <div className="px-6 pt-6 pb-4 border-b border-neutral-800">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Team Pulse</CardTitle>
-                <CardDescription>Live activity — updates every 30s</CardDescription>
-              </div>
-              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-                <span className="text-xs font-medium text-emerald-400">Live</span>
-              </div>
-            </div>
-          </div>
-          <div className="divide-y divide-neutral-800/60">
-            {teamMembers.filter(m => m.status !== 'offline').map(member => (
-              <div key={member.id} className="flex items-center gap-4 px-6 py-3.5 hover:bg-neutral-800/50 transition-colors duration-150 cursor-default">
-                <Avatar name={member.name} size="md" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <button
-                      onClick={() => setProfileMember(member)}
-                      className="text-sm font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150 text-left"
-                    >
-                      {member.name}
-                    </button>
-                    <StatusBadge status={member.status} />
-                  </div>
-                  <p className="text-xs text-neutral-500 truncate">{member.currentTask}</p>
-                </div>
-                <div className="w-28 shrink-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs text-neutral-600">{member.projectName}</span>
-                    <span className="text-xs font-mono text-neutral-500">{member.activityLevel}%</span>
-                  </div>
-                  <ActivityBar value={member.activityLevel} />
-                </div>
-                <div className="w-16 text-right shrink-0">
-                  <p className="text-sm font-mono text-neutral-300">{member.hoursToday}h</p>
-                  <p className="text-xs text-neutral-600">today</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-        )}
-
-        {/* Weekly Hours — 2/5 */}
-        <Card className="col-span-2" padding="p-6">
-          <CardHeader>
-            <div>
-              <CardTitle>This Week</CardTitle>
-              <CardDescription>Team hours by day</CardDescription>
-            </div>
-            <Badge variant="violet">
-              <Zap size={10} />
-              {m.weeklyHours.reduce((a, b) => a + b.hours, 0).toFixed(1)}h total
-            </Badge>
-          </CardHeader>
-
-          {/* Mini bar chart */}
-          <div className="flex items-end gap-2 h-28 mt-2">
-            {m.weeklyHours.map((d, i) => {
-              const max = Math.max(...m.weeklyHours.map(x => x.hours))
-              const pct = (d.hours / max) * 100
-              const isToday = i === m.weeklyHours.length - 1
-              return (
-                <div key={d.day} className="flex-1 flex flex-col items-center gap-1.5">
-                  <span className="text-xs font-mono text-neutral-500">{d.hours}</span>
-                  <div className="w-full rounded-t-md overflow-hidden flex flex-col justify-end" style={{ height: '80px' }}>
-                    <div
-                      className={`w-full rounded-t-md transition-all duration-700 ${isToday ? 'bg-violet-500' : 'bg-neutral-700 hover:bg-neutral-600'}`}
-                      style={{ height: `${pct}%` }}
-                    />
-                  </div>
-                  <span className={`text-xs ${isToday ? 'text-violet-400 font-medium' : 'text-neutral-600'}`}>{d.day}</span>
-                </div>
-              )
-            })}
-          </div>
-        </Card>
-      </div>
-
-      {/* ── Recent Time Logs ───────────────────────────────────────────────── */}
-      <Card padding="p-0">
-        <div className="px-6 pt-6 pb-4 border-b border-neutral-800 flex items-center justify-between">
-          <div>
-            <CardTitle>Recent Time Logs</CardTitle>
-            <CardDescription>All team entries from the last 48 hours</CardDescription>
-          </div>
-          <button className="text-xs text-violet-400 hover:text-violet-300 transition-colors duration-150">
-            View all →
-          </button>
+    <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 animate-fade-in">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            Command Center
+          </h1>
+          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+            Overview of team performance and financial health.
+          </p>
         </div>
-        <Table>
-          <TableHead>
-            <Th>Member</Th>
-            <Th>Project</Th>
-            <Th>Task</Th>
-            <Th>Date</Th>
-            <Th>Time</Th>
-            <Th>Duration</Th>
-            <Th>Source</Th>
-            <Th>Billable</Th>
-            <Th></Th>
-          </TableHead>
-          <TableBody>
-            {(role === 'employee' ? recentLogs.filter(log => log.userId === 'u1') : recentLogs).map(log => (
-              <Tr key={log.id} className="group">
-                <Td>
-                  <div className="flex items-center gap-2.5">
-                    <Avatar name={log.userName} size="sm" />
-                    <span className="font-medium text-neutral-200">{log.userName}</span>
-                  </div>
-                </Td>
-                <Td>
-                  <span className="text-neutral-400">{log.projectName}</span>
-                </Td>
-                <Td>
-                  <span className="max-w-[200px] truncate block text-neutral-300">{log.task}</span>
-                </Td>
-                <Td>
-                  <span className="font-mono text-neutral-500 text-xs">{log.date}</span>
-                </Td>
-                <Td>
-                  <span className="font-mono text-neutral-500 text-xs">{log.startTime} – {log.endTime}</span>
-                </Td>
-                <Td>
-                  <span className="font-mono font-medium text-neutral-200">{log.duration}h</span>
-                </Td>
-                <Td>
-                  <TrackingSourceBadge source={log.source} />
-                </Td>
-                <Td>
-                  <Badge variant={log.billable ? 'success' : 'neutral'}>
-                    {log.billable ? 'Billable' : 'Non-bill.'}
-                  </Badge>
-                </Td>
-                <Td>
-                  <button className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-neutral-600 hover:text-neutral-300">
-                    <MoreHorizontal size={14} />
-                  </button>
-                </Td>
-              </Tr>
+        
+        {/* CADENCE TOGGLE */}
+        <div className="glass-interactive flex items-center p-1 rounded-full border border-neutral-200 dark:border-white/10">
+          {['Today', 'Week', 'Month'].map(t => (
+            <button
+              key={t}
+              onClick={() => setCadence(t)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-full transition-all duration-200 ${
+                cadence === t 
+                  ? 'bg-amber-500 text-white shadow-sm' 
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
+              }`}
+            >
+              {t}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* KPI CARDS ROW */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Hours */}
+        <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
+          <div 
+            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => handleKpiClick('hours')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
+                <Clock className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium text-emerald-500 flex items-center bg-emerald-500/10 px-2 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3 mr-1" /> +12%
+              </span>
+            </div>
+            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Total Hours</h3>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+              {metrics.hours}
+            </div>
+          </div>
+          
+          {expandedKpi === 'hours' && (
+            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
+              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Project Breakdown</h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Brand Redesign</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">45h</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">API Gateway</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">32h</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Internal Comms</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">12h</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Utilization Rate */}
+        <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
+          <div 
+            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => handleKpiClick('utilization')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                <BarChart3 className="w-5 h-5" />
+              </div>
+              <span className="text-xs font-medium text-emerald-500 flex items-center bg-emerald-500/10 px-2 py-1 rounded-full">
+                <TrendingUp className="w-3 h-3 mr-1" /> +5%
+              </span>
+            </div>
+            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Utilization Rate</h3>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+              {metrics.utilization}%
+            </div>
+          </div>
+          
+          {expandedKpi === 'utilization' && (
+            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
+              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Top Performers</h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Daniel Osei</span>
+                  <span className="font-medium text-emerald-500">95%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Priya Sharma</span>
+                  <span className="font-medium text-emerald-500">88%</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Marcus Webb</span>
+                  <span className="font-medium text-amber-500">71%</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Est. Revenue */}
+        <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
+          <div 
+            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => handleKpiClick('revenue')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
+                <DollarSign className="w-5 h-5" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Est. Revenue</h3>
+            <div className="text-3xl font-bold text-neutral-900 dark:text-white tracking-tight">
+              ${metrics.revenue}
+            </div>
+          </div>
+          
+          {expandedKpi === 'revenue' && (
+            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
+              <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3">Top Clients</h4>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">CloudScale Inc</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">$8,500</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">Acme Corp</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">$3,200</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600 dark:text-neutral-300">DataStream</span>
+                  <span className="font-medium text-neutral-900 dark:text-white">$700</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Uninvoiced Hours */}
+        <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300 border-red-500/20">
+          <div 
+            className="p-5 flex-1 cursor-pointer hover:bg-white/5 transition-colors"
+            onClick={() => handleKpiClick('uninvoiced')}
+          >
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
+                <AlertCircle className="w-5 h-5" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-neutral-500 dark:text-neutral-400 mb-1">Uninvoiced Hours</h3>
+            <div className="text-3xl font-bold text-red-500 tracking-tight">
+              {metrics.uninvoiced}
+            </div>
+          </div>
+          
+          {expandedKpi === 'uninvoiced' && (
+            <div className="border-t border-neutral-200/50 dark:border-white/5 p-4 bg-neutral-50/50 dark:bg-black/20 animate-fade-in">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleToast("Generating invoice draft...", "success");
+                }}
+                className="w-full py-2 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg text-sm font-medium lift-on-hover press-on-click"
+              >
+                Create Invoice
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* MIDDLE SECTION: CHART + NEEDS ATTENTION */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* BAR CHART SECTION */}
+        <div className="glass-card lg:col-span-2 p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Activity Overview</h2>
+            <div className="flex items-center gap-4 text-sm text-neutral-500">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-amber-500"></div>
+                Billable
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-neutral-300 dark:bg-neutral-600"></div>
+                Internal
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex-1 flex items-end gap-2 h-48 relative border-b border-neutral-200 dark:border-white/10 pb-2">
+            {chartBars.map((bar, idx) => (
+              <div 
+                key={idx} 
+                className="flex-1 flex flex-col justify-end items-center group cursor-pointer h-full"
+                onClick={() => handleBarClick(bar.dateStr)}
+              >
+                <div 
+                  className={`w-full max-w-[32px] rounded-t-sm transition-all duration-300 animate-bar-grow ${
+                    selectedChartDay === bar.dateStr ? 'bg-amber-400' : 'bg-amber-500/80 group-hover:bg-amber-400'
+                  }`}
+                  style={{ height: `${(bar.value / maxChartValue) * 100}%`, animationDelay: `${idx * 0.05}s` }}
+                ></div>
+                <div className="mt-3 text-xs text-neutral-500 dark:text-neutral-400 opacity-70 group-hover:opacity-100">
+                  {bar.label}
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
-      </Card>
-      <MemberProfileDrawer
-        member={profileMember}
-        context="dashboard"
-        isOpen={profileMember !== null}
-        onClose={() => setProfileMember(null)}
-      />
+          </div>
+
+          {/* INLINE CHART DETAILS */}
+          {selectedChartDay && (
+            <div className="mt-6 p-4 rounded-xl bg-neutral-50 dark:bg-white/5 border border-neutral-200 dark:border-white/10 animate-fade-in">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="font-bold text-sm text-neutral-900 dark:text-white">Activity for {selectedChartDay}</h3>
+                <button onClick={() => setSelectedChartDay(null)} className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white">
+                  <AlertCircle className="w-4 h-4" /> {/* Just a visual close icon placeholder */}
+                </button>
+              </div>
+              <div className="space-y-3">
+                {timeLogs.slice(0, 3).map(log => (
+                  <div key={log.id} className="flex justify-between items-center text-sm p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-md transition-colors">
+                    <div>
+                      <p className="font-medium text-neutral-900 dark:text-white">{log.task}</p>
+                      <p className="text-xs text-neutral-500">{log.projectName} • {log.userName}</p>
+                    </div>
+                    <div className="font-medium text-amber-500">{log.duration}h</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* NEEDS ATTENTION WIDGET */}
+        <div className="glass-card p-6 flex flex-col">
+          <div className="flex items-center gap-2 mb-6">
+            <AlertTriangle className="w-5 h-5 text-red-500 animate-status-pulse" />
+            <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Needs Attention</h2>
+          </div>
+          
+          <div className="space-y-4 flex-1">
+            <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 lift-on-hover cursor-pointer transition-all duration-300">
+              <h3 className="text-sm font-bold text-red-600 dark:text-red-400 mb-1">Overdue Invoice</h3>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300">Meridian Finance (INV-2025-040) is 15 days overdue.</p>
+            </div>
+            
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 lift-on-hover cursor-pointer transition-all duration-300">
+              <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-1">Budget Alert</h3>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300">Brand Redesign project has consumed 85% of allocated hours.</p>
+            </div>
+
+            <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 lift-on-hover cursor-pointer transition-all duration-300">
+              <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 mb-1">Missing Time Logs</h3>
+              <p className="text-xs text-neutral-600 dark:text-neutral-300">Aiko Tanaka has 0 logged hours this week.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* TEAM PULSE SECTION */}
+      <div className="glass-card flex flex-col overflow-hidden">
+        <div className="p-6 border-b border-neutral-200 dark:border-white/10">
+          <h2 className="text-lg font-bold text-neutral-900 dark:text-white tracking-tight">Team Pulse</h2>
+        </div>
+        <div className="divide-y divide-neutral-200 dark:divide-white/10">
+          {teamMembers.map((member) => (
+            <div key={member.id} className="flex flex-col hover:bg-neutral-50/50 dark:hover:bg-white/5 transition-colors cursor-pointer" onClick={() => handleMemberClick(member.id)}>
+              <div className="p-4 sm:p-6 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center font-bold text-neutral-500 dark:text-neutral-400 shrink-0">
+                      {member.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    {member.status === 'active' && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-[#1a1a1a] bg-emerald-500 animate-status-pulse"></span>
+                    )}
+                    {member.status === 'idle' && (
+                      <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white dark:border-[#1a1a1a] bg-amber-500"></span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-neutral-900 dark:text-white">{member.name}</h3>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">{member.role}</p>
+                  </div>
+                </div>
+                
+                <div className="hidden md:block flex-1 max-w-xs mx-8">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-neutral-500">Utilization</span>
+                    <span className={`font-medium ${member.activityLevel > 80 ? 'text-emerald-500' : member.activityLevel > 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                      {member.activityLevel}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-neutral-200 dark:bg-neutral-800 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className={`h-full rounded-full ${member.activityLevel > 80 ? 'bg-emerald-500' : member.activityLevel > 40 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                      style={{ width: `${member.activityLevel}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div className="text-right flex items-center gap-4">
+                  <div className="hidden sm:block">
+                    <div className="text-sm font-medium text-neutral-900 dark:text-white">{member.hoursWeek}h</div>
+                    <div className="text-xs text-neutral-500 dark:text-neutral-400">this week</div>
+                  </div>
+                  {expandedMemberId === member.id ? <ChevronUp className="w-5 h-5 text-neutral-400" /> : <ChevronDown className="w-5 h-5 text-neutral-400" />}
+                </div>
+              </div>
+              
+              {/* INLINE EXPANSION PANEL */}
+              {expandedMemberId === member.id && (
+                <div className="px-6 py-4 bg-neutral-50 dark:bg-black/20 animate-fade-in border-t border-neutral-200/50 dark:border-white/5">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Current Activity</h4>
+                      <p className="text-sm text-neutral-900 dark:text-white">{member.currentTask || 'No active task'}</p>
+                      <p className="text-xs text-neutral-500 mt-1">{member.currentProject || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2">Metrics</h4>
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-neutral-500">Hourly Rate</span>
+                          <span className="font-medium text-neutral-900 dark:text-white">${member.hourlyRate || 0}/hr</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span className="text-neutral-500">Capacity</span>
+                          <span className="font-medium text-neutral-900 dark:text-white">{member.availableHoursPerWeek || 40}h/week</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-end">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToast(`Message sent to ${member.name}`, "success");
+                        }}
+                        className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-900 dark:text-white rounded-lg text-sm font-medium lift-on-hover press-on-click"
+                      >
+                        Ping {member.name.split(' ')[0]}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  )
+  );
 }

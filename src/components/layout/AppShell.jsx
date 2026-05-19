@@ -6,6 +6,7 @@ import SlideOutDrawer from '../ui/SlideOutDrawer.jsx';
 import Toast from '../ui/Toast.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import Input, { Select } from '../ui/Input.jsx';
+import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import Toggle from '../ui/Toggle.jsx';
 import { projects } from '../../data/mockData.js';
@@ -135,7 +136,7 @@ export default function AppShell() {
   return (
     <div
       className="flex h-screen overflow-hidden"
-      style={{ background: 'var(--bg-base)' }}
+      style={{ background: 'var(--bg-base)', minHeight: '100vh' }}
     >
       {/* Sidebar */}
       <Sidebar
@@ -151,11 +152,11 @@ export default function AppShell() {
         {/* Employee warning banner */}
         {isEmployee && (
           <div
-            className="flex items-center gap-2 px-6 py-2 text-xs font-medium shrink-0"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium shrink-0"
             style={{
-              background: 'rgba(245, 158, 11, 0.08)',
-              borderBottom: '1px solid rgba(245,158,11,0.20)',
-              color: 'var(--accent)',
+              background: 'var(--warning-bg)',
+              borderBottom: '1px solid var(--warning-border)',
+              color: 'var(--warning-text)',
             }}
           >
             <AlertTriangle size={12} />
@@ -229,37 +230,31 @@ export default function AppShell() {
               ))}
             </Select>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              Date
-            </label>
-            <Input
-              type="date"
-              value={drawerEntry.date}
-              onChange={e => setDrawerEntry(prev => ({ ...prev, date: e.target.value }))}
-            />
-          </div>
+          <DateTimePicker
+            label="Date"
+            value={drawerEntry.date}
+            onChange={date => setDrawerEntry(prev => ({ ...prev, date }))}
+            placeholder="Select date"
+          />
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                Start Time
-              </label>
-              <Input
-                type="time"
-                value={drawerEntry.startTime}
-                onChange={e => setDrawerEntry(prev => ({ ...prev, startTime: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                End Time
-              </label>
-              <Input
-                type="time"
-                value={drawerEntry.endTime}
-                onChange={e => setDrawerEntry(prev => ({ ...prev, endTime: e.target.value }))}
-              />
-            </div>
+            <DateTimePicker
+              label="Start Time"
+              value=""
+              timeValue={drawerEntry.startTime}
+              onChange={() => {}}
+              onTimeChange={t => setDrawerEntry(prev => ({ ...prev, startTime: t }))}
+              showTime={true}
+              placeholder="Start"
+            />
+            <DateTimePicker
+              label="End Time"
+              value=""
+              timeValue={drawerEntry.endTime}
+              onChange={() => {}}
+              onTimeChange={t => setDrawerEntry(prev => ({ ...prev, endTime: t }))}
+              showTime={true}
+              placeholder="End"
+            />
           </div>
           <div className="flex items-center justify-between pt-1">
             <div>

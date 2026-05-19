@@ -1,243 +1,739 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import {
-  Plus, ChevronDown, MoreHorizontal, Target, Calendar,
-  Users, DollarSign, AlertTriangle, CheckCircle2, PauseCircle, FolderKanban,
-} from 'lucide-react'
-import Card from '../components/ui/Card'
-import EmptyState from '../components/ui/EmptyState'
-import Badge from '../components/ui/Badge'
-import Button from '../components/ui/Button'
-import Avatar from '../components/ui/Avatar'
-import { ProgressBar, CircularProgress } from '../components/ui/ProgressBar'
-import { projects, teamMembers } from '../data/mockData'
+  Plus, Search, CheckCircle2, PauseCircle, Circle,
+  Target, Users, DollarSign, Calendar, ChevronDown,
+  X, TrendingUp, Clock, Edit3, Check,
+} from 'lucide-react';
+import Avatar from '../components/ui/Avatar.jsx';
+import Badge from '../components/ui/Badge.jsx';
+import { ProgressBar, CircularProgress } from '../components/ui/ProgressBar.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import Input, { Select } from '../components/ui/Input.jsx';
+import Button from '../components/ui/Button.jsx';
+import { FolderKanban } from 'lucide-react';
+import { projects as initialProjects, teamMembers } from '../data/mockData.js';
 
-const goalTypeOptions = ['Daily', 'Weekly', 'Monthly', 'Project-based']
+// ─── Helpers ──────────────────────────────────────────────
+const STATUS_FILTERS = ['All', 'Active', 'Paused', 'Completed'];
 
-const statusConfig = {
-  active: { variant: 'success', icon: CheckCircle2, label: 'Active' },
-  paused: { variant: 'warning', icon: PauseCircle, label: 'Paused' },
-  completed: { variant: 'neutral', icon: CheckCircle2, label: 'Completed' },
+const STATUS_META = {
+  active:    { variant: 'success', label: 'Active',    icon: CheckCircle2 },
+  paused:    { variant: 'warning', label: 'Paused',    icon: PauseCircle  },
+  completed: { variant: 'neutral', label: 'Completed', icon: CheckCircle2 },
+};
+
+const CADENCE_OPTIONS = ['daily', 'weekly', 'monthly', 'project'];
+
+function goalLabel(type, hours) {
+  const map = { daily: 'day', weekly: 'week', monthly: 'month', project: 'total' };
+  return `${hours}h / ${map[type] || 'period'}`;
 }
 
-function GoalEngine({ project, onUpdateGoal }) {
-  const [open, setOpen] = useState(false)
-  const [goalType, setGoalType] = useState(
-    project.goalType.charAt(0).toUpperCase() + project.goalType.slice(1).replace('-', ' ')
-  )
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const diff = new Date(dateStr) - new Date();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
 
-  const pct = Math.round((project.loggedHours / project.goalHours) * 100)
+function formatDue(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// ─── Stat Card ────────────────────────────────────────────
+function StatCard({ icon: Icon, label, value, sub }) {
+  return (
+    <div className="glass-card p-5 flex items-center gap-4">
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-border)',
+        }}
+      >
+        <Icon size={18} style={{ color: 'var(--accent)' }} />
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <p className="text-2xl font-semibold font-mono mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        {sub && <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: 'var(--text-disabled)' }}>{sub}</p>}
+      </div>
+    </div>
+  );
+}
+
+// ─── Goal Ring (clickable) ────────────────────────────────
+function GoalRing({ project, onClickRing }) {
+  const pct = project.goalHours > 0
+    ? Math.round((project.loggedHours / project.goalHours) * 100)
+    : 0;
+  const label = `${pct}%`;
 
   return (
-    <div className="flex items-center gap-4 pt-4 border-t border-neutral-800">
-      {/* Circular progress */}
-      <CircularProgress
-        value={project.loggedHours}
-        max={project.goalHours}
-        size={56}
-        strokeWidth={5}
-        label={`${pct}%`}
-      />
+    <button
+      onClick={onClickRing}
+      className="relative flex flex-col items-center gap-1 group"
+      title="Click to edit goal"
+    >
+      <CircularProgress value={project.loggedHours} max={project.goalHours} size={72} strokeWidth={5} label={label} />
+      <span
+        className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150 mt-1"
+        style={{ color: 'var(--accent)' }}
+      >
+        Edit goal
+      </span>
+    </button>
+  );
+}
 
-      {/* Goal text */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <Target size={12} className="text-neutral-500" />
-          <span className="text-xs text-neutral-500">
-            Goal: <span className="text-neutral-300 font-medium">{project.goalHours}h</span>
-            <span className="text-neutral-600"> / {goalType.toLowerCase()}</span>
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <ProgressBar
-            value={project.loggedHours}
-            max={project.goalHours}
-            showPercent={false}
-            className="flex-1"
+// ─── Inline Goal Editor ───────────────────────────────────
+function GoalEditor({ project, onSave, onCancel }) {
+  const [goalHours, setGoalHours] = useState(project.goalHours);
+  const [goalType, setGoalType]   = useState(project.goalType);
+
+  return (
+    <div
+      className="rounded-xl p-5 animate-slide-up mt-2"
+      style={{
+        background: 'var(--bg-sunken)',
+        border: '1px solid var(--border-default)',
+      }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider mb-4"
+        style={{ color: 'var(--text-secondary)' }}>
+        Edit Goal
+      </p>
+      <div className="flex items-center gap-4">
+        <div className="flex-1">
+          <label className="text-xs uppercase tracking-wider font-semibold block mb-2"
+            style={{ color: 'var(--text-muted)' }}>
+            Target Hours
+          </label>
+          <Input
+            type="number"
+            min="1"
+            value={goalHours}
+            onChange={e => setGoalHours(Number(e.target.value))}
+            className="w-full"
           />
-          <span className="text-xs font-mono text-neutral-500 shrink-0">
-            {project.loggedHours}h / {project.goalHours}h
+        </div>
+        <div className="flex-1">
+          <label className="text-xs uppercase tracking-wider font-semibold block mb-2"
+            style={{ color: 'var(--text-muted)' }}>
+            Cadence
+          </label>
+          <Select
+            value={goalType}
+            onChange={e => setGoalType(e.target.value)}
+            className="w-full"
+          >
+            {CADENCE_OPTIONS.map(c => (
+              <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+            ))}
+          </Select>
+        </div>
+        <div className="flex gap-2 mt-7">
+          <Button
+            variant="primary"
+            onClick={() => onSave({ goalHours, goalType })}
+            className="w-10 h-10 !p-0 flex items-center justify-center"
+          >
+            <Check size={16} />
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={onCancel}
+            className="w-10 h-10 !p-0 flex items-center justify-center"
+          >
+            <X size={16} />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Project Card ─────────────────────────────────────────
+function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) {
+  const [editingGoal, setEditingGoal] = useState(false);
+
+  const statusMeta = STATUS_META[project.status] || STATUS_META.active;
+  const members    = teamMembers.filter(m => project.members.includes(m.id));
+  const days       = daysUntil(project.dueDate);
+  const dueSoon    = days !== null && days >= 0 && days <= 7;
+  const overdue    = days !== null && days < 0;
+  const budgetPct  = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
+
+  const handleGoalSave = (newGoal) => {
+    onGoalSave(project.id, newGoal);
+    setEditingGoal(false);
+    triggerToast?.('Goal updated', `${project.name} goal set to ${newGoal.goalHours}h/${newGoal.goalType}.`, 'success');
+  };
+
+  const getHealthFlag = (project) => {
+    const budgetPct = project.spent / project.budget;
+    const goalPct = project.loggedHours / project.goalHours;
+    const daysUntilDue = Math.ceil(
+      (new Date(project.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
+    );
+    if (budgetPct >= 0.9) return { label: 'Over Budget', color: 'danger' };
+    if (budgetPct >= 0.8) return { label: 'Budget Risk', color: 'warning' };
+    if (daysUntilDue <= 7 && goalPct < 0.8)
+      return { label: 'Due Soon', color: 'warning' };
+    if (daysUntilDue < 0) return { label: 'Overdue', color: 'danger' };
+    return null;
+  };
+
+  const healthFlag = getHealthFlag(project);
+
+  return (
+    <div
+      className="glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer"
+      style={{
+        border: selected
+          ? '1px solid var(--accent-border)'
+          : '1px solid var(--border-default)',
+        boxShadow: selected ? 'var(--shadow-md)' : undefined,
+      }}
+      onClick={() => !editingGoal && onSelect(project)}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <span
+            className="w-3 h-3 rounded-full shrink-0"
+            style={{ background: project.color }}
+          />
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+              {project.name}
+            </h3>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {project.client}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 ml-auto shrink-0">
+          {healthFlag && (
+            <Badge variant={healthFlag.color}>{healthFlag.label}</Badge>
+          )}
+          <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+        </div>
+      </div>
+
+      {/* Goal ring + progress */}
+      <div className="flex items-center gap-5">
+        <div onClick={e => { e.stopPropagation(); setEditingGoal(v => !v); }}>
+          <GoalRing project={project} onClickRing={() => {}} />
+        </div>
+        <div className="flex-1 min-w-0 space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs uppercase tracking-wider font-semibold"
+                style={{ color: 'var(--text-muted)' }}>Goal Progress</span>
+              <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                {project.loggedHours}h / {goalLabel(project.goalType, project.goalHours)}
+              </span>
+            </div>
+            <ProgressBar value={project.loggedHours} max={project.goalHours} />
+          </div>
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs uppercase tracking-wider font-semibold"
+                style={{ color: 'var(--text-muted)' }}>Budget</span>
+              <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                ${project.spent.toLocaleString()} / ${project.budget.toLocaleString()}
+              </span>
+            </div>
+            <ProgressBar value={project.spent} max={project.budget} />
+          </div>
+        </div>
+      </div>
+
+      {/* Inline goal editor */}
+      {editingGoal && (
+        <div onClick={e => e.stopPropagation()}>
+          <GoalEditor
+            project={project}
+            onSave={handleGoalSave}
+            onCancel={() => setEditingGoal(false)}
+          />
+        </div>
+      )}
+
+      {/* Footer — members + due date */}
+      <div
+        className="flex items-center justify-between pt-4"
+        style={{ borderTop: '1px solid var(--border-default)' }}
+      >
+        {/* Member avatar cluster — click zone */}
+        <div
+          className="flex items-center"
+          onClick={e => { e.stopPropagation(); onSelect(project); }}
+        >
+          {members.slice(0, 4).map((m, i) => (
+            <div
+              key={m.id}
+              className="rounded-full border-2 transition-transform duration-100 hover:scale-110 hover:z-10"
+              style={{
+                marginLeft: i > 0 ? '-8px' : 0,
+                borderColor: 'var(--bg-surface)',
+                zIndex: members.length - i,
+                position: 'relative',
+              }}
+              title={m.name}
+            >
+              <Avatar name={m.name} size="sm" />
+            </div>
+          ))}
+          {members.length > 4 && (
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold"
+              style={{
+                marginLeft: '-8px',
+                background: 'var(--bg-sunken)',
+                border: '2px solid var(--bg-surface)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              +{members.length - 4}
+            </div>
+          )}
+        </div>
+
+        {/* Due date */}
+        <div className="flex items-center gap-1.5">
+          <Calendar size={14} style={{ color: overdue ? '#dc2626' : dueSoon ? 'var(--accent)' : 'var(--text-disabled)' }} />
+          <span
+            className="text-xs"
+            style={{
+              color: overdue ? '#dc2626' : dueSoon ? 'var(--accent)' : 'var(--text-muted)',
+              fontWeight: (overdue || dueSoon) ? '600' : '500',
+            }}
+          >
+            {overdue ? `${Math.abs(days)}d overdue` : days === 0 ? 'Due today' : `${formatDue(project.dueDate)}`}
           </span>
         </div>
       </div>
 
-      {/* Edit Goal dropdown */}
-      <div className="relative shrink-0">
-        <button
-          onClick={() => setOpen(o => !o)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-neutral-700 hover:border-neutral-600 bg-neutral-800/60 hover:bg-neutral-800 text-xs text-neutral-400 hover:text-neutral-200 transition-colors duration-150"
-        >
-          Edit Goal
-          <ChevronDown size={11} className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
-        </button>
-        {open && (
-          <div className="absolute right-0 top-full mt-1 w-44 rounded-lg border border-neutral-700 bg-neutral-800 shadow-xl shadow-black/40 z-10 overflow-hidden animate-fade-in">
-            <div className="px-3 py-2 border-b border-neutral-700">
-              <p className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Goal Cadence</p>
+      {/* Tags */}
+      {project.tags?.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {project.tags.map(tag => (
+            <span
+              key={tag}
+              className="text-xs px-2.5 py-1 rounded-md font-medium"
+              style={{
+                background: 'var(--bg-sunken)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Project Detail Panel ─────────────────────────────────
+function ProjectDetailPanel({ project, onClose }) {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const tabs = ['Overview', 'Team', 'Budget'];
+
+  const members    = teamMembers.filter(m => project.members.includes(m.id));
+  const budgetPct  = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
+  const goalPct    = project.goalHours > 0 ? Math.round((project.loggedHours / project.goalHours) * 100) : 0;
+  const days       = daysUntil(project.dueDate);
+  const statusMeta = STATUS_META[project.status] || STATUS_META.active;
+
+  return (
+    <div
+      className="flex flex-col h-full animate-slide-in-right overflow-hidden"
+      style={{
+        background: 'var(--bg-surface)',
+        borderLeft: '1px solid var(--border-default)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="px-6 py-5 shrink-0"
+        style={{ borderBottom: '1px solid var(--border-default)' }}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <span
+              className="w-4 h-4 rounded-full shrink-0"
+              style={{ background: project.color }}
+            />
+            <div className="min-w-0">
+              <h3 className="text-lg font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                {project.name}
+              </h3>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{project.client}</p>
             </div>
-            {goalTypeOptions.map(opt => (
-              <button
-                key={opt}
-                onClick={() => { setGoalType(opt); setOpen(false) }}
-                className={`w-full text-left px-3 py-2 text-sm transition-colors duration-100 flex items-center justify-between
-                  ${goalType === opt
-                    ? 'text-violet-400 bg-violet-500/10'
-                    : 'text-neutral-300 hover:bg-neutral-700'
-                  }`}
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
+              style={{ color: 'var(--text-muted)' }}
+              onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+              onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+            >
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Description */}
+        {project.description && (
+          <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            {project.description}
+          </p>
+        )}
+      </div>
+
+      {/* Tabs */}
+      <div
+        className="flex gap-4 px-6 pt-3 shrink-0"
+        style={{ borderBottom: '1px solid var(--border-default)' }}
+      >
+        {tabs.map(tab => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-2 pb-3 text-sm font-medium transition-colors"
+              style={{
+                color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-base" style={{ background: 'var(--bg-base)' }}>
+
+        {/* ── Overview tab ── */}
+        {activeTab === 'Overview' && (
+          <>
+            {/* Key stats */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Logged Hours',  value: `${project.loggedHours}h` },
+                { label: 'Goal Hours',    value: goalLabel(project.goalType, project.goalHours) },
+                { label: 'Due Date',      value: formatDue(project.dueDate) },
+                { label: 'Goal Progress', value: `${goalPct}%` },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="glass-card rounded-xl p-4"
+                >
+                  <p className="text-xs uppercase tracking-wider font-semibold"
+                    style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  <p className="text-lg font-semibold font-mono mt-2"
+                    style={{ color: 'var(--text-primary)' }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Goal progress */}
+            <div className="glass-card rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Goal Progress
+                </p>
+                <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {project.loggedHours}h / {project.goalHours}h
+                </span>
+              </div>
+              <ProgressBar value={project.loggedHours} max={project.goalHours} />
+            </div>
+
+            {/* Tags */}
+            {project.tags?.length > 0 && (
+              <div>
+                <p className="text-xs uppercase tracking-wider font-semibold mb-3"
+                  style={{ color: 'var(--text-muted)' }}>Tags</p>
+                <div className="flex flex-wrap gap-2">
+                  {project.tags.map(tag => (
+                    <span
+                      key={tag}
+                      className="text-xs px-3 py-1.5 rounded-lg font-medium"
+                      style={{
+                        background: 'var(--bg-sunken)',
+                        border: '1px solid var(--border-default)',
+                        color: 'var(--text-secondary)',
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Team tab ── */}
+        {activeTab === 'Team' && (
+          <div className="space-y-3">
+            {members.length === 0 ? (
+              <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
+                No members assigned.
+              </p>
+            ) : members.map(m => (
+              <div
+                key={m.id}
+                className="flex items-center gap-4 rounded-xl p-4 transition-colors duration-150"
+                style={{
+                  border: '1px solid var(--border-default)',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
-                {opt}
-                {goalType === opt && <span className="text-xs">✓</span>}
-              </button>
+                <Avatar name={m.name} size="md" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{m.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{m.role}</p>
+                </div>
+                <Badge variant={m.status === 'active' ? 'success' : m.status === 'idle' ? 'warning' : 'neutral'}>
+                  {m.status}
+                </Badge>
+              </div>
             ))}
+          </div>
+        )}
+
+        {/* ── Budget tab ── */}
+        {activeTab === 'Budget' && (
+          <>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Total Budget', value: `$${project.budget.toLocaleString()}` },
+                { label: 'Spent',        value: `$${project.spent.toLocaleString()}` },
+                { label: 'Remaining',    value: `$${(project.budget - project.spent).toLocaleString()}` },
+                { label: 'Used',         value: `${budgetPct}%` },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="glass-card rounded-xl p-4"
+                >
+                  <p className="text-xs uppercase tracking-wider font-semibold"
+                    style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  <p className="text-lg font-semibold font-mono mt-2"
+                    style={{ color: 'var(--text-primary)' }}>{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="glass-card rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                  Budget Utilisation
+                </p>
+                <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {budgetPct}%
+                </span>
+              </div>
+              <ProgressBar value={project.spent} max={project.budget} />
+              {budgetPct >= 85 && (
+                <p className="text-sm mt-3 text-amber-600 font-medium">
+                  ⚠ Budget nearly exhausted
+                </p>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Projects Page ────────────────────────────────────────
+export default function Projects() {
+  const { activeRole, triggerToast } = useOutletContext();
+  const isAdmin = activeRole === 'admin';
+
+  const [projectData, setProjectData]       = useState(initialProjects);
+  const [statusFilter, setStatusFilter]     = useState('All');
+  const [query, setQuery]                   = useState('');
+  const [selectedProject, setSelectedProject] = useState(null);
+
+  const handleGoalSave = (projectId, { goalHours, goalType }) => {
+    setProjectData(prev =>
+      prev.map(p => p.id === projectId ? { ...p, goalHours, goalType } : p)
+    );
+  };
+
+  const filtered = useMemo(() => {
+    return projectData.filter(p => {
+      const matchStatus = statusFilter === 'All' || p.status === statusFilter.toLowerCase();
+      const matchQuery  = !query || p.name.toLowerCase().includes(query.toLowerCase()) ||
+                          p.client.toLowerCase().includes(query.toLowerCase());
+      return matchStatus && matchQuery;
+    });
+  }, [projectData, statusFilter, query]);
+
+  // Summary stats
+  const active    = projectData.filter(p => p.status === 'active').length;
+  const totalBudget = projectData.reduce((s, p) => s + p.budget, 0);
+  const totalSpent  = projectData.reduce((s, p) => s + p.spent, 0);
+  const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
+
+  return (
+    <div className="px-8 py-6 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'var(--bg-base)' }}>
+
+      {/* ── Stat row ── */}
+      <div className="grid grid-cols-4 gap-5">
+        <StatCard icon={FolderKanban} label="Total Projects" value={projectData.length} />
+        <StatCard icon={CheckCircle2} label="Active"         value={active} />
+        <StatCard icon={Clock}        label="Hours Logged"   value={`${totalLogged}h`} />
+        <StatCard icon={DollarSign}   label="Budget Used"
+          value={`$${totalSpent.toLocaleString()}`}
+          sub={`of $${totalBudget.toLocaleString()}`}
+        />
+      </div>
+
+      {/* ── Main split layout ── */}
+      <div
+        className="flex gap-0 overflow-hidden rounded-2xl flex-1"
+        style={{
+          border: '1px solid var(--border-default)',
+          background: 'var(--bg-surface)',
+          minHeight: '500px',
+        }}
+      >
+        {/* Left — project grid */}
+        <div
+          className="flex flex-col transition-all duration-300 ease-in-out bg-base"
+          style={{
+            width: selectedProject ? '55%' : '100%',
+            borderRight: selectedProject ? '1px solid var(--border-default)' : 'none',
+            minWidth: 0,
+            background: 'var(--bg-base)',
+          }}
+        >
+          {/* Toolbar */}
+          <div
+            className="flex items-center gap-4 px-5 py-4 shrink-0 flex-wrap"
+            style={{ borderBottom: '1px solid var(--border-default)' }}
+          >
+            {/* Status filter tabs */}
+            <div className="flex gap-2">
+              {STATUS_FILTERS.map(f => (
+                <button
+                  key={f}
+                  onClick={() => setStatusFilter(f)}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+                  style={{
+                    background: statusFilter === f ? 'var(--accent-subtle)' : 'transparent',
+                    color: statusFilter === f ? 'var(--accent-text)' : 'var(--text-muted)',
+                    border: statusFilter === f ? '1px solid var(--accent-border)' : '1px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (statusFilter !== f) {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                      e.currentTarget.style.background = 'var(--bg-sunken)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (statusFilter !== f) {
+                      e.currentTarget.style.color = 'var(--text-muted)';
+                      e.currentTarget.style.background = 'transparent';
+                    }
+                  }}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+
+            {/* Search */}
+            <div className="relative flex-1 min-w-[160px]">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+                style={{ color: 'var(--text-muted)' }}
+              />
+              <Input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search projects…"
+                className="w-full pl-10 pr-4 py-2"
+              />
+            </div>
+
+            {/* New project button — admin only */}
+            {isAdmin && (
+              <Button
+                variant="primary"
+                className="shrink-0 flex items-center gap-2 !px-4 !py-2"
+                onClick={() => triggerToast?.('Coming soon', 'Project creation is in Phase 2.', 'info')}
+              >
+                <Plus size={16} /> New Project
+              </Button>
+            )}
+          </div>
+
+          {/* Grid */}
+          <div className="flex-1 overflow-y-auto p-5">
+            {filtered.length === 0 ? (
+              <EmptyState
+                icon={FolderKanban}
+                title="No projects found"
+                description="Try adjusting your filters or search query."
+              />
+            ) : (
+              <div
+                className="grid gap-5"
+                style={{
+                  gridTemplateColumns: selectedProject
+                    ? 'repeat(1, 1fr)'
+                    : 'repeat(auto-fill, minmax(340px, 1fr))',
+                }}
+              >
+                {filtered.map(project => (
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    selected={selectedProject?.id === project.id}
+                    onSelect={setSelectedProject}
+                    onGoalSave={handleGoalSave}
+                    triggerToast={triggerToast}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right — inline detail panel */}
+        {selectedProject && (
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <ProjectDetailPanel
+              project={projectData.find(p => p.id === selectedProject.id) || selectedProject}
+              onClose={() => setSelectedProject(null)}
+            />
           </div>
         )}
       </div>
     </div>
-  )
-}
-
-function ProjectCard({ project }) {
-  const cfg = statusConfig[project.status] ?? statusConfig.active
-  const StatusIcon = cfg.icon
-  const budgetPct = Math.round((project.spent / project.budget) * 100)
-  const memberDetails = project.members.map(id => teamMembers.find(m => m.id === id)).filter(Boolean)
-
-  return (
-    <Card padding="p-5" className="group hover:border-neutral-700 hover:bg-neutral-800/20 transition-colors duration-200 flex flex-col gap-0">
-      {/* Top */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-2.5">
-          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
-          <div>
-            <h3 className="text-sm font-medium text-neutral-100">{project.name}</h3>
-            <p className="text-xs text-neutral-600 mt-0.5">{project.client}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={cfg.variant}>
-            <StatusIcon size={10} />
-            {cfg.label}
-          </Badge>
-          <button className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-600 hover:text-neutral-300">
-            <MoreHorizontal size={15} />
-          </button>
-        </div>
-      </div>
-
-      {/* Description */}
-      <p className="text-xs text-neutral-500 mb-4 line-clamp-2">{project.description}</p>
-
-      {/* Tags */}
-      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-        {project.tags.map(tag => (
-          <span key={tag} className="px-2 py-0.5 rounded-md bg-neutral-800 text-neutral-500 text-xs border border-neutral-700">
-            {tag}
-          </span>
-        ))}
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div>
-          <p className="text-xs text-neutral-500 mb-0.5">Budget</p>
-          <p className="text-sm font-mono font-medium text-neutral-300">${(project.budget / 1000).toFixed(0)}k</p>
-        </div>
-        <div>
-          <p className="text-xs text-neutral-500 mb-0.5">Spent</p>
-          <p className={`text-sm font-mono font-medium ${budgetPct > 85 ? 'text-red-400' : 'text-neutral-300'}`}>
-            ${(project.spent / 1000).toFixed(1)}k
-          </p>
-        </div>
-        <div>
-          <p className="text-xs text-neutral-500 mb-0.5">Due</p>
-          <p className="text-sm font-mono text-neutral-400">{project.dueDate.slice(5)}</p>
-        </div>
-      </div>
-
-      {/* Members */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex -space-x-2">
-          {memberDetails.map(m => (
-            <Avatar key={m.id} name={m.name} size="xs" className="ring-2 ring-neutral-900" />
-          ))}
-        </div>
-        <span className="text-xs text-neutral-600">{memberDetails.length} member{memberDetails.length !== 1 ? 's' : ''}</span>
-      </div>
-
-      {/* Goal Engine */}
-      <GoalEngine project={project} />
-    </Card>
-  )
-}
-
-export default function Projects() {
-  const [filter, setFilter] = useState('all')
-
-  const filtered = filter === 'all'
-    ? projects
-    : projects.filter(p => p.status === filter)
-
-  return (
-    <div className="space-y-6 animate-fade-in">
-
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          {['all', 'active', 'paused'].map(f => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors duration-150 ${
-                filter === f
-                  ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                  : 'text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 border border-transparent'
-              }`}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-              <span className="ml-1.5 text-neutral-600">
-                {f === 'all' ? projects.length : projects.filter(p => p.status === f).length}
-              </span>
-            </button>
-          ))}
-        </div>
-        <Button variant="primary" size="sm">
-          <Plus size={13} />
-          New Project
-        </Button>
-      </div>
-
-      {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Total Projects', value: projects.length, icon: Target },
-          { label: 'Active', value: projects.filter(p => p.status === 'active').length, icon: CheckCircle2 },
-          { label: 'Total Budget', value: '$' + (projects.reduce((a, p) => a + p.budget, 0) / 1000).toFixed(0) + 'k', icon: DollarSign },
-          { label: 'Total Hours Logged', value: projects.reduce((a, p) => a + p.loggedHours, 0).toFixed(0) + 'h', icon: Calendar },
-        ].map(s => (
-          <Card key={s.label} padding="p-4" className="flex flex-col gap-1.5">
-            <p className="text-2xl font-semibold font-mono text-neutral-100 tracking-tight">{s.value}</p>
-            <div className="flex items-center gap-1.5">
-              <s.icon size={12} className="text-neutral-600" />
-              <p className="text-xs text-neutral-500">{s.label}</p>
-            </div>
-            <div className="h-px w-8 bg-violet-500/30 rounded-full" />
-          </Card>
-        ))}
-      </div>
-
-      {/* Project grid */}
-      <div className="grid grid-cols-3 gap-4">
-        {filtered.map(project => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <EmptyState
-          icon={FolderKanban}
-          title="No projects found"
-          description="No projects match the selected filter. Try switching to a different tab."
-        />
-      )}
-    </div>
-  )
+  );
 }

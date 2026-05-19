@@ -20,27 +20,20 @@ const allItems = [
   })),
 ];
 
-export default function CommandPalette({ isOpen, onClose }) {
+export default function CommandPalette({ onClose }) {
   const [query, setQuery] = useState('');
   const inputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (isOpen) {
-      setQuery('');
-      setTimeout(() => inputRef.current?.focus(), 50);
-    }
-  }, [isOpen]);
+    setTimeout(() => inputRef.current?.focus(), 50);
+  }, []);
 
   useEffect(() => {
-    const handler = (e) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handler);
+    const handler = (e) => { if (e.key === 'Escape') onClose?.(); };
+    window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  }, [onClose]);
 
   const filtered = query.trim()
     ? allItems.filter(
@@ -52,29 +45,49 @@ export default function CommandPalette({ isOpen, onClose }) {
 
   const handleSelect = (item) => {
     navigate(item.route);
-    onClose();
+    onClose?.();
   };
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-start justify-center pt-24 px-4 bg-black/50 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-start justify-center pt-24 px-4"
+      style={{ background: 'rgba(240, 235, 230, 0.50)', backdropFilter: 'blur(6px)' }}
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg rounded-xl border border-neutral-700 bg-neutral-900 shadow-2xl shadow-black/60 overflow-hidden animate-fade-in"
+        className="w-full max-w-lg overflow-hidden animate-fade-in"
+        style={{
+          background: 'var(--bg-surface)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid var(--border-default)',
+          borderRadius: '16px',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.15)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-neutral-800">
-          <Search size={15} className="text-neutral-500 shrink-0" />
+        {/* Search row */}
+        <div
+          className="flex items-center gap-3 px-4 py-3"
+          style={{ borderBottom: '1px solid var(--border-default)' }}
+        >
+          <Search size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             ref={inputRef}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search projects, members..."
-            className="flex-1 bg-transparent text-sm text-neutral-200 placeholder-neutral-600 outline-none"
+            placeholder="Search projects, members…"
+            className="flex-1 bg-transparent text-sm outline-none"
+            style={{ color: 'var(--text-primary)' }}
           />
-          <kbd className="font-mono text-xs text-neutral-600 border border-neutral-700 rounded px-1.5 py-0.5">
+          <kbd
+            className="font-mono text-xs px-1.5 py-0.5 rounded"
+            style={{
+              background: 'var(--bg-sunken)',
+              border: '1px solid var(--border-default)',
+              color: 'var(--text-muted)',
+            }}
+          >
             ESC
           </kbd>
         </div>
@@ -82,7 +95,7 @@ export default function CommandPalette({ isOpen, onClose }) {
         {/* Results */}
         <div className="max-h-80 overflow-y-auto">
           {filtered.length === 0 ? (
-            <div className="py-10 text-center text-sm text-neutral-600">
+            <div className="py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               No results for &ldquo;{query}&rdquo;
             </div>
           ) : (
@@ -91,16 +104,22 @@ export default function CommandPalette({ isOpen, onClose }) {
                 <li key={i}>
                   <button
                     onClick={() => handleSelect(item)}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-800/60 transition-colors duration-100 text-left"
+                    className="w-full flex items-center gap-3 px-4 py-2.5 transition-colors duration-100 text-left hover:bg-[var(--bg-sunken)]"
                   >
-                    <div className="w-7 h-7 rounded-md bg-neutral-800 border border-neutral-700 flex items-center justify-center shrink-0">
-                      <item.icon size={13} className="text-neutral-400" />
+                    <div
+                      className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                      style={{
+                        background: 'var(--bg-sunken)',
+                        border: '1px solid var(--border-default)',
+                      }}
+                    >
+                      <item.icon size={13} style={{ color: 'var(--text-muted)' }} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-neutral-200 truncate">{item.label}</p>
-                      <p className="text-xs text-neutral-500 truncate">{item.sub}</p>
+                      <p className="text-sm truncate" style={{ color: 'var(--text-primary)' }}>{item.label}</p>
+                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{item.sub}</p>
                     </div>
-                    <span className="text-xs text-neutral-600 shrink-0">{item.type}</span>
+                    <span className="text-xs shrink-0" style={{ color: 'var(--text-muted)' }}>{item.type}</span>
                   </button>
                 </li>
               ))}
@@ -109,11 +128,15 @@ export default function CommandPalette({ isOpen, onClose }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center gap-4 px-4 py-2 border-t border-neutral-800">
-          <span className="text-xs text-neutral-700">↵ to navigate</span>
-          <span className="text-xs text-neutral-700">ESC to close</span>
+        <div
+          className="flex items-center gap-4 px-4 py-2"
+          style={{ borderTop: '1px solid var(--border-default)' }}
+        >
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>↵ navigate</span>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>ESC close</span>
         </div>
       </div>
     </div>
   );
 }
+

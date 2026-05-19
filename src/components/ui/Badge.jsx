@@ -1,21 +1,21 @@
 import React from 'react';
 
 const VARIANTS = {
-  success: 'bg-emerald-400/10 text-emerald-300 border-emerald-400/20',
-  warning: 'bg-yellow-400/10 text-yellow-300 border-yellow-400/20',
-  danger:  'bg-red-400/10 text-red-300 border-red-400/20',
-  info:    'bg-blue-400/10 text-blue-300 border-blue-400/20',
-  neutral: 'bg-white/5 border-white/10',
-  accent:  'bg-amber-400/10 text-amber-300 border-amber-400/20',
+  success: { background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' },
+  warning: { background: 'var(--warning-bg)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' },
+  danger: { background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' },
+  info: { background: 'var(--info-bg)', color: 'var(--info-text)', border: '1px solid var(--info-border)' },
+  neutral: { background: 'var(--bg-sunken)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' },
+  amber: { background: 'var(--accent-subtle)', color: 'var(--accent-text)', border: '1px solid var(--accent-border)' },
 };
 
 export default function Badge({ variant = 'neutral', children, className = '' }) {
-  const variantClass = VARIANTS[variant] || VARIANTS.neutral;
-  const textClass = variant === 'neutral' ? 'text-[var(--text-muted)]' : '';
+  const style = VARIANTS[variant] || VARIANTS.neutral;
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium border ${variantClass} ${textClass} ${className}`}
+      className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${className}`}
+      style={style}
     >
       {children}
     </span>

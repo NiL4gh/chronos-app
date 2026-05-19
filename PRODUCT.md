@@ -104,10 +104,12 @@ When both are in use, the Admin dashboard dynamically enriches data:
 ## 5. Complete Feature Matrix
 
 ### A. Admin Dashboard — CEO Command Center
-- **Macro Metric Cards (3):** Total Team Hours Today (with delta), Active Projects (with delta), Project Profitability Margin (with delta)
-- **Team Pulse panel:** Live roster of non-offline employees. Each row: Avatar + name + status badge, current task (truncated), Activity Level bar (color-coded), hours today. Bars carry a browser tooltip: `"{value}% Activity (Requires Desktop App)"`.
-- **Weekly Hours bar chart:** 5-day bar chart, today's bar in violet, all others neutral. Shows hours per day with total.
-- **Recent Time Logs table:** Last 48 hours of all team entries. Columns: Member, Project, Task, Date, Time range, Duration, **Tracking Source Badge**, Billable, Actions.
+- **Cadence Toggle:** Day / Week / Month pill selector at top. All metrics recalculate based on selected period.
+- **Macro Metric Cards (4):** Total Team Hours (cadence-filtered), Billable Utilization % (billable hrs / available hrs × 100, color-coded ≥75% emerald, 50-74% amber, <50% red), Est. Revenue (billable hrs × default billing rate), Uninvoiced Hours (billable tracked time not yet invoiced, shows estimated dollar value, clickable to trigger invoice creation). Each card expands inline on click showing a contextual breakdown.
+- **Needs Attention Widget:** Auto-computed action queue. Surfaces: overdue invoices, projects over 85% budget, team members with zero hours logged today (active members only), pending signature invoices. Each item is clickable. Shows EmptyState when clear. Has amber left border accent.
+- **Weekly Hours Bar Chart:** Animated bars (grow from bottom on load), hover tooltips showing day summary, clickable bars opening inline day detail panels below the chart showing that day's time entries.
+- **Team Pulse Panel:** All team members, sorted active→idle→offline. Each row: avatar with pulsing status dot, name, current task, utilization % (hoursToday/8×100), ActivityBar. Row click opens INLINE expansion below the row (NOT a drawer) showing stat chips, current project, last 2 entries.
+- **Recent Time Logs table:** Last 48h, member name click opens MemberProfileDrawer (appropriate here — detail context).
 
 ### B. Tracking Engine & Source Distinction
 - **Manual Time Entry:** Via a Slide-Out Drawer (right-side panel). Fields: Task description, Project (select), Date, Start Time, End Time, Billable toggle.
@@ -122,13 +124,12 @@ When both are in use, the Admin dashboard dynamically enriches data:
 - Linear progress bar with color thresholds (≥85% green, ≥50% violet, <50% amber)
 - Cadence dropdown: Daily / Weekly / Monthly / Project-based
 - Goal hours and cadence stored per project in mock data
+- Project health flags auto-computed on project cards: Over Budget (≥90% spent), Budget Risk (≥80% spent), Due Soon (≤7 days + <80% goal), Overdue (past due date). Rendered as Badge components top-right of card header.
 
 ### D. Reports & Export
-- **Filter bar:** Start date, End date, View (Daily/Weekly/Monthly), Member filter, Project filter
-- **Summary metrics (4 cards):** Total Hours, Billable Hours, Est. Revenue, Active Members
-- **Daily Hours Distribution chart:** Bar chart, violet fill, team aggregate
-- **Billable Split donut chart:** Violet segment = billable, neutral = non-billable, with percentage center label
-- **Detailed breakdown table:** Per member, per project, per day. Totals row at bottom.
+- **Filter bar:** Start date, End date (default last 14 days), Member select, Project select. All four filters drive filteredLogs which feeds all charts and the breakdown table.
+- **Summary metrics (4 cards):** Total Hours, Billable Hours, Est. Revenue, Active Members. Daily Hours Bar chart: animated bars, hover tooltips, bar click shows inline day detail panel. Billable Split donut: segment click filters breakdown table and highlights clicked segment. Selecting same segment deselects.
+- **Detailed breakdown table:** Per member, per project, per day. Member name in breakdown table opens inline split panel (w-80, two tabs: Overview + Time Breakdown). NOT MemberProfileDrawer. Totals row at bottom.
 - **Export:** SplitButton component — primary action "Export to CSV", dropdown offers "Export to PDF" and "Export to Excel". Any click triggers a Toast notification.
 - **Source filter (planned):** Filter results by Tracking Source (Auto / Manual only) — post-MVP.
 
@@ -145,9 +146,8 @@ When both are in use, the Admin dashboard dynamically enriches data:
 
 ### F. Application Shell & Navigation
 - **Sidebar:** Collapsible (expanded `w-60`, collapsed `w-16`). Logo area (violet Timer icon + "Chronos"). Section label "Workspace". Nav items with active route highlighting. Bottom section: Settings, Help & Docs, User avatar + name + role.
-- **Topbar:** Page title + subtitle, styled read-only `⌘K` search trigger, compound timer action group (dominant "Start Timer" primary button + subordinate "Manual Entry" secondary button), notification bell with dot indicator.
+- **Topbar:** h-16. Three zones: LEFT (page title bold + dynamic date chip), CENTER (search bar with amber focus glow), RIGHT (dominant "Start Timer" amber gradient CTA with pulse ring animation + icon-only Manual button; live timer pill when running). Notification bell with count badge. Timer is the visual center of gravity of the topbar.
 - **Global Search Modal (planned):** `⌘K` / `Ctrl+K` to open. Filters across projects, team members, time logs. Phase 1: read-only placeholder. Phase 2: functional overlay.
-- **Notification panel (planned):** Slide-out or dropdown from bell icon. Not yet built.
 
 ### G. My Time (Employee + Admin)
 - **Live Timer:** Large monospaced clock display, Play/Stop button, task input, project selector. Fully functional in Phase 1.5 — `setInterval` in AppShell drives shared timer state passed via Outlet context. Timer persists across page navigation. Topbar shows live ticking pill with pulsing red dot and stop button when running.
@@ -160,15 +160,17 @@ When both are in use, the Admin dashboard dynamically enriches data:
 - **Stats row (4 cards):** Total Members, Active Now, Idle, Avg Hours/Week
 - **Grid view:** Member cards with avatar, status badge, current project, hours this week, activity level bar. Hover actions: Message, View Logs.
 - **Table view:** Compact rows with all key stats.
-- **Invite Member button** (non-functional in Phase 1).
-- **Member Profile Drill-Down:** Clicking on any team member name (on the Dashboard, the Team page grid/table, or the Reports detailed table) opens a context-aware `MemberProfileDrawer` slide-out panel from the right. This drawer displays tabbed content customized dynamically based on which page opened it:
-  - `team` context (from Team page): shows *Overview*, *Time Logs*, *Projects*, and *Activity* tabs.
-  - `dashboard` context (from Dashboard): shows *Overview* and *Today* tabs.
-  - `reports` context (from Reports page): shows *Overview* and *Time Breakdown* tabs.
-  Inside the drawer, it features detailed metrics (Today's hours, This Week's hours, Billable ratio, Total entries), a visual Activity Level bar, and interactive list breakdown widgets.
+- **Member Profile Drill-Down:** MemberProfileDrawer is opened from: Team page (grid/table member clicks), Dashboard recent logs table (member name click). NOT opened from: Dashboard Team Pulse (inline expansion), Reports page (inline split panel). This distinction is intentional — drawers are for detail contexts, inline panels for scan contexts. Inside the drawer, it features detailed metrics (Today's hours, This Week's hours, Billable ratio, Total entries), a visual Activity Level bar, and interactive list breakdown widgets.
 
 ### I. Settings
-- Placeholder page in Phase 1. Will contain: Workspace name, billing, API keys, notification preferences, team permissions.
+Full 7-section settings page. Two-column layout (left nav + right content). Sections:
+1. Workspace — org name, industry, timezone, date format, default billing rate
+2. Profile — name, email, job title, avatar placeholder
+3. Notifications — 7 toggles for email and in-app preferences
+4. Appearance — theme selector (light active, dark Phase 2), density picker, sidebar toggle
+5. Keyboard Shortcuts — full shortcut reference grouped by Navigation, Timer, General. Styled kbd tags.
+6. Integrations — 6 integration cards (Slack, Google Calendar, Jira, GitHub, Gmail, Zoom), all "Coming Soon"
+7. Billing — plan display, usage bars, danger zone
 
 ---
 
@@ -178,12 +180,16 @@ These are planned but must not be built or scaffolded during the Static Museum p
 
 - Real timer logic (`useEffect` + `setInterval` in MyTime.jsx)
 - Desktop App development (Windows, Electron/C++, SQLite sync)
-- Light/Dark mode toggle (dark-only at launch)
+- Light/Dark mode toggle (warm-light only at launch)
 - Mobile responsive layout (desktop-first at launch)
 - Client Portals (external login for clients)
 - Working `⌘K` search modal
 - Working Notification panel
 - Project detail page (`/projects/:id`)
 - Real CSV/PDF/Excel export (Blob API)
-- Settings page real content
 - ProofOfWorkTab wired to real desktop data
+- Settings persistence (changes currently local state only, no backend)
+- Dark mode wiring (toggle UI exists in Settings → Appearance, mode switching not yet implemented)
+- Notification bell panel (count badge shows but panel not built)
+- Working CSV/PDF/Excel export (triggers toast only)
+- Real billing/payment integration

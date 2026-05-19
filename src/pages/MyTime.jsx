@@ -3,10 +3,9 @@ import { useOutletContext } from 'react-router-dom'
 import {
   Play, Square, Plus, MoreHorizontal, Clock, Target, Calendar, ChevronLeft, ChevronRight,
 } from 'lucide-react'
-import Card from '../components/ui/Card'
 import Badge from '../components/ui/Badge'
 import Button from '../components/ui/Button'
-import Input from '../components/ui/Input'
+import Input, { Select } from '../components/ui/Input'
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge'
 import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
 import { timeLogs, projects } from '../data/mockData'
@@ -34,19 +33,25 @@ export default function MyTime() {
   const totalWeek = myLogs.reduce((a, l) => a + l.duration, 0)
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div style={{ background: 'var(--bg-base)' }} className="px-8 py-6 animate-fade-in space-y-6">
 
       {/* ── Live Timer ──────────────────────────────────────────────────────── */}
-      <Card padding="p-6">
+      <div 
+        className="glass-card p-6" 
+        style={{ 
+          borderLeft: timerRunning ? '3px solid #10b981' : '3px solid var(--border-strong)',
+          boxShadow: timerRunning ? '0 0 0 3px rgba(16,185,129,0.15)' : 'none'
+        }}
+      >
         <div className="flex items-center gap-6">
           {/* Timer display */}
-          <div className={`flex-1 pl-4 border-l-2 transition-colors duration-300 ${timerRunning ? 'border-emerald-500/60' : 'border-neutral-800'}`}>
+          <div className="flex-1 pl-4">
             <div className="flex items-center gap-2 mb-3">
-              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${timerRunning ? 'bg-emerald-500 animate-pulse-dot' : 'bg-neutral-700'}`} />
-              <span className={`text-xs font-medium transition-colors duration-300 ${timerRunning ? 'text-emerald-400' : 'text-neutral-600'}`}>{timerRunning ? 'Timer running' : 'Timer stopped'}</span>
+              <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${timerRunning ? 'bg-emerald-500 animate-pulse-dot' : 'bg-[var(--text-muted)]'}`} />
+              <span className={`text-xs font-medium transition-colors duration-300 ${timerRunning ? 'text-emerald-600' : 'text-[var(--text-muted)]'}`}>{timerRunning ? 'Timer running' : 'Timer stopped'}</span>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-4xl font-mono font-semibold text-neutral-100 tabular-nums tracking-tight">
+              <span className="text-4xl font-mono font-semibold tabular-nums tracking-tight text-[var(--text-primary)]">
                 {formatTimer(timerSeconds)}
               </span>
             </div>
@@ -54,38 +59,44 @@ export default function MyTime() {
 
           {/* Task input */}
           <div className="flex-1">
-            <label className="text-xs text-neutral-600 mb-1.5 block">What are you working on?</label>
-            <input
+            <label className="text-xs text-[var(--text-muted)] mb-1.5 block uppercase tracking-wider">What are you working on?</label>
+            <Input
               value={currentTask}
               onChange={e => setCurrentTask(e.target.value)}
               placeholder="e.g. Hero section responsive layout..."
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors duration-150"
             />
           </div>
 
           {/* Project select */}
           <div className="w-44">
-            <label className="text-xs text-neutral-600 mb-1.5 block">Project</label>
-            <select className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-200 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors duration-150 cursor-pointer">
+            <label className="text-xs text-[var(--text-muted)] mb-1.5 block uppercase tracking-wider">Project</label>
+            <Select className="w-full">
               {projects.filter(p => p.status === 'active').map(p => (
                 <option key={p.id}>{p.name}</option>
               ))}
-            </select>
+            </Select>
           </div>
 
           {/* Controls */}
-          <button
-            onClick={() => timerRunning ? stopTimer() : startTimer(currentTask)}
-            className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors duration-150 shrink-0 ${
-              timerRunning
-                ? 'bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400'
-                : 'bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 text-emerald-400'
-            }`}
-          >
-            {timerRunning ? <Square size={18} /> : <Play size={18} />}
-          </button>
+          {timerRunning ? (
+            <button
+              onClick={() => stopTimer()}
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150"
+              style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)' }}
+            >
+              <Square size={18} />
+            </button>
+          ) : (
+            <Button
+              variant="primary"
+              onClick={() => startTimer(currentTask)}
+              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            >
+              <Play size={18} />
+            </Button>
+          )}
         </div>
-      </Card>
+      </div>
 
       {/* ── Personal Stats ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-4 gap-4">
@@ -95,30 +106,30 @@ export default function MyTime() {
           { label: 'Billable (week)', value: myLogs.filter(l => l.billable).reduce((a, l) => a + l.duration, 0).toFixed(1) + 'h', sub: '100% billable', pct: 100 },
           { label: 'Entries (week)', value: myLogs.length, sub: 'time entries', pct: null },
         ].map(s => (
-          <Card key={s.label} padding="p-4">
-            <p className="text-2xl font-semibold font-mono text-neutral-100">{s.value}</p>
-            <p className="text-xs text-neutral-500 mt-1">{s.label}</p>
-            <p className="text-xs text-neutral-600">{s.sub}</p>
+          <div key={s.label} className="glass-card p-4">
+            <p className="text-2xl font-semibold font-mono text-[var(--text-primary)]">{s.value}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{s.label}</p>
+            <p className="text-xs text-[var(--text-secondary)]">{s.sub}</p>
             {s.pct !== null && (
-              <div className="mt-2 h-1 w-full rounded-full bg-neutral-800 overflow-hidden">
+              <div className="mt-2 h-1 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
                 <div
-                  className={`h-full rounded-full ${s.pct >= 100 ? 'bg-emerald-500' : 'bg-violet-500'}`}
+                  className="h-full rounded-full bg-amber-400"
                   style={{ width: `${Math.min(100, s.pct)}%` }}
                 />
               </div>
             )}
-          </Card>
+          </div>
         ))}
       </div>
 
       {/* ── Week calendar strip ─────────────────────────────────────────────── */}
-      <Card padding="p-4">
+      <div className="glass-card p-4">
         <div className="flex items-center gap-2 mb-4">
-          <button className="w-7 h-7 rounded-md flex items-center justify-center text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150">
+          <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150">
             <ChevronLeft size={14} />
           </button>
-          <h3 className="text-sm font-medium text-neutral-300 flex-1 text-center">Timesheet</h3>
-          <button className="w-7 h-7 rounded-md flex items-center justify-center text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150">
+          <h3 className="text-sm font-medium text-[var(--text-primary)] flex-1 text-center">Timesheet</h3>
+          <button className="w-7 h-7 rounded-md flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150">
             <ChevronRight size={14} />
           </button>
         </div>
@@ -141,71 +152,77 @@ export default function MyTime() {
           })().map(d => {
             const pct = (d.hours / 8) * 100
             const isExpanded = expandedDate === d.fullDate
-            const baseClasses = isExpanded 
-              ? 'border-violet-500/40 bg-violet-500/5'
-              : (d.isToday ? 'bg-violet-500/10 border-violet-500/20' : 'border-neutral-800 hover:border-neutral-700 hover:bg-neutral-800/60')
+            
+            let style = { background: 'var(--bg-sunken)', border: '1px solid var(--border-default)', color: 'var(--text-secondary)' };
+            if (isExpanded) {
+              style = { background: 'var(--accent)', border: '1px solid transparent', color: 'white' };
+            } else if (d.isToday) {
+              style = { background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent-text)' };
+            }
+            
             return (
               <button
                 key={d.day}
                 onClick={() => setExpandedDate(isExpanded ? null : d.fullDate)}
-                className={`flex flex-col items-center p-3 rounded-lg border ${baseClasses} transition-colors duration-150`}
+                className="flex flex-col items-center p-3 rounded-lg transition-colors duration-150"
+                style={style}
               >
-                <span className={`text-xs font-medium mb-1 ${d.isToday ? 'text-violet-400' : 'text-neutral-500'}`}>{d.day}</span>
-                <span className={`text-lg font-semibold mb-2 ${d.isToday ? 'text-violet-300' : d.hours > 0 ? 'text-neutral-300' : 'text-neutral-700'}`}>{d.date}</span>
-                <div className="w-full h-1.5 rounded-full bg-neutral-800 overflow-hidden">
+                <span className={`text-xs font-medium mb-1 ${isExpanded ? 'text-white' : d.isToday ? 'text-[var(--accent-text)]' : 'text-[var(--text-muted)]'}`}>{d.day}</span>
+                <span className={`text-lg font-semibold mb-2 ${isExpanded ? 'text-white' : d.isToday ? 'text-[var(--accent-text)]' : d.hours > 0 ? 'text-[var(--text-primary)]' : 'text-[var(--text-muted)]'}`}>{d.date}</span>
+                <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-surface)' }}>
                   <div
-                    className={`h-full rounded-full ${d.isToday ? 'bg-violet-500' : d.hours > 0 ? 'bg-neutral-500' : 'bg-neutral-800'}`}
+                    className={`h-full rounded-full ${isExpanded ? 'bg-white' : 'bg-amber-400'}`}
                     style={{ width: `${Math.min(100, pct)}%` }}
                   />
                 </div>
-                <span className="text-xs font-mono text-neutral-600 mt-1.5">{d.hours > 0 ? d.hours + 'h' : '—'}</span>
+                <span className={`text-xs font-mono mt-1.5 ${isExpanded ? 'text-white' : 'text-[var(--text-muted)]'}`}>{d.hours > 0 ? d.hours + 'h' : '—'}</span>
               </button>
             )
           })}
         </div>
-      </Card>
+      </div>
 
       {expandedDate && (
-        <Card padding="p-0" className="animate-fade-in">
-          <div className="flex items-center justify-between px-5 py-3 border-b border-neutral-800">
-            <span className="text-sm font-medium text-neutral-200">
+        <div className="glass-card p-4 animate-fade-in" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-[var(--text-primary)]">
               {new Date(expandedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </span>
-            <span className="font-mono text-sm text-neutral-400">
+            <span className="font-mono text-sm text-[var(--text-primary)] font-semibold">
               {timeLogs.filter(l => l.userId === 'u1' && l.date === expandedDate).reduce((a, l) => a + l.duration, 0).toFixed(1)}h
             </span>
           </div>
-          <div>
+          <div className="space-y-2">
             {timeLogs.filter(l => l.userId === 'u1' && l.date === expandedDate).length === 0 ? (
               <EmptyState icon={Clock} title="No entries for this day" description="Start the timer or add a manual entry." />
             ) : (
               timeLogs.filter(l => l.userId === 'u1' && l.date === expandedDate).map(entry => (
-                <div key={entry.id} className="flex items-center justify-between px-5 py-3 border-b border-neutral-800/50 last:border-0 hover:bg-neutral-800/30 transition-colors duration-100">
+                <div key={entry.id} className="flex items-center justify-between py-2 border-b border-[var(--border-default)] last:border-0">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: projects.find(p => p.id === entry.projectId)?.color || '#525252' }} />
-                    <span className="text-sm text-neutral-200">{entry.task}</span>
-                    <span className="text-neutral-700">·</span>
-                    <span className="text-xs text-neutral-500">{entry.projectName}</span>
+                    <span className="text-sm text-[var(--text-primary)] font-medium">{entry.task}</span>
+                    <span className="text-[var(--text-muted)]">·</span>
+                    <span className="text-xs text-[var(--text-muted)]">{entry.projectName}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs text-neutral-500">{entry.startTime} – {entry.endTime}</span>
-                    <span className="font-mono text-sm text-neutral-300">{entry.duration}h</span>
+                    <span className="font-mono text-xs text-[var(--text-secondary)]">{entry.startTime} – {entry.endTime}</span>
+                    <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">{entry.duration}h</span>
                     <TrackingSourceBadge source={entry.source} />
-                    {entry.billable && <span className="text-xs text-emerald-400">$</span>}
+                    {entry.billable && <span className="text-emerald-600 text-xs">$</span>}
                   </div>
                 </div>
               ))
             )}
           </div>
-        </Card>
+        </div>
       )}
 
       {/* ── My Time Logs ───────────────────────────────────────────────────── */}
-      <Card padding="p-0">
-        <div className="px-6 pt-5 pb-4 border-b border-neutral-800 flex items-center justify-between">
+      <div className="glass-card p-0">
+        <div className="px-6 pt-5 pb-4 border-b border-[var(--border-default)] flex items-center justify-between">
           <div>
-            <h3 className="text-base font-medium text-neutral-100">My Time Entries</h3>
-            <p className="text-xs text-neutral-500 mt-0.5">All your logged time this period</p>
+            <h3 className="text-base font-medium text-[var(--text-primary)]">My Time Entries</h3>
+            <p className="text-xs text-[var(--text-muted)] mt-0.5">All your logged time this period</p>
           </div>
           <Button variant="primary" size="sm" onClick={() => setShowManualEntry(s => !s)}>
             <Plus size={13} />
@@ -213,7 +230,7 @@ export default function MyTime() {
           </Button>
         </div>
         {showManualEntry && (
-          <div className="px-6 py-4 border-b border-neutral-800">
+          <div className="px-6 py-4 border-b border-[var(--border-default)]">
             <div className="flex items-end gap-4">
               <div className="w-36">
                 <Input type="date" label="Date" />
@@ -236,25 +253,25 @@ export default function MyTime() {
         )}
         <Table>
           <TableHead>
-            <Th>Project</Th>
-            <Th>Task</Th>
-            <Th>Date</Th>
-            <Th>Start</Th>
-            <Th>End</Th>
-            <Th>Duration</Th>
-            <Th>Source</Th>
-            <Th>Billable</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Project</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Task</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Date</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Start</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">End</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Duration</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Source</Th>
+            <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Billable</Th>
             <Th></Th>
           </TableHead>
           <TableBody>
             {myLogs.map(log => (
               <Tr key={log.id}>
-                <Td><span className="font-medium text-neutral-300">{log.projectName}</span></Td>
-                <Td><span className="text-neutral-400 max-w-[200px] truncate block">{log.task}</span></Td>
-                <Td><span className="font-mono text-xs text-neutral-500">{log.date}</span></Td>
-                <Td><span className="font-mono text-xs text-neutral-500">{log.startTime}</span></Td>
-                <Td><span className="font-mono text-xs text-neutral-500">{log.endTime}</span></Td>
-                <Td><span className="font-mono font-medium text-neutral-200">{log.duration}h</span></Td>
+                <Td><span className="font-medium text-[var(--text-primary)]">{log.projectName}</span></Td>
+                <Td><span className="text-[var(--text-secondary)] max-w-[200px] truncate block">{log.task}</span></Td>
+                <Td><span className="font-mono text-xs text-[var(--text-muted)]">{log.date}</span></Td>
+                <Td><span className="font-mono text-xs text-[var(--text-muted)]">{log.startTime}</span></Td>
+                <Td><span className="font-mono text-xs text-[var(--text-muted)]">{log.endTime}</span></Td>
+                <Td><span className="font-mono font-medium text-[var(--text-primary)]">{log.duration}h</span></Td>
                 <Td><TrackingSourceBadge source={log.source} /></Td>
                 <Td>
                   <Badge variant={log.billable ? 'success' : 'neutral'}>
@@ -262,7 +279,7 @@ export default function MyTime() {
                   </Badge>
                 </Td>
                 <Td>
-                  <button className="text-neutral-700 hover:text-neutral-400 transition-colors duration-150">
+                  <button className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors duration-150">
                     <MoreHorizontal size={14} />
                   </button>
                 </Td>
@@ -270,7 +287,7 @@ export default function MyTime() {
             ))}
           </TableBody>
         </Table>
-      </Card>
+      </div>
     </div>
   )
 }

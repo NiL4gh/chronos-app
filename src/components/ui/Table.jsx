@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 export function Table({ children, className = '' }) {
   return (
@@ -23,7 +23,8 @@ export function TableHead({ children }) {
 export function Th({ children, className = '' }) {
   return (
     <th
-      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] ${className}`}
+      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${className}`}
+      style={{ color: 'var(--text-muted)' }}
     >
       {children}
     </th>
@@ -32,22 +33,21 @@ export function Th({ children, className = '' }) {
 
 export function TableBody({ children }) {
   return (
-    <tbody style={{ '--divider': 'var(--border-subtle)' }}>
+    <tbody className="divide-y divide-[var(--border-default)]">
       {children}
     </tbody>
   );
 }
 
 export function Tr({ children, className = '', onClick, interactive = false }) {
+  const [hover, setHover] = useState(false);
+  
   return (
     <tr
-      className={[
-        'transition-colors duration-100',
-        interactive || onClick ? 'cursor-pointer' : '',
-        onClick ? 'hover:bg-white/5' : '',
-        className,
-      ].join(' ')}
-      style={{ borderBottom: '1px solid var(--border-subtle)' }}
+      className={`transition-colors duration-100 ${interactive || onClick ? 'cursor-pointer' : ''} ${className}`}
+      style={{ background: hover && (interactive || onClick) ? 'var(--bg-sunken)' : 'transparent' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
       onClick={onClick}
     >
       {children}
@@ -57,7 +57,7 @@ export function Tr({ children, className = '', onClick, interactive = false }) {
 
 export function Td({ children, className = '' }) {
   return (
-    <td className={`px-4 py-3 text-sm text-[var(--text-secondary)] ${className}`}>
+    <td className={`px-4 py-3 text-sm ${className}`} style={{ color: 'var(--text-secondary)' }}>
       {children}
     </td>
   );

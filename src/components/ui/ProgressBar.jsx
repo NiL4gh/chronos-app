@@ -3,7 +3,7 @@ import React from 'react';
 // ActivityBar — color by activity value 0–100
 export function ActivityBar({ value = 0, className = '' }) {
   const color =
-    value > 75 ? 'bg-emerald-400' :
+    value > 75 ? 'bg-emerald-500' :
     value >= 40 ? 'bg-amber-400' :
     'bg-red-400';
 
@@ -11,7 +11,7 @@ export function ActivityBar({ value = 0, className = '' }) {
     <div
       title={`${value}% Activity (Requires Desktop App)`}
       className={`h-1 w-full rounded-full overflow-hidden ${className}`}
-      style={{ background: 'var(--border-subtle)' }}
+      style={{ background: 'var(--bg-sunken)' }}
     >
       <div
         className={`h-full rounded-full transition-all duration-700 ${color}`}
@@ -25,14 +25,14 @@ export function ActivityBar({ value = 0, className = '' }) {
 export function ProgressBar({ value = 0, max = 100, className = '' }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
   const color =
-    pct >= 85 ? 'bg-emerald-400' :
+    pct >= 85 ? 'bg-emerald-500' :
     pct >= 50 ? 'bg-amber-400' :
-    'bg-red-400/70';
+    'bg-red-400';
 
   return (
     <div
       className={`h-1.5 w-full rounded-full overflow-hidden ${className}`}
-      style={{ background: 'var(--border-subtle)' }}
+      style={{ background: 'var(--bg-sunken)' }}
     >
       <div
         className={`h-full rounded-full transition-all duration-700 ${color}`}
@@ -50,8 +50,8 @@ export function CircularProgress({ value = 0, max = 100, size = 80, strokeWidth 
   const dash = (pct / 100) * circ;
 
   const color =
-    pct >= 85 ? '#34d399' :  // emerald-400
-    pct >= 50 ? '#f59e0b' :  // amber-400
+    pct >= 85 ? '#10b981' :  // emerald-500
+    pct >= 50 ? '#fbbf24' :  // amber-400
     '#f87171';               // red-400
 
   return (
@@ -60,7 +60,7 @@ export function CircularProgress({ value = 0, max = 100, size = 80, strokeWidth 
       <circle
         cx={size / 2} cy={size / 2} r={r}
         fill="none"
-        stroke="rgba(255,200,120,0.10)"
+        stroke="var(--border-default)"
         strokeWidth={strokeWidth}
       />
       {/* Progress */}

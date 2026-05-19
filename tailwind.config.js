@@ -7,8 +7,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'sans-serif'],
-        mono: ['ui-monospace', 'DM Mono', 'monospace'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
       },
       colors: {
         // Warm Cyber-Bento semantic aliases
@@ -52,6 +52,8 @@ export default {
         'pulse-dot':       'pulse-dot 2s cubic-bezier(0.4,0,0.6,1) infinite',
         'calendar-next':   'calendar-slide-next 0.12s ease-out forwards',
         'calendar-prev':   'calendar-slide-prev 0.12s ease-out forwards',
+        'bar-grow': 'bar-grow 0.5s ease-out forwards',
+        'status-pulse': 'status-pulse 2.5s cubic-bezier(0.4,0,0.6,1) infinite',
       },
       keyframes: {
         'fade-in': {
@@ -85,6 +87,14 @@ export default {
         'calendar-slide-prev': {
           from: { opacity: '0', transform: 'translateX(-20px)' },
           to:   { opacity: '1', transform: 'translateX(0)' },
+        },
+        'bar-grow': {
+          'from': { transform: 'scaleY(0)', transformOrigin: 'bottom' },
+          'to':   { transform: 'scaleY(1)', transformOrigin: 'bottom' },
+        },
+        'status-pulse': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.85' },
         },
       },
     },

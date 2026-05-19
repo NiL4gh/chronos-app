@@ -1,28 +1,27 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2, AlertTriangle, X, Info } from 'lucide-react';
 
 const VARIANTS = {
   success: {
     icon: CheckCircle2,
-    iconClass: 'text-emerald-300',
-    ringClass: 'bg-emerald-400/10 border-emerald-400/20',
-    barClass: 'bg-emerald-400',
+    iconClass: 'text-emerald-500',
+    borderLeft: '3px solid #10b981', // emerald-500
   },
   warning: {
     icon: AlertTriangle,
-    iconClass: 'text-yellow-300',
-    ringClass: 'bg-yellow-400/10 border-yellow-400/20',
-    barClass: 'bg-yellow-400',
+    iconClass: 'text-amber-400',
+    borderLeft: '3px solid #fbbf24', // amber-400
   },
   info: {
     icon: Info,
-    iconClass: 'text-blue-300',
-    ringClass: 'bg-blue-400/10 border-blue-400/20',
-    barClass: 'bg-blue-400',
+    iconClass: 'text-blue-500',
+    borderLeft: '3px solid #3b82f6', // blue-500
   },
 };
 
 export default function Toast({ visible, title, message, variant = 'success', onDismiss }) {
+  const [hoverClose, setHoverClose] = useState(false);
+  
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(() => onDismiss?.(), 4000);
@@ -37,38 +36,31 @@ export default function Toast({ visible, title, message, variant = 'success', on
   return (
     <div className="fixed bottom-6 right-6 z-[100] pointer-events-none">
       <div
-        className="pointer-events-auto flex items-start gap-3 rounded-2xl px-4 py-3.5 min-w-[300px] max-w-sm animate-slide-up"
+        className="pointer-events-auto flex items-start gap-3 rounded-xl px-4 py-3.5 min-w-[300px] max-w-sm animate-fade-in"
         style={{
-          background: 'rgba(42, 34, 26, 0.95)',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid var(--border-interactive)',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.40), 0 0 24px rgba(245,158,11,0.08)',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-strong)',
+          borderLeft: v.borderLeft,
+          boxShadow: 'var(--shadow-xl)',
         }}
       >
-        <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 mt-0.5 ${v.ringClass}`}>
-          <Icon size={11} className={v.iconClass} />
+        <div className="mt-0.5 shrink-0">
+          <Icon size={16} className={v.iconClass} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-[var(--text-primary)]">{title}</p>
-          {message && <p className="text-xs mt-0.5 text-[var(--text-muted)]">{message}</p>}
+          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{title}</p>
+          {message && <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{message}</p>}
         </div>
         <button
           onClick={onDismiss}
-          className="shrink-0 mt-0.5 transition-colors duration-150 hover:text-[var(--text-primary)]"
-          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={() => setHoverClose(true)}
+          onMouseLeave={() => setHoverClose(false)}
+          className="shrink-0 mt-0.5 transition-colors duration-150"
+          style={{ color: hoverClose ? 'var(--text-primary)' : 'var(--text-muted)' }}
           aria-label="Dismiss"
         >
           <X size={14} />
         </button>
-
-        {/* Progress bar */}
-        <div className="absolute bottom-0 left-0 right-0 h-[2px] rounded-b-2xl overflow-hidden">
-          <div
-            className={`h-full ${v.barClass} opacity-40`}
-            style={{ animation: 'shrink-bar 4s linear forwards' }}
-          />
-        </div>
       </div>
     </div>
   );

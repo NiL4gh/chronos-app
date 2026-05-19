@@ -1,7 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell, Play, Square, Timer } from 'lucide-react';
-import Button from '../ui/Button.jsx';
+import { Search, Bell, Play, Square, Plus } from 'lucide-react';
 
 const PAGE_META = {
   '/dashboard': { title: 'Dashboard',   subtitle: 'Team overview & activity' },
@@ -31,115 +30,216 @@ export default function Topbar({
 }) {
   const { pathname } = useLocation();
   const meta = PAGE_META[pathname] || { title: 'Chronos', subtitle: '' };
+  
+  const [hoverSearch, setHoverSearch] = useState(false);
+  const [hoverBell, setHoverBell] = useState(false);
+  
+  const [dateStr, setDateStr] = useState('');
+
+  useEffect(() => {
+    const d = new Date();
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    setDateStr(d.toLocaleDateString('en-US', options));
+  }, []);
 
   return (
     <header
-      className="flex items-center justify-between px-6 h-14 shrink-0"
+      className="px-6 flex items-center justify-between gap-4 h-16 shrink-0"
       style={{
-        borderBottom: '1px solid var(--border-subtle)',
-        background: 'rgba(26, 20, 16, 0.80)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'rgba(255,255,255,0.80)',
+        backdropFilter: 'blur(16px)',
+        WebkitBackdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(255,255,255,0.9)',
+        boxShadow: '0 1px 0 rgba(28,25,23,0.06), 0 4px 16px rgba(28,25,23,0.04)'
       }}
     >
-      {/* Left — page title */}
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="min-w-0">
-          <h1 className="text-base font-semibold leading-tight tracking-tight text-[var(--text-primary)]">
-            {meta.title}
-          </h1>
-          {meta.subtitle && (
-            <p className="text-xs leading-tight" style={{ color: 'var(--text-muted)' }}>
-              {meta.subtitle}
-            </p>
-          )}
+      {/* LEFT ZONE — Page identity */}
+      <div className="flex-shrink-0 flex flex-col items-start min-w-0">
+        <h1 
+          className="truncate"
+          style={{
+            fontFamily: 'var(--font-sans)',
+            fontWeight: 700,
+            fontSize: '15px',
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.01em',
+            lineHeight: 1.2
+          }}
+        >
+          {meta.title}
+        </h1>
+        <div 
+          className="mt-1 text-xs font-medium rounded-full px-2.5 py-0.5"
+          style={{
+            background: 'var(--accent-subtle)',
+            border: '1px solid var(--accent-border)',
+            color: 'var(--accent-text)',
+            lineHeight: 1
+          }}
+        >
+          {dateStr}
         </div>
       </div>
 
-      {/* Right — actions */}
-      <div className="flex items-center gap-2 shrink-0">
-
-        {/* Search trigger */}
+      {/* CENTER ZONE — Search */}
+      <div className="flex-1 max-w-sm mx-auto">
         <button
           onClick={onOpenCommandPalette}
-          className="relative flex items-center gap-2 px-3 py-1.5 rounded-xl text-sm transition-all duration-150"
+          onMouseEnter={() => setHoverSearch(true)}
+          onMouseLeave={() => setHoverSearch(false)}
+          className="relative flex items-center w-full transition-all duration-150"
           style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid var(--border-subtle)',
-            color: 'var(--text-disabled)',
-            width: '220px',
+            background: 'rgba(255,255,255,0.6)',
+            backdropFilter: 'blur(8px)',
+            border: `1px solid ${hoverSearch ? 'var(--border-strong)' : 'var(--border-default)'}`,
+            borderRadius: '10px',
+            height: '36px',
+            padding: '0 12px 0 36px',
+            fontSize: '13px',
+            color: 'var(--text-muted)',
+            boxShadow: hoverSearch ? '0 0 0 3px rgba(245,158,11,0.08)' : 'none'
           }}
           aria-label="Open command palette"
         >
-          <Search size={13} style={{ color: 'var(--text-disabled)', flexShrink: 0 }} />
-          <span className="flex-1 text-left text-xs truncate" style={{ color: 'var(--text-disabled)' }}>
-            Search…
-          </span>
+          <Search size={13} style={{ color: 'var(--text-muted)', position: 'absolute', left: '12px' }} />
+          <span className="truncate">Search…</span>
           <kbd
-            className="text-[10px] font-mono px-1 py-0.5 rounded"
+            className="absolute right-[10px] font-mono text-xs rounded px-1 py-0.5"
             style={{
-              background: 'rgba(255,200,120,0.06)',
-              border: '1px solid var(--border-subtle)',
               color: 'var(--text-disabled)',
+              border: '1px solid var(--border-default)',
+              lineHeight: 1
             }}
           >
             ⌘K
           </kbd>
         </button>
+      </div>
 
-        {/* Live timer pill — shown when running */}
-        {timerRunning && (
-          <div
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl animate-glow-pulse"
-            style={{
-              background: 'rgba(245,158,11,0.12)',
-              border: '1px solid rgba(245,158,11,0.30)',
-            }}
-          >
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse-dot" />
-            <span className="font-mono text-xs font-semibold text-amber-300 tabular-nums">
-              {formatTimer(timerSeconds)}
-            </span>
-            {timerTaskLabel && (
-              <span className="text-xs max-w-[80px] truncate" style={{ color: 'var(--text-muted)' }}>
-                {timerTaskLabel}
+      {/* RIGHT ZONE — Timer CTA group */}
+      <div className="flex-shrink-0 flex items-center gap-2">
+        {!timerRunning ? (
+          <>
+            <button
+              onClick={onStartTimer}
+              className="timer-cta-pulse press-on-click flex items-center justify-center gap-1.5 transition-all duration-150"
+              style={{
+                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                border: 'none',
+                borderRadius: '8px',
+                height: '36px',
+                padding: '0 16px',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '13px',
+                letterSpacing: '0.01em',
+                boxShadow: '0 2px 8px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.15)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(245,158,11,0.45)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.15)';
+              }}
+            >
+              <Play size={13} fill="currentColor" />
+              Start Timer
+            </button>
+            <button
+              onClick={onOpenDrawer}
+              title="Manual entry (N)"
+              className="flex items-center justify-center transition-colors duration-150"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'var(--bg-surface)',
+                border: '1px solid var(--border-default)',
+                color: 'var(--text-muted)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-sunken)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'var(--bg-surface)';
+                e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              <Plus size={14} />
+            </button>
+          </>
+        ) : (
+          <>
+            <div
+              className="flex items-center gap-2 px-4"
+              style={{
+                background: 'rgba(16,185,129,0.08)',
+                border: '1px solid rgba(16,185,129,0.25)',
+                borderRadius: '8px',
+                height: '36px'
+              }}
+            >
+              <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse-dot flex-shrink-0" />
+              <span 
+                className="font-mono font-semibold text-sm tabular-nums"
+                style={{ color: '#065f46', letterSpacing: '0.02em' }}
+              >
+                {formatTimer(timerSeconds)}
               </span>
-            )}
+            </div>
             <button
               onClick={onStopTimer}
-              className="w-5 h-5 rounded-md flex items-center justify-center transition-all duration-150 hover:bg-white/10"
-              style={{ color: 'var(--text-muted)' }}
+              className="flex items-center justify-center transition-colors duration-150"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: 'rgba(239,68,68,0.08)',
+                border: '1px solid rgba(239,68,68,0.2)',
+                color: 'rgb(185,28,28)'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(239,68,68,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+              }}
               aria-label="Stop timer"
             >
-              <Square size={10} />
+              <Square size={14} fill="currentColor" />
             </button>
-          </div>
+          </>
         )}
 
-        {/* Timer action group */}
-        {!timerRunning ? (
-          <Button variant="primary" size="sm" onClick={onStartTimer}>
-            <Play size={13} />
-            Start Timer
-          </Button>
-        ) : null}
-
-        {/* Manual entry */}
-        <Button variant="secondary" size="sm" onClick={onOpenDrawer}>
-          Manual Entry
-        </Button>
-
-        {/* Notifications */}
         <button
-          className="relative w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-150 hover:bg-white/5"
-          style={{ color: 'var(--text-muted)' }}
+          className="relative flex items-center justify-center transition-colors duration-150 ml-1"
+          style={{
+            width: '32px',
+            height: '32px',
+            borderRadius: '8px',
+            background: 'transparent',
+            color: 'var(--text-muted)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--bg-sunken)';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--text-muted)';
+          }}
           aria-label="Notifications"
         >
-          <Bell size={16} />
+          <Bell size={15} />
           <span
-            className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-amber-400"
-            style={{ boxShadow: '0 0 6px rgba(245,158,11,0.60)' }}
-          />
+            className="absolute top-1 right-1 w-4 h-4 rounded-full bg-red-500 text-white font-bold flex items-center justify-center"
+            style={{ fontSize: '9px' }}
+          >
+            3
+          </span>
         </button>
       </div>
     </header>

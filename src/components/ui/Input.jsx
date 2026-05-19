@@ -1,38 +1,50 @@
-import React from 'react';
-
-const baseInput = [
-  'w-full rounded-xl',
-  'border border-[var(--border-default)]',
-  'bg-white/5 backdrop-blur-sm',
-  'px-3 py-2 text-sm',
-  'text-[var(--text-primary)]',
-  'placeholder:text-[var(--text-disabled)]',
-  'outline-none',
-  'focus:border-[var(--border-focus)] focus:ring-1 focus:ring-amber-400/20',
-  'transition-all duration-150',
-  '[color-scheme:dark]',
-].join(' ');
-
-const baseSelect = [
-  'rounded-xl',
-  'border border-[var(--border-default)]',
-  'bg-[var(--bg-elevated)] backdrop-blur-sm',
-  'px-3 py-2 text-sm',
-  'text-[var(--text-primary)]',
-  'outline-none',
-  'focus:border-[var(--border-focus)] focus:ring-1 focus:ring-amber-400/20',
-  'transition-all duration-150',
-  'cursor-pointer',
-  '[color-scheme:dark]',
-].join(' ');
+import React, { useState } from 'react';
 
 export default function Input({ className = '', ...props }) {
-  return <input className={`${baseInput} ${className}`} {...props} />;
+  const [focused, setFocused] = useState(false);
+  return (
+    <input 
+      className={`w-full rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-150 placeholder:text-[var(--text-muted)] ${className}`} 
+      style={{
+        background: 'var(--bg-surface)',
+        border: `1px solid ${focused ? 'var(--border-focus)' : 'var(--border-default)'}`,
+        color: 'var(--text-primary)',
+        boxShadow: focused ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none',
+      }}
+      onFocus={(e) => {
+        setFocused(true);
+        if (props.onFocus) props.onFocus(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        if (props.onBlur) props.onBlur(e);
+      }}
+      {...props} 
+    />
+  );
 }
 
 export function Select({ children, className = '', ...props }) {
+  const [focused, setFocused] = useState(false);
   return (
-    <select className={`${baseSelect} ${className}`} {...props}>
+    <select 
+      className={`rounded-lg px-3 py-2 text-sm outline-none transition-colors duration-150 cursor-pointer ${className}`} 
+      style={{
+        background: 'var(--bg-surface)',
+        border: `1px solid ${focused ? 'var(--border-focus)' : 'var(--border-default)'}`,
+        color: 'var(--text-primary)',
+        boxShadow: focused ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none',
+      }}
+      onFocus={(e) => {
+        setFocused(true);
+        if (props.onFocus) props.onFocus(e);
+      }}
+      onBlur={(e) => {
+        setFocused(false);
+        if (props.onBlur) props.onBlur(e);
+      }}
+      {...props}
+    >
       {children}
     </select>
   );

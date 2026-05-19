@@ -1,218 +1,633 @@
-import { useState } from 'react'
-import { Search, UserPlus, MoreHorizontal, Mail, Shield, Clock } from 'lucide-react'
-import Card from '../components/ui/Card'
-import Badge from '../components/ui/Badge'
-import Avatar from '../components/ui/Avatar'
-import Button from '../components/ui/Button'
-import { ActivityBar } from '../components/ui/ProgressBar'
-import { Table, TableHead, Th, TableBody, Tr, Td } from '../components/ui/Table'
-import { teamMembers } from '../data/mockData'
-import MemberProfileDrawer from '../components/team/MemberProfileDrawer';
+import { useState, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
+import {
+  Search, Grid3X3, List, Mail, Clock, Activity,
+  X, BarChart2, FolderKanban, Calendar, TrendingUp,
+  CheckCircle2, Circle, Users,
+} from 'lucide-react';
+import Avatar from '../components/ui/Avatar.jsx';
+import Badge from '../components/ui/Badge.jsx';
+import Input from '../components/ui/Input.jsx';
+import { ActivityBar, ProgressBar } from '../components/ui/ProgressBar.jsx';
+import TrackingSourceBadge from '../components/ui/TrackingSourceBadge.jsx';
+import { teamMembers, timeLogs, projects } from '../data/mockData.js';
 
-function StatusDot({ status }) {
-  const colors = { active: 'bg-emerald-500', idle: 'bg-amber-500', offline: 'bg-neutral-600' }
-  return <span className={`w-2 h-2 rounded-full shrink-0 ${colors[status] ?? colors.offline}`} />
+// ─── Helpers ──────────────────────────────────────────────
+const STATUS_BADGE = {
+  active:  { variant: 'success', label: 'Active' },
+  idle:    { variant: 'warning', label: 'Idle' },
+  offline: { variant: 'neutral', label: 'Offline' },
+};
+const DOT_COLOR = {
+  active:  '#10b981',
+  idle:    '#f59e0b',
+  offline: 'var(--text-disabled)',
+};
+
+// ─── Stat summary card ────────────────────────────────────
+function StatCard({ icon: Icon, label, value }) {
+  return (
+    <div className="glass-card p-5 flex items-center gap-4">
+      <div
+        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+        style={{
+          background: 'var(--accent-subtle)',
+          border: '1px solid var(--accent-border)',
+        }}
+      >
+        <Icon size={18} style={{ color: 'var(--accent)' }} />
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
+        <p className="text-2xl font-semibold font-mono mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
+      </div>
+    </div>
+  );
 }
 
-export default function Team() {
-  const [profileMember, setProfileMember] = useState(null);
-  const [drawerInitialTab, setDrawerInitialTab] = useState('Overview');
-  const [search, setSearch] = useState('')
-  const [view, setView] = useState('grid')
-
-  const filtered = teamMembers.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.role.toLowerCase().includes(search.toLowerCase())
-  )
-
-  const statusVariant = { active: 'success', idle: 'warning', offline: 'neutral' }
+// ─── Member Grid Card ─────────────────────────────────────
+function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickProject }) {
+  const statusInfo = STATUS_BADGE[member.status] || STATUS_BADGE.offline;
+  const memberProjects = projects.filter(p => p.members.includes(member.id));
+  const [hoverMsg, setHoverMsg] = useState(false);
+  const [hoverLogs, setHoverLogs] = useState(false);
 
   return (
-    <div className="space-y-6 animate-fade-in">
-
-      {/* Header bar */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-600" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search members..."
-              className="w-64 rounded-lg border border-neutral-700 bg-neutral-800 pl-8 pr-3 py-2 text-sm text-neutral-200 placeholder-neutral-600 outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/30 transition-colors duration-150"
+    <div
+      className="glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200"
+      style={{
+        border: selected
+          ? '1px solid var(--accent-border)'
+          : '1px solid var(--border-default)',
+        boxShadow: selected
+          ? 'var(--shadow-md)'
+          : undefined,
+        cursor: 'default',
+      }}
+    >
+      {/* Top — avatar + name + status */}
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative shrink-0">
+            <Avatar name={member.name} size="md" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2"
+              style={{
+                background: DOT_COLOR[member.status],
+                borderColor: 'var(--bg-surface)',
+              }}
             />
           </div>
-          <div className="flex rounded-lg border border-neutral-700 overflow-hidden">
-            {['grid', 'table'].map(v => (
-              <button
-                key={v}
-                onClick={() => setView(v)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors duration-150 ${view === v ? 'bg-neutral-700 text-neutral-100' : 'bg-transparent text-neutral-500 hover:text-neutral-300'}`}
-              >
-                {v.charAt(0).toUpperCase() + v.slice(1)}
-              </button>
-            ))}
+          <div className="min-w-0">
+            {/* Name — zone click → profile overview */}
+            <button
+              onClick={onClickName}
+              className="text-sm font-medium text-left block truncate hover:text-amber-600 transition-colors duration-100"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {member.name}
+            </button>
+            <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-muted)' }}>
+              {member.role}
+            </p>
           </div>
         </div>
-        <Button variant="primary" size="sm">
-          <UserPlus size={13} />
-          Invite Member
-        </Button>
+        {/* Status badge — zone click → today tab */}
+        <button onClick={onClickStatus} className="shrink-0">
+          <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+        </button>
+      </div>
+
+      {/* Current task */}
+      <div
+        className="rounded-xl px-4 py-3"
+        style={{
+          background: 'var(--bg-sunken)',
+          border: '1px solid var(--border-subtle)',
+        }}
+      >
+        <p className="text-xs uppercase tracking-wider font-semibold mb-1"
+          style={{ color: 'var(--text-muted)' }}>Now working on</p>
+        {/* Project — zone click → projects tab */}
+        <button
+          onClick={onClickProject}
+          className="text-xs text-left truncate w-full hover:text-amber-600 transition-colors duration-100"
+          style={{ color: member.currentTask !== 'Offline' ? 'var(--text-tertiary)' : 'var(--text-disabled)' }}
+        >
+          {member.currentTask !== 'Offline' ? member.currentTask : '—'}
+        </button>
       </div>
 
       {/* Stats row */}
-      <div className="grid grid-cols-4 gap-4">
-        {[
-          { label: 'Total Members', value: teamMembers.length },
-          { label: 'Active Now', value: teamMembers.filter(m => m.status === 'active').length },
-          { label: 'Idle', value: teamMembers.filter(m => m.status === 'idle').length },
-          { label: 'Avg Hours / Week', value: (teamMembers.reduce((a, m) => a + m.hoursWeek, 0) / teamMembers.length).toFixed(1) + 'h' },
-        ].map(stat => (
-          <Card key={stat.label} padding="p-4" className="flex flex-col gap-1.5">
-            <p className="text-2xl font-semibold font-mono text-neutral-100 tracking-tight">{stat.value}</p>
-            <p className="text-xs text-neutral-500">{stat.label}</p>
-            <div className="h-px w-8 bg-violet-500/30 rounded-full mt-0.5" />
-          </Card>
-        ))}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <p className="text-xs uppercase tracking-wider font-semibold mb-1"
+            style={{ color: 'var(--text-muted)' }}>Today</p>
+          <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+            {member.hoursToday}h
+          </p>
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wider font-semibold mb-1"
+            style={{ color: 'var(--text-muted)' }}>This Week</p>
+          <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+            {member.hoursWeek}h
+          </p>
+        </div>
       </div>
 
-      {/* Grid view */}
-      {view === 'grid' && (
-        <div className="grid grid-cols-3 gap-4">
-          {filtered.map(member => (
-            <Card key={member.id} padding="p-5" className="group hover:border-neutral-700 hover:bg-neutral-800/30 transition-colors duration-200">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <Avatar name={member.name} size="lg" />
-                    <StatusDot status={member.status} className="absolute -bottom-0.5 -right-0.5" />
-                  </div>
-                  <div>
-                    <button
-                      onClick={() => { setDrawerInitialTab('Overview'); setProfileMember(member); }}
-                      className="text-sm font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150 text-left"
-                    >
-                      {member.name}
-                    </button>
-                    <p className="text-xs text-neutral-500">{member.role}</p>
-                  </div>
-                </div>
-                <button className="opacity-0 group-hover:opacity-100 transition-opacity text-neutral-600 hover:text-neutral-300">
-                  <MoreHorizontal size={15} />
-                </button>
-              </div>
-
-              <div className="space-y-2.5 mb-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-neutral-600">Status</span>
-                  <Badge variant={statusVariant[member.status] ?? 'neutral'}>
-                    <StatusDot status={member.status} />
-                    {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                  </Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-neutral-600">Project</span>
-                  <span className="text-xs text-neutral-400 truncate ml-2">{member.currentProject}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-neutral-600">Hours this week</span>
-                  <span className="text-xs font-mono text-neutral-300">{member.hoursWeek}h</span>
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs text-neutral-600">Activity level</span>
-                  <span className="text-xs font-mono text-neutral-500">{member.activityLevel}%</span>
-                </div>
-                <ActivityBar value={member.activityLevel} />
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-neutral-800 flex items-center gap-2">
-                <button
-                  onClick={() => window.open(`mailto:${member.email}`, '_blank')}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-neutral-500 hover:text-neutral-300 hover:bg-neutral-800 transition-colors duration-150"
-                >
-                  <Mail size={12} />
-                  Message
-                </button>
-                <button
-                  onClick={() => { setDrawerInitialTab('Time Logs'); setProfileMember(member); }}
-                  className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-md text-xs text-violet-400/70 hover:text-violet-400 hover:bg-violet-500/10 transition-colors duration-150"
-                >
-                  <Clock size={12} />
-                  View Logs
-                </button>
-              </div>
-            </Card>
-          ))}
+      {/* Activity bar */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <p className="text-xs uppercase tracking-wider font-semibold"
+            style={{ color: 'var(--text-muted)' }}>Activity</p>
+          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+            {member.activityLevel}%
+          </span>
         </div>
-      )}
+        <ActivityBar value={member.activityLevel} />
+      </div>
 
-      {/* Table view */}
-      {view === 'table' && (
-        <Card padding="p-0">
-          <Table>
-            <TableHead>
-              <Th>Member</Th>
-              <Th>Role</Th>
-              <Th>Status</Th>
-              <Th>Current Project</Th>
-              <Th>Today</Th>
-              <Th>This Week</Th>
-              <Th>Activity</Th>
-              <Th></Th>
-            </TableHead>
-            <TableBody>
-              {filtered.map(member => (
-                <Tr key={member.id}>
-                  <Td>
-                    <div className="flex items-center gap-2.5">
-                      <Avatar name={member.name} size="sm" />
-                      <div>
-                        <button
-                          onClick={() => { setDrawerInitialTab('Overview'); setProfileMember(member); }}
-                          className="font-medium text-neutral-200 hover:text-violet-400 transition-colors duration-150"
-                        >
-                          {member.name}
-                        </button>
-                        <p className="text-xs text-neutral-600">{member.email}</p>
-                      </div>
-                    </div>
-                  </Td>
-                  <Td><span className="text-neutral-400">{member.role}</span></Td>
-                  <Td>
-                    <Badge variant={statusVariant[member.status] ?? 'neutral'}>
-                      <StatusDot status={member.status} />
-                      {member.status.charAt(0).toUpperCase() + member.status.slice(1)}
-                    </Badge>
-                  </Td>
-                  <Td><span className="text-neutral-400">{member.currentProject}</span></Td>
-                  <Td><span className="font-mono text-neutral-300">{member.hoursToday}h</span></Td>
-                  <Td><span className="font-mono text-neutral-300">{member.hoursWeek}h</span></Td>
-                  <Td>
-                    <div className="w-24">
-                      <ActivityBar value={member.activityLevel} />
-                    </div>
-                  </Td>
-                  <Td>
-                    <button className="text-neutral-600 hover:text-neutral-300 transition-colors duration-150">
-                      <MoreHorizontal size={14} />
-                    </button>
-                  </Td>
-                </Tr>
-              ))}
-            </TableBody>
-          </Table>
-        </Card>
-      )}
-      <MemberProfileDrawer
-        member={profileMember}
-        context="team"
-        initialTab={drawerInitialTab}
-        isOpen={profileMember !== null}
-        onClose={() => setProfileMember(null)}
-      />
+      {/* Footer actions */}
+      <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid var(--border-default)' }}>
+        <button
+          onClick={() => window.open(`mailto:${member.email}`)}
+          onMouseEnter={() => setHoverMsg(true)}
+          onMouseLeave={() => setHoverMsg(false)}
+          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
+          style={{
+            background: 'var(--bg-sunken)',
+            color: hoverMsg ? 'var(--text-primary)' : 'var(--text-secondary)',
+            border: '1px solid var(--border-default)'
+          }}
+        >
+          <Mail size={14} /> Message
+        </button>
+        <button
+          onClick={onClickName}
+          onMouseEnter={() => setHoverLogs(true)}
+          onMouseLeave={() => setHoverLogs(false)}
+          className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
+          style={{
+            background: 'var(--bg-sunken)',
+            color: hoverLogs ? 'var(--text-primary)' : 'var(--text-secondary)',
+            border: '1px solid var(--border-default)',
+          }}
+        >
+          <BarChart2 size={14} /> View Logs
+        </button>
+      </div>
     </div>
-  )
+  );
+}
+
+// ─── Member Table Row ─────────────────────────────────────
+function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
+  const statusInfo = STATUS_BADGE[member.status] || STATUS_BADGE.offline;
+  const [hover, setHover] = useState(false);
+  return (
+    <div
+      className="flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0"
+      style={{
+        borderBottom: '1px solid var(--border-default)',
+        background: selected ? 'var(--accent-subtle)' : hover ? 'var(--bg-sunken)' : 'transparent',
+      }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      <div className="relative shrink-0">
+        <Avatar name={member.name} size="sm" />
+        <span
+          className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+          style={{ background: DOT_COLOR[member.status], borderColor: 'var(--bg-surface)' }}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <button
+          onClick={onClickName}
+          className="text-sm font-bold text-left block hover:text-amber-600 transition-colors duration-100"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          {member.name}
+        </button>
+        <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{member.role}</p>
+      </div>
+      <button onClick={onClickStatus} className="shrink-0">
+        <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+      </button>
+      <p className="text-xs font-mono w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
+        {member.hoursToday}h today
+      </p>
+      <p className="text-xs font-mono w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
+        {member.hoursWeek}h week
+      </p>
+      <div className="w-32 shrink-0 ml-4">
+        <ActivityBar value={member.activityLevel} />
+      </div>
+    </div>
+  );
+}
+
+// ─── Inline Member Detail Panel ───────────────────────────
+function MemberDetailPanel({ member, onClose }) {
+  const [activeTab, setActiveTab] = useState('Overview');
+  const tabs = ['Overview', 'Time Logs', 'Projects'];
+
+  const memberLogs = timeLogs.filter(l => l.userId === member.id);
+  const memberProjects = projects.filter(p => p.members.includes(member.id));
+  const todayStr = new Date().toISOString().split('T')[0];
+  const todayLogs = memberLogs.filter(l => l.date === todayStr);
+  const billableHours = memberLogs.filter(l => l.billable).reduce((s, l) => s + l.duration, 0);
+  const totalHours = memberLogs.reduce((s, l) => s + l.duration, 0);
+  const billableRatio = totalHours > 0 ? Math.round((billableHours / totalHours) * 100) : 0;
+
+  return (
+    <div
+      className="flex flex-col h-full animate-slide-in-right overflow-hidden"
+      style={{
+        background: 'var(--bg-surface)',
+        borderLeft: '1px solid var(--border-default)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="flex items-start justify-between px-6 py-5 shrink-0"
+        style={{ borderBottom: '1px solid var(--border-default)' }}
+      >
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Avatar name={member.name} size="lg" />
+            <span
+              className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2"
+              style={{
+                background: DOT_COLOR[member.status],
+                borderColor: 'var(--bg-surface)',
+              }}
+            />
+          </div>
+          <div>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {member.name}
+            </h3>
+            <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>{member.role}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--text-disabled)' }}>{member.email}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-150"
+          style={{ color: 'var(--text-muted)' }}
+          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+        >
+          <X size={16} />
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div
+        className="flex gap-4 px-6 pt-3 shrink-0"
+        style={{ borderBottom: '1px solid var(--border-default)' }}
+      >
+        {tabs.map(tab => {
+          const isActive = activeTab === tab;
+          return (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-2 pb-3 text-sm font-medium transition-colors"
+              style={{
+                color: isActive ? 'var(--accent-text)' : 'var(--text-muted)',
+                borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) e.currentTarget.style.color = 'var(--text-muted)';
+              }}
+            >
+              {tab}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Body — scrollable */}
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-base" style={{ background: 'var(--bg-base)' }}>
+
+        {/* ── Overview tab ── */}
+        {activeTab === 'Overview' && (
+          <>
+            {/* Metric cards */}
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: 'Today', value: `${member.hoursToday}h` },
+                { label: 'This Week', value: `${member.hoursWeek}h` },
+                { label: 'Billable', value: `${billableRatio}%` },
+                { label: 'Total Entries', value: memberLogs.length },
+              ].map(({ label, value }) => (
+                <div
+                  key={label}
+                  className="glass-card rounded-xl p-4"
+                >
+                  <p className="text-xs uppercase tracking-wider font-semibold"
+                    style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  <p className="text-xl font-semibold font-mono mt-2"
+                    style={{ color: 'var(--text-primary)' }}>{value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Activity level */}
+            <div className="glass-card rounded-xl p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
+                  Activity Level
+                </p>
+                <span className="text-sm font-mono font-semibold"
+                  style={{ color: 'var(--text-primary)' }}>
+                  {member.activityLevel}%
+                </span>
+              </div>
+              <ActivityBar value={member.activityLevel} />
+              <p className="text-xs mt-3" style={{ color: 'var(--text-disabled)' }}>
+                Requires Desktop App for live data
+              </p>
+            </div>
+
+            {/* Current project */}
+            {member.currentProject && (
+              <div className="glass-card rounded-xl p-5">
+                <p className="text-xs uppercase tracking-wider font-semibold mb-2"
+                  style={{ color: 'var(--text-muted)' }}>Current Project</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {member.currentProject}
+                </p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+                  {member.currentTask !== 'Offline' ? member.currentTask : '—'}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Time Logs tab ── */}
+        {activeTab === 'Time Logs' && (
+          <div className="space-y-3">
+            {memberLogs.length === 0 ? (
+              <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
+                No time logs recorded.
+              </p>
+            ) : memberLogs.map(log => (
+              <div
+                key={log.id}
+                className="glass-card rounded-xl p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                    {log.task}
+                  </p>
+                  <TrackingSourceBadge source={log.source} />
+                </div>
+                <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>{log.projectName}</p>
+                <div className="flex items-center gap-4 mt-3">
+                  <span className="text-sm font-mono" style={{ color: 'var(--text-muted)' }}>
+                    {log.startTime}–{log.endTime}
+                  </span>
+                  <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {log.duration}h
+                  </span>
+                  {log.billable && (
+                    <CheckCircle2 size={14} className="text-emerald-600" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ── Projects tab ── */}
+        {activeTab === 'Projects' && (
+          <div className="space-y-3">
+            {memberProjects.length === 0 ? (
+              <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>
+                Not assigned to any projects.
+              </p>
+            ) : memberProjects.map(proj => {
+              const pct = proj.goalHours > 0
+                ? Math.round((proj.loggedHours / proj.goalHours) * 100)
+                : 0;
+              return (
+                <div
+                  key={proj.id}
+                  className="glass-card rounded-xl p-5"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ background: proj.color }}
+                    />
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {proj.name}
+                    </p>
+                    <Badge variant={proj.status === 'active' ? 'success' : proj.status === 'paused' ? 'warning' : 'neutral'}>
+                      {proj.status}
+                    </Badge>
+                  </div>
+                  <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{proj.client}</p>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs uppercase tracking-wider font-semibold"
+                      style={{ color: 'var(--text-muted)' }}>Progress</span>
+                    <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                      {proj.loggedHours}h / {proj.goalHours}h
+                    </span>
+                  </div>
+                  <ProgressBar value={proj.loggedHours} max={proj.goalHours} />
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Team Page ────────────────────────────────────────────
+export default function Team() {
+  const { activeRole, triggerToast } = useOutletContext();
+  const [query, setQuery] = useState('');
+  const [viewMode, setViewMode] = useState('grid');
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [detailTab, setDetailTab] = useState('Overview');
+
+  const filtered = useMemo(() => {
+    const q = query.toLowerCase();
+    return teamMembers.filter(m =>
+      m.name.toLowerCase().includes(q) ||
+      m.role.toLowerCase().includes(q) ||
+      (m.currentProject?.toLowerCase() || '').includes(q)
+    );
+  }, [query]);
+
+  const openDetail = (member, tab = 'Overview') => {
+    setSelectedMember(member);
+    setDetailTab(tab);
+  };
+
+  const closeDetail = () => setSelectedMember(null);
+
+  // Stats
+  const activeCount  = teamMembers.filter(m => m.status === 'active').length;
+  const idleCount    = teamMembers.filter(m => m.status === 'idle').length;
+  const avgHours     = (teamMembers.reduce((s, m) => s + m.hoursWeek, 0) / teamMembers.length).toFixed(1);
+
+  return (
+    <div className="px-8 py-6 animate-fade-in h-full" style={{ background: 'var(--bg-base)' }}>
+      {/* ── Stat row ── */}
+      <div className="grid grid-cols-4 gap-5 mb-6">
+        <StatCard icon={Users}    label="Total Members" value={teamMembers.length} />
+        <StatCard icon={Activity} label="Active Now"     value={activeCount} />
+        <StatCard icon={Clock}    label="Idle"           value={idleCount} />
+        <StatCard icon={TrendingUp} label="Avg Hrs/Week" value={`${avgHours}h`} />
+      </div>
+
+      {/* ── Main split layout ── */}
+      <div
+        className="flex gap-0 overflow-hidden rounded-2xl"
+        style={{
+          border: '1px solid var(--border-default)',
+          background: 'var(--bg-surface)',
+          height: 'calc(100vh - 220px)',
+        }}
+      >
+        {/* Left — member list */}
+        <div
+          className="flex flex-col transition-all duration-300 ease-in-out bg-base"
+          style={{
+            width: selectedMember ? '45%' : '100%',
+            borderRight: selectedMember ? '1px solid var(--border-default)' : 'none',
+            minWidth: 0,
+            background: 'var(--bg-base)'
+          }}
+        >
+          {/* Toolbar */}
+          <div
+            className="flex items-center gap-4 px-5 py-4 shrink-0"
+            style={{ borderBottom: '1px solid var(--border-default)' }}
+          >
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search
+                size={16}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+                style={{ color: 'var(--text-muted)' }}
+              />
+              <Input
+                value={query}
+                onChange={e => setQuery(e.target.value)}
+                placeholder="Search members…"
+                className="w-full pl-10 pr-4 py-2"
+              />
+            </div>
+
+            {/* View toggle */}
+            <div
+              className="flex rounded-lg overflow-hidden shrink-0"
+              style={{ border: '1px solid var(--border-default)' }}
+            >
+              {[
+                { mode: 'grid', icon: Grid3X3 },
+                { mode: 'list', icon: List },
+              ].map(({ mode, icon: Icon }) => (
+                <button
+                  key={mode}
+                  onClick={() => setViewMode(mode)}
+                  className="w-10 h-10 flex items-center justify-center transition-all duration-150"
+                  style={{
+                    background: viewMode === mode ? 'var(--accent-subtle)' : 'var(--bg-sunken)',
+                    color: viewMode === mode ? 'var(--accent-text)' : 'var(--text-muted)',
+                    border: viewMode === mode ? '1px solid var(--accent-border)' : '1px solid transparent'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (viewMode !== mode) e.currentTarget.style.color = 'var(--text-primary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (viewMode !== mode) e.currentTarget.style.color = 'var(--text-muted)';
+                  }}
+                >
+                  <Icon size={16} />
+                </button>
+              ))}
+            </div>
+
+            {/* Invite button */}
+            <button
+              className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150"
+              style={{
+                background: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+                color: 'var(--accent-text)',
+              }}
+              onClick={() => triggerToast?.('Coming soon', 'Invite flow is in Phase 2.', 'info')}
+            >
+              + Invite
+            </button>
+          </div>
+
+          {/* Member list */}
+          <div className="flex-1 overflow-y-auto">
+            {viewMode === 'grid' ? (
+              <div
+                className="p-5 grid gap-5"
+                style={{
+                  gridTemplateColumns: selectedMember
+                    ? 'repeat(1, 1fr)'
+                    : 'repeat(auto-fill, minmax(280px, 1fr))',
+                }}
+              >
+                {filtered.map(member => (
+                  <MemberGridCard
+                    key={member.id}
+                    member={member}
+                    selected={selectedMember?.id === member.id}
+                    onClickName={() => openDetail(member, 'Overview')}
+                    onClickStatus={() => openDetail(member, 'Overview')}
+                    onClickProject={() => openDetail(member, 'Projects')}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="py-2">
+                {filtered.map(member => (
+                  <MemberTableRow
+                    key={member.id}
+                    member={member}
+                    selected={selectedMember?.id === member.id}
+                    onClickName={() => openDetail(member, 'Overview')}
+                    onClickStatus={() => openDetail(member, 'Overview')}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right — inline detail panel */}
+        {selectedMember && (
+          <div
+            className="flex-1 min-w-0 overflow-hidden"
+            style={{ minWidth: '55%' }}
+          >
+            <MemberDetailPanel
+              member={selectedMember}
+              initialTab={detailTab}
+              onClose={closeDetail}
+            />
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
