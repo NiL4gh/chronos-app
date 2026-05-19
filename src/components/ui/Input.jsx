@@ -9,6 +9,7 @@ export default function Input({ className = '', ...props }) {
         background: 'var(--bg-surface)',
         border: `1px solid ${focused ? 'var(--border-focus)' : 'var(--border-default)'}`,
         color: 'var(--text-primary)',
+        colorScheme: 'light',
         boxShadow: focused ? '0 0 0 2px rgba(245, 158, 11, 0.2)' : 'none',
       }}
       onFocus={(e) => {

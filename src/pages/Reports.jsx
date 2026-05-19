@@ -1,4 +1,4 @@
-﻿import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Download, Filter, TrendingUp, Clock, DollarSign, Users, 
   ChevronDown, ChevronUp, X, CheckCircle2 
@@ -43,12 +43,9 @@ export default function Reports() {
   const [selectedReportsMember, setSelectedReportsMember] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
 
-  // Options
-  const memberOptions = ['All Members', ...teamMembers.map(m => m.id)];
-  const getMemberLabel = (id) => id === 'All Members' ? 'All Members' : teamMembers.find(m => m.id === id)?.name || id;
-  
-  const projectOptions = ['All Projects', ...projects.map(p => p.id)];
-  const getProjectLabel = (id) => id === 'All Projects' ? 'All Projects' : projects.find(p => p.id === id)?.name || id;
+  // Options — sentinel value is 'all' to match filter logic
+  const memberOptions = [{ value: 'all', label: 'All Members' }, ...teamMembers.map(m => ({ value: m.id, label: m.name }))];
+  const projectOptions = [{ value: 'all', label: 'All Projects' }, ...projects.map(p => ({ value: p.id, label: p.name }))];
 
   // Filtered Logs
   const filteredLogs = useMemo(() => {
@@ -151,13 +148,13 @@ export default function Reports() {
             <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Member</label>
               <Select value={filterMember} onChange={e => setFilterMember(e.target.value)}>
-                {memberOptions.map(m => <option key={m} value={m}>{getMemberLabel(m)}</option>)}
+                {memberOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </Select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Project</label>
               <Select value={filterProject} onChange={e => setFilterProject(e.target.value)}>
-                {projectOptions.map(p => <option key={p} value={p}>{getProjectLabel(p)}</option>)}
+                {projectOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </Select>
             </div>
           </div>
