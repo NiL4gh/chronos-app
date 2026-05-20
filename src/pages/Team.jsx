@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Search, Grid3X3, List, Mail, Clock, Activity,
@@ -13,7 +13,7 @@ import TrackingSourceBadge from '../components/ui/TrackingSourceBadge.jsx';
 import { teamMembers, timeLogs, projects } from '../data/mockData.js';
 
 // ─── Helpers ──────────────────────────────────────────────
-const STATUS_BADGE = {
+const STATUS_PILL = {
   active:  { variant: 'success', label: 'Active' },
   idle:    { variant: 'warning', label: 'Idle' },
   offline: { variant: 'neutral', label: 'Offline' },
@@ -39,22 +39,23 @@ function StatCard({ icon: Icon, label, value }) {
       </div>
       <div>
         <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-        <p className="text-2xl font-semibold font-mono mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
       </div>
     </div>
   );
 }
 
 // ─── Member Grid Card ─────────────────────────────────────
-function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickProject }) {
-  const statusInfo = STATUS_BADGE[member.status] || STATUS_BADGE.offline;
+function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickProject, onClickLogs }) {
+  const statusInfo = STATUS_PILL[member.status] || STATUS_PILL.offline;
   const memberProjects = projects.filter(p => p.members.includes(member.id));
   const [hoverMsg, setHoverMsg] = useState(false);
   const [hoverLogs, setHoverLogs] = useState(false);
 
   return (
     <div
-      className="glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200"
+      className="glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer"
+      onClick={onClickName}
       style={{
         border: selected
           ? '1px solid var(--accent-border)'
@@ -62,7 +63,6 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
         boxShadow: selected
           ? 'var(--shadow-md)'
           : undefined,
-        cursor: 'default',
       }}
     >
       {/* Top — avatar + name + status */}
@@ -81,7 +81,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
           <div className="min-w-0">
             {/* Name — zone click → profile overview */}
             <button
-              onClick={onClickName}
+              onClick={(e) => { e.stopPropagation(); onClickName(); }}
               className="text-sm font-medium text-left block truncate hover:text-amber-600 transition-colors duration-100"
               style={{ color: 'var(--text-primary)' }}
             >
@@ -92,30 +92,29 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
             </p>
           </div>
         </div>
-        {/* Status badge — zone click → today tab */}
-        <button onClick={onClickStatus} className="shrink-0">
+        <button onClick={(e) => { e.stopPropagation(); onClickStatus(); }} className="shrink-0">
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
         </button>
       </div>
 
       {/* Current task */}
       <div
-        className="rounded-xl px-4 py-3"
+        className="rounded-full px-4 py-2.5 flex items-center justify-between"
         style={{
-          background: 'var(--bg-sunken)',
-          border: '1px solid var(--border-subtle)',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border-default)',
         }}
       >
-        <p className="text-xs uppercase tracking-wider font-semibold mb-1"
-          style={{ color: 'var(--text-muted)' }}>Now working on</p>
-        {/* Project — zone click → projects tab */}
-        <button
-          onClick={onClickProject}
-          className="text-xs text-left truncate w-full hover:text-amber-600 transition-colors duration-100"
-          style={{ color: member.currentTask !== 'Offline' ? 'var(--text-tertiary)' : 'var(--text-disabled)' }}
-        >
-          {member.currentTask !== 'Offline' ? member.currentTask : '—'}
-        </button>
+        <div className="flex items-center gap-2.5 overflow-hidden w-full">
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${member.status === 'active' ? 'bg-emerald-500 timer-glow-emerald' : 'bg-[var(--text-disabled)]'}`} />
+          <button
+            onClick={(e) => { e.stopPropagation(); onClickProject(); }}
+            className="text-xs font-medium text-left truncate w-full hover:text-amber-600 transition-colors duration-100"
+            style={{ color: member.currentTask !== 'Offline' ? 'var(--text-primary)' : 'var(--text-disabled)' }}
+          >
+            {member.currentTask !== 'Offline' ? member.currentTask : 'Idle / Offline'}
+          </button>
+        </div>
       </div>
 
       {/* Stats row */}
@@ -123,14 +122,14 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
         <div>
           <p className="text-xs uppercase tracking-wider font-semibold mb-1"
             style={{ color: 'var(--text-muted)' }}>Today</p>
-          <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
             {member.hoursToday}h
           </p>
         </div>
         <div>
           <p className="text-xs uppercase tracking-wider font-semibold mb-1"
             style={{ color: 'var(--text-muted)' }}>This Week</p>
-          <p className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+          <p className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
             {member.hoursWeek}h
           </p>
         </div>
@@ -141,7 +140,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
         <div className="flex items-center justify-between mb-1.5">
           <p className="text-xs uppercase tracking-wider font-semibold"
             style={{ color: 'var(--text-muted)' }}>Activity</p>
-          <span className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>
+          <span className="text-xs font-sans tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
             {member.activityLevel}%
           </span>
         </div>
@@ -151,7 +150,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
       {/* Footer actions */}
       <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid var(--border-default)' }}>
         <button
-          onClick={() => window.open(`mailto:${member.email}`)}
+          onClick={(e) => { e.stopPropagation(); window.open(`mailto:${member.email}`); }}
           onMouseEnter={() => setHoverMsg(true)}
           onMouseLeave={() => setHoverMsg(false)}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
@@ -164,7 +163,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
           <Mail size={14} /> Message
         </button>
         <button
-          onClick={onClickName}
+          onClick={(e) => { e.stopPropagation(); (onClickLogs || onClickName)(); }}
           onMouseEnter={() => setHoverLogs(true)}
           onMouseLeave={() => setHoverLogs(false)}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
@@ -183,11 +182,12 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 
 // ─── Member Table Row ─────────────────────────────────────
 function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
-  const statusInfo = STATUS_BADGE[member.status] || STATUS_BADGE.offline;
+  const statusInfo = STATUS_PILL[member.status] || STATUS_PILL.offline;
   const [hover, setHover] = useState(false);
   return (
     <div
-      className="flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0"
+      className="flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0 cursor-pointer"
+      onClick={onClickName}
       style={{
         borderBottom: '1px solid var(--border-default)',
         background: selected ? 'var(--accent-subtle)' : hover ? 'var(--bg-sunken)' : 'transparent',
@@ -204,7 +204,7 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
       </div>
       <div className="flex-1 min-w-0">
         <button
-          onClick={onClickName}
+          onClick={(e) => { e.stopPropagation(); onClickName(); }}
           className="text-sm font-bold text-left block hover:text-amber-600 transition-colors duration-100"
           style={{ color: 'var(--text-primary)' }}
         >
@@ -212,13 +212,13 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
         </button>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{member.role}</p>
       </div>
-      <button onClick={onClickStatus} className="shrink-0">
+      <button onClick={(e) => { e.stopPropagation(); onClickStatus(); }} className="shrink-0">
         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
       </button>
-      <p className="text-xs font-mono w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
+      <p className="text-xs font-sans tabular-nums font-semibold w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
         {member.hoursToday}h today
       </p>
-      <p className="text-xs font-mono w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
+      <p className="text-xs font-sans tabular-nums font-semibold w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
         {member.hoursWeek}h week
       </p>
       <div className="w-32 shrink-0 ml-4">
@@ -229,9 +229,15 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
 }
 
 // ─── Inline Member Detail Panel ───────────────────────────
-function MemberDetailPanel({ member, onClose }) {
-  const [activeTab, setActiveTab] = useState('Overview');
+function MemberDetailPanel({ member, initialTab, onClose }) {
+  const [activeTab, setActiveTab] = useState(initialTab || 'Overview');
   const tabs = ['Overview', 'Time Logs', 'Projects'];
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   const memberLogs = timeLogs.filter(l => l.userId === member.id);
   const memberProjects = projects.filter(p => p.members.includes(member.id));
@@ -249,6 +255,13 @@ function MemberDetailPanel({ member, onClose }) {
         borderLeft: '1px solid var(--border-default)',
       }}
     >
+      {/* Breadcrumb Header */}
+      <div className="px-6 py-2.5 flex items-center gap-2 border-b border-[var(--border-default)] shrink-0">
+        <button onClick={onClose} className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Team</button>
+        <span className="text-[var(--text-disabled)] text-xs">/</span>
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{member.name}</span>
+      </div>
+
       {/* Header */}
       <div
         className="flex items-start justify-between px-6 py-5 shrink-0"
@@ -314,59 +327,60 @@ function MemberDetailPanel({ member, onClose }) {
       </div>
 
       {/* Body — scrollable */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-base" style={{ background: 'var(--bg-base)' }}>
+      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-base" style={{ background: 'transparent' }}>
 
         {/* ── Overview tab ── */}
         {activeTab === 'Overview' && (
           <>
-            {/* Metric cards */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Metric cards — 3-col compact grid */}
+            <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Today', value: `${member.hoursToday}h` },
                 { label: 'This Week', value: `${member.hoursWeek}h` },
                 { label: 'Billable', value: `${billableRatio}%` },
-                { label: 'Total Entries', value: memberLogs.length },
+                { label: 'Entries', value: memberLogs.length },
+                { label: 'Rate', value: member.hourlyRate ? `$${member.hourlyRate}/h` : '$85/h' },
+                { label: 'Capacity', value: member.availableHoursPerWeek ? `${member.availableHoursPerWeek}h` : '40h' },
               ].map(({ label, value }) => (
                 <div
                   key={label}
-                  className="glass-card rounded-xl p-4"
+                  className="glass-card rounded-xl p-3"
                 >
-                  <p className="text-xs uppercase tracking-wider font-semibold"
+                  <p className="text-[10px] uppercase tracking-wider font-semibold"
                     style={{ color: 'var(--text-muted)' }}>{label}</p>
-                  <p className="text-xl font-semibold font-mono mt-2"
+                  <p className="text-base font-bold font-sans tabular-nums mt-1"
                     style={{ color: 'var(--text-primary)' }}>{value}</p>
                 </div>
               ))}
             </div>
 
             {/* Activity level */}
-            <div className="glass-card rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-muted)' }}>
+            <div className="glass-card rounded-xl p-3">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                   Activity Level
                 </p>
-                <span className="text-sm font-mono font-semibold"
+                <span className="text-sm font-sans tabular-nums font-bold"
                   style={{ color: 'var(--text-primary)' }}>
                   {member.activityLevel}%
                 </span>
               </div>
               <ActivityBar value={member.activityLevel} />
-              <p className="text-xs mt-3" style={{ color: 'var(--text-disabled)' }}>
-                Requires Desktop App for live data
-              </p>
             </div>
 
             {/* Current project */}
             {member.currentProject && (
-              <div className="glass-card rounded-xl p-5">
-                <p className="text-xs uppercase tracking-wider font-semibold mb-2"
+              <div className="glass-card rounded-xl p-3">
+                <p className="text-[10px] uppercase tracking-wider font-semibold mb-1"
                   style={{ color: 'var(--text-muted)' }}>Current Project</p>
-                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {member.currentProject}
                 </p>
-                <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-                  {member.currentTask !== 'Offline' ? member.currentTask : '—'}
-                </p>
+                {member.currentTask !== 'Offline' && (
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                    {member.currentTask}
+                  </p>
+                )}
               </div>
             )}
           </>
@@ -392,10 +406,10 @@ function MemberDetailPanel({ member, onClose }) {
                 </div>
                 <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>{log.projectName}</p>
                 <div className="flex items-center gap-4 mt-3">
-                  <span className="text-sm font-mono" style={{ color: 'var(--text-muted)' }}>
+                  <span className="text-sm font-sans tabular-nums" style={{ color: 'var(--text-muted)' }}>
                     {log.startTime}–{log.endTime}
                   </span>
-                  <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {log.duration}h
                   </span>
                   {log.billable && (
@@ -439,7 +453,7 @@ function MemberDetailPanel({ member, onClose }) {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs uppercase tracking-wider font-semibold"
                       style={{ color: 'var(--text-muted)' }}>Progress</span>
-                    <span className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+                    <span className="text-sm font-sans tabular-nums" style={{ color: 'var(--text-primary)' }}>
                       {proj.loggedHours}h / {proj.goalHours}h
                     </span>
                   </div>
@@ -484,7 +498,7 @@ export default function Team() {
   const avgHours     = (teamMembers.reduce((s, m) => s + m.hoursWeek, 0) / teamMembers.length).toFixed(1);
 
   return (
-    <div className="px-8 py-6 animate-fade-in h-full" style={{ background: 'var(--bg-base)' }}>
+    <div className="px-8 py-6 animate-fade-in h-full" style={{ background: 'transparent' }}>
       {/* ── Stat row ── */}
       <div className="grid grid-cols-4 gap-5 mb-6">
         <StatCard icon={Users}    label="Total Members" value={teamMembers.length} />
@@ -595,6 +609,7 @@ export default function Team() {
                     onClickName={() => openDetail(member, 'Overview')}
                     onClickStatus={() => openDetail(member, 'Overview')}
                     onClickProject={() => openDetail(member, 'Projects')}
+                    onClickLogs={() => openDetail(member, 'Time Logs')}
                   />
                 ))}
               </div>

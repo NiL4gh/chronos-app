@@ -1,9 +1,9 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Plus, Search, CheckCircle2, PauseCircle, Circle,
   Target, Users, DollarSign, Calendar, ChevronDown,
-  X, TrendingUp, Clock, Edit3, Check,
+  X, TrendingUp, Clock, Edit3, Check, Trash2,
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -11,6 +11,8 @@ import { ProgressBar, CircularProgress } from '../components/ui/ProgressBar.jsx'
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Input, { Select } from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
+import SlideOutDrawer from '../components/ui/SlideOutDrawer.jsx';
+import DateTimePicker from '../components/ui/DateTimePicker.jsx';
 import { FolderKanban } from 'lucide-react';
 import { projects as initialProjects, teamMembers } from '../data/mockData.js';
 
@@ -57,7 +59,7 @@ function StatCard({ icon: Icon, label, value, sub }) {
       </div>
       <div>
         <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-        <p className="text-2xl font-semibold font-mono mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
         {sub && <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: 'var(--text-disabled)' }}>{sub}</p>}
       </div>
     </div>
@@ -223,27 +225,17 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
         </div>
       </div>
 
-      {/* Goal ring + progress */}
-      <div className="flex items-center gap-5">
+      {/* Goal ring + budget progress */}
+      <div className="flex items-center gap-6">
         <div onClick={e => { e.stopPropagation(); setEditingGoal(v => !v); }}>
           <GoalRing project={project} onClickRing={() => {}} />
         </div>
-        <div className="flex-1 min-w-0 space-y-3">
+        <div className="flex-1 min-w-0">
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--text-muted)' }}>Goal Progress</span>
-              <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                {project.loggedHours}h / {goalLabel(project.goalType, project.goalHours)}
-              </span>
-            </div>
-            <ProgressBar value={project.loggedHours} max={project.goalHours} />
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--text-muted)' }}>Budget</span>
-              <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-secondary)' }}>
+                style={{ color: 'var(--text-muted)' }}>Budget Spent</span>
+              <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
                 ${project.spent.toLocaleString()} / ${project.budget.toLocaleString()}
               </span>
             </div>
@@ -359,6 +351,13 @@ function ProjectDetailPanel({ project, onClose }) {
         borderLeft: '1px solid var(--border-default)',
       }}
     >
+      {/* Breadcrumb Header */}
+      <div className="px-6 py-2.5 flex items-center gap-2 border-b border-[var(--border-default)] shrink-0">
+        <button onClick={onClose} className="text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">Projects</button>
+        <span className="text-[var(--text-disabled)] text-xs">/</span>
+        <span className="text-xs font-medium text-[var(--text-secondary)]">{project.name}</span>
+      </div>
+
       {/* Header */}
       <div
         className="px-6 py-5 shrink-0"
@@ -429,7 +428,7 @@ function ProjectDetailPanel({ project, onClose }) {
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-base" style={{ background: 'var(--bg-base)' }}>
+      <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5 bg-base" style={{ background: 'transparent' }}>
 
         {/* ── Overview tab ── */}
         {activeTab === 'Overview' && (
@@ -448,7 +447,7 @@ function ProjectDetailPanel({ project, onClose }) {
                 >
                   <p className="text-xs uppercase tracking-wider font-semibold"
                     style={{ color: 'var(--text-muted)' }}>{label}</p>
-                  <p className="text-lg font-semibold font-mono mt-2"
+                  <p className="text-lg font-semibold font-sans tabular-nums mt-2"
                     style={{ color: 'var(--text-primary)' }}>{value}</p>
                 </div>
               ))}
@@ -460,7 +459,7 @@ function ProjectDetailPanel({ project, onClose }) {
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   Goal Progress
                 </p>
-                <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {project.loggedHours}h / {project.goalHours}h
                 </span>
               </div>
@@ -538,7 +537,7 @@ function ProjectDetailPanel({ project, onClose }) {
                 >
                   <p className="text-xs uppercase tracking-wider font-semibold"
                     style={{ color: 'var(--text-muted)' }}>{label}</p>
-                  <p className="text-lg font-semibold font-mono mt-2"
+                  <p className="text-lg font-semibold font-sans tabular-nums mt-2"
                     style={{ color: 'var(--text-primary)' }}>{value}</p>
                 </div>
               ))}
@@ -548,7 +547,7 @@ function ProjectDetailPanel({ project, onClose }) {
                 <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
                   Budget Utilisation
                 </p>
-                <span className="text-sm font-mono font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {budgetPct}%
                 </span>
               </div>
@@ -571,10 +570,41 @@ export default function Projects() {
   const { activeRole, triggerToast } = useOutletContext();
   const isAdmin = activeRole === 'admin';
 
-  const [projectData, setProjectData]       = useState(initialProjects);
-  const [statusFilter, setStatusFilter]     = useState('All');
-  const [query, setQuery]                   = useState('');
+  const [projectData, setProjectData]         = useState(initialProjects);
+  const [statusFilter, setStatusFilter]       = useState('All');
+  const [query, setQuery]                     = useState('');
   const [selectedProject, setSelectedProject] = useState(null);
+  const [createOpen, setCreateOpen]           = useState(false);
+  const [newProject, setNewProject]           = useState({
+    name: '', client: '', description: '', dueDate: '', budget: '', status: 'active',
+  });
+
+  const handleCreateProject = () => {
+    if (!newProject.name.trim()) {
+      triggerToast?.('Validation error', 'Project name is required.', 'warning');
+      return;
+    }
+    const proj = {
+      id: `p-${Date.now()}`,
+      name: newProject.name.trim(),
+      client: newProject.client.trim() || 'Internal',
+      description: newProject.description,
+      status: newProject.status,
+      dueDate: newProject.dueDate || null,
+      budget: Number(newProject.budget) || 0,
+      spent: 0,
+      loggedHours: 0,
+      goalHours: 40,
+      goalType: 'project',
+      members: [],
+      tags: [],
+      color: `hsl(${Math.floor(Math.random() * 360)}, 60%, 55%)`,
+    };
+    setProjectData(prev => [proj, ...prev]);
+    setCreateOpen(false);
+    setNewProject({ name: '', client: '', description: '', dueDate: '', budget: '', status: 'active' });
+    triggerToast?.('Project created', `"${proj.name}" has been added.`, 'success');
+  };
 
   const handleGoalSave = (projectId, { goalHours, goalType }) => {
     setProjectData(prev =>
@@ -598,7 +628,7 @@ export default function Projects() {
   const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
 
   return (
-    <div className="px-8 py-6 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'var(--bg-base)' }}>
+    <div className="px-8 py-6 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-4 gap-5">
@@ -685,7 +715,7 @@ export default function Projects() {
               <Button
                 variant="primary"
                 className="shrink-0 flex items-center gap-2 !px-4 !py-2"
-                onClick={() => triggerToast?.('Coming soon', 'Project creation is in Phase 2.', 'info')}
+                onClick={() => setCreateOpen(true)}
               >
                 <Plus size={16} /> New Project
               </Button>
@@ -734,6 +764,71 @@ export default function Projects() {
           </div>
         )}
       </div>
+
+      {/* Create Project Drawer */}
+      <SlideOutDrawer
+        isOpen={createOpen}
+        onClose={() => setCreateOpen(false)}
+        title="New Project"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setCreateOpen(false)}>Cancel</Button>
+            <Button variant="primary" onClick={handleCreateProject}>Create Project</Button>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Project Name *</label>
+            <Input
+              placeholder="e.g. Brand Refresh, API Integration…"
+              value={newProject.name}
+              onChange={e => setNewProject(p => ({ ...p, name: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Client</label>
+            <Input
+              placeholder="Client or company name"
+              value={newProject.client}
+              onChange={e => setNewProject(p => ({ ...p, client: e.target.value }))}
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Description</label>
+            <Input
+              placeholder="What is this project about?"
+              value={newProject.description}
+              onChange={e => setNewProject(p => ({ ...p, description: e.target.value }))}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Status</label>
+              <Select value={newProject.status} onChange={e => setNewProject(p => ({ ...p, status: e.target.value }))}>
+                <option value="active">Active</option>
+                <option value="paused">Paused</option>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Due Date</label>
+              <DateTimePicker
+                value={newProject.dueDate}
+                onChange={val => setNewProject(p => ({ ...p, dueDate: val }))}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Budget ($)</label>
+            <Input
+              type="number"
+              placeholder="e.g. 10000"
+              value={newProject.budget}
+              onChange={e => setNewProject(p => ({ ...p, budget: e.target.value }))}
+            />
+          </div>
+        </div>
+      </SlideOutDrawer>
     </div>
   );
 }

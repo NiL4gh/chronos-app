@@ -188,6 +188,7 @@ export default function DateTimePicker({
   showTime = false,
   placeholder = 'Select date',
   label,
+  mode = 'date', // 'date' | 'datetime' | 'time'
 }) {
   const [activePanel, setActivePanel] = useState(null); // null | 'date' | 'time'
   const [slideDir, setSlideDir] = useState(null);
@@ -211,10 +212,30 @@ export default function DateTimePicker({
     return isNaN(m) ? 0 : m;
   });
 
-  // Sync time outward
+  // Sync time outward — only when user actively changes hours/minutes
+  const isMounted = useRef(false);
   useEffect(() => {
+    if (!isMounted.current) { isMounted.current = true; return; }
     onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
   }, [hours, minutes]);
+
+  // Sync calendar view when value prop changes
+  useEffect(() => {
+    const p = parseDate(value);
+    if (p) {
+      setViewYear(p.year);
+      setViewMonth(p.month);
+    }
+  }, [value]);
+
+  // When time panel closes in mode=time, commit current wheel value to parent
+  const prevActivePanel = useRef(null);
+  useEffect(() => {
+    if (mode === 'time' && prevActivePanel.current === 'time' && activePanel === null) {
+      onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
+    }
+    prevActivePanel.current = activePanel;
+  }, [activePanel]);
 
   // Close on outside click
   useEffect(() => {
@@ -255,7 +276,7 @@ export default function DateTimePicker({
     ? `${MONTHS[parsed.month].slice(0, 3)} ${parsed.day}, ${parsed.year}`
     : placeholder;
 
-  const timeDisplay = showTime ? `${pad(hours)}:${pad(minutes)}` : '';
+  const timeDisplay = (showTime || mode === 'time') ? `${pad(hours)}:${pad(minutes)}` : '';
 
   return (
     <div ref={containerRef} className="relative inline-flex flex-col gap-1.5 w-full">
@@ -267,25 +288,27 @@ export default function DateTimePicker({
 
       {/* Trigger Pills */}
       <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setActivePanel(activePanel === 'date' ? null : 'date')}
-          className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)]"
-          style={{
-            background: 'var(--bg-surface)',
-            border: activePanel === 'date' ? '1px solid var(--border-focus)' : '1px solid var(--border-default)',
-            color: 'var(--text-primary)',
-          }}
-        >
-          <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
-          <span>{displayValue}</span>
-        </button>
+        {mode !== 'time' && (
+          <button
+            type="button"
+            onClick={() => setActivePanel(activePanel === 'date' ? null : 'date')}
+            className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)] w-full justify-center"
+            style={{
+              background: 'var(--bg-surface)',
+              border: activePanel === 'date' ? '1px solid var(--border-focus)' : '1px solid var(--border-default)',
+              color: 'var(--text-primary)',
+            }}
+          >
+            <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
+            <span>{displayValue}</span>
+          </button>
+        )}
 
-        {showTime && (
+        {(showTime || mode === 'time') && (
           <button
             type="button"
             onClick={() => setActivePanel(activePanel === 'time' ? null : 'time')}
-            className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)]"
+            className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)] w-full justify-center"
             style={{
               background: 'var(--bg-surface)',
               border: activePanel === 'time' ? '1px solid var(--border-focus)' : '1px solid var(--border-default)',
@@ -298,86 +321,140 @@ export default function DateTimePicker({
         )}
       </div>
 
-      {/* Dropdown panels */}
-      <div className="relative">
-        {/* Calendar Panel */}
-        {activePanel === 'date' && (
-          <div
-            className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4"
-            style={{ width: '280px' }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <button
-                onClick={goToPrevMonth}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                {MONTHS[viewMonth]} {viewYear}
-              </span>
-              <button
-                onClick={goToNextMonth}
-                className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
-                style={{ color: 'var(--text-muted)' }}
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-
-            <CalendarGrid
-              year={viewYear}
-              month={viewMonth}
-              selectedDate={parsed}
-              onSelect={handleDaySelect}
-              slideDir={slideDir}
+      {/* Inline time panel for mode=time (avoids overflow clipping in drawers) */}
+      {mode === 'time' && activePanel === 'time' && (
+        <div
+          className="animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 mt-1"
+        >
+          <div className="flex items-center justify-center gap-3">
+            <TimeWheel
+              value={hours}
+              min={0}
+              max={23}
+              onChange={setHours}
+              label="Hour"
             />
+            <span className="text-xl font-mono font-bold mt-4"
+              style={{ color: 'var(--text-muted)' }}>:</span>
+            <TimeWheel
+              value={minutes}
+              min={0}
+              max={59}
+              onChange={setMinutes}
+              label="Min"
+            />
+          </div>
+          <button
+            onClick={() => {
+              onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
+              setActivePanel(null);
+            }}
+            className="w-full text-xs font-semibold py-1.5 rounded-lg transition-all duration-150"
+            style={{
+              background: 'var(--accent)',
+              color: '#fff',
+            }}
+          >
+            Set Time
+          </button>
+        </div>
+      )}
 
-            <div className="mt-3 flex justify-end">
+      {/* Dropdown panels (absolute, for date/datetime modes) */}
+      {mode !== 'time' && (
+        <div className="relative">
+          {/* Calendar Panel */}
+          {activePanel === 'date' && (
+            <div
+              className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4"
+              style={{ width: '280px' }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={goToPrevMonth}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <ChevronLeft size={14} />
+                </button>
+                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {MONTHS[viewMonth]} {viewYear}
+                </span>
+                <button
+                  onClick={goToNextMonth}
+                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
+                  style={{ color: 'var(--text-muted)' }}
+                >
+                  <ChevronRight size={14} />
+                </button>
+              </div>
+
+              <CalendarGrid
+                year={viewYear}
+                month={viewMonth}
+                selectedDate={parsed}
+                onSelect={handleDaySelect}
+                slideDir={slideDir}
+              />
+
+              <div className="mt-3 flex justify-end">
+                <button
+                  onClick={() => {
+                    const t = new Date();
+                    handleDaySelect(t.getFullYear(), t.getMonth(), t.getDate());
+                    setViewYear(t.getFullYear());
+                    setViewMonth(t.getMonth());
+                  }}
+                  className="text-xs px-3 py-1.5 rounded-lg transition-all duration-150 hover:bg-[var(--bg-sunken)] font-medium"
+                  style={{ color: 'var(--accent)' }}
+                >
+                  Today
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Time Panel */}
+          {activePanel === 'time' && (
+            <div
+              className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3"
+              style={{ width: '220px' }}
+            >
+              <div className="flex items-center justify-center gap-3">
+                <TimeWheel
+                  value={hours}
+                  min={0}
+                  max={23}
+                  onChange={setHours}
+                  label="Hour"
+                />
+                <span className="text-xl font-mono font-bold mt-4"
+                  style={{ color: 'var(--text-muted)' }}>:</span>
+                <TimeWheel
+                  value={minutes}
+                  min={0}
+                  max={59}
+                  onChange={setMinutes}
+                  label="Min"
+                />
+              </div>
               <button
                 onClick={() => {
-                  const t = new Date();
-                  handleDaySelect(t.getFullYear(), t.getMonth(), t.getDate());
-                  setViewYear(t.getFullYear());
-                  setViewMonth(t.getMonth());
+                  onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
+                  setActivePanel(null);
                 }}
-                className="text-xs px-3 py-1.5 rounded-lg transition-all duration-150 hover:bg-[var(--bg-sunken)] font-medium"
-                style={{ color: 'var(--accent)' }}
+                className="w-full text-xs font-semibold py-1.5 rounded-lg transition-all duration-150"
+                style={{
+                  background: 'var(--accent)',
+                  color: '#fff',
+                }}
               >
-                Today
+                Set Time
               </button>
             </div>
-          </div>
-        )}
-
-        {/* Time Panel */}
-        {activePanel === 'time' && (
-          <div
-            className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center"
-            style={{ width: '220px' }}
-          >
-            <div className="flex items-center justify-center gap-3">
-              <TimeWheel
-                value={hours}
-                min={0}
-                max={23}
-                onChange={setHours}
-                label="Hour"
-              />
-              <span className="text-xl font-mono font-bold mt-4"
-                style={{ color: 'var(--text-muted)' }}>:</span>
-              <TimeWheel
-                value={minutes}
-                min={0}
-                max={59}
-                onChange={setMinutes}
-                label="Min"
-              />
-            </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

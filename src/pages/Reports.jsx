@@ -9,20 +9,13 @@ import Badge from '../components/ui/Badge';
 import Input, { Select } from '../components/ui/Input';
 import DateTimePicker from '../components/ui/DateTimePicker';
 import { useOutletContext } from 'react-router-dom';
+import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
+import EmptyState from '../components/ui/EmptyState';
 
 import { teamMembers, projects, timeLogs, billingRates } from '../data/mockData';
 
-// Helper to track active badges
-function TrackingSourceBadge({ source }) {
-  return source === 'auto' ? (
-    <Badge variant="violet">Auto</Badge>
-  ) : (
-    <Badge variant="neutral">Manual</Badge>
-  );
-}
-
 export default function Reports() {
-  const { triggerToast, role } = useOutletContext();
+  const { triggerToast, role, logs } = useOutletContext();
   
   // Default dates
   const defaultEnd = new Date().toISOString().split('T')[0];
@@ -50,13 +43,13 @@ export default function Reports() {
 
   // Filtered Logs
   const filteredLogs = useMemo(() => {
-    return timeLogs.filter(log => {
+    return logs.filter(log => {
       if (log.date < filterStart || log.date > filterEnd) return false;
       if (filterMember !== 'all' && log.userId !== filterMember) return false;
       if (filterProject !== 'all' && log.projectId !== filterProject) return false;
       return true;
     });
-  }, [timeLogs, filterStart, filterEnd, filterMember, filterProject]);
+  }, [logs, filterStart, filterEnd, filterMember, filterProject]);
 
   // Metrics
   const totalHours = filteredLogs.reduce((acc, log) => acc + log.duration, 0);
@@ -124,13 +117,40 @@ export default function Reports() {
     setExpandedMembersTable(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
+  const handleExportCSV = () => {
+    const headers = ['Date', 'Member', 'Project', 'Task', 'Start', 'End',
+      'Duration (h)', 'Source', 'Billable'];
+    const rows = filteredLogs.map(log => [
+      log.date,
+      log.userName,
+      log.projectName,
+      `"${log.task.replace(/"/g, '""')}"`,
+      log.startTime,
+      log.endTime,
+      log.duration.toFixed(2),
+      log.source,
+      log.billable ? 'Yes' : 'No'
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `chronos-report-${new Date().toISOString().slice(0,10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    triggerToast('Report exported as CSV.', 'success');
+  };
+
   const selectedMemberData = selectedReportsMember ? teamMembers.find(m => m.id === selectedReportsMember) : null;
   const selectedMemberLogs = selectedMemberData ? filteredLogs.filter(l => l.userId === selectedMemberData.id) : [];
 
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'var(--bg-base)' }}>
+      <div className="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
         
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
@@ -175,7 +195,7 @@ export default function Reports() {
               onClick={() => setExpandedMetric(expandedMetric === metric.id ? null : metric.id)}
             >
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-violet-500/10 text-violet-500">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-500">
                   <metric.icon size={16} />
                 </div>
               </div>
@@ -249,7 +269,7 @@ export default function Reports() {
                     const proj = projects.find(p => p.id === log.projectId);
                     const mem = teamMembers.find(m => m.id === log.userId);
                     return (
-                      <div key={log.id} className="flex justify-between items-center text-sm p-2 bg-white rounded-md border border-[var(--border-default)]">
+                      <div key={log.id} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-surface)] rounded-md border border-[var(--border-default)]">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 rounded-full bg-[var(--border-default)] flex items-center justify-center text-[10px] font-bold shrink-0">
                             {mem?.name.split(' ').map(n=>n[0]).join('')}
@@ -342,11 +362,25 @@ export default function Reports() {
         <div className="glass-card p-0 overflow-hidden flex flex-col">
           <div className="px-6 py-4 flex justify-between items-center border-b border-[var(--border-default)]">
             <h3 className="font-bold text-[var(--text-primary)]">Detailed Breakdown</h3>
-            <SplitButton onExport={(format) => triggerToast('Export started', `Your ${format.toUpperCase()} file will download shortly.`, 'success')} />
+            <SplitButton onExport={(format) => {
+              if (format === 'CSV' || format === 'Export to CSV') {
+                handleExportCSV();
+              } else {
+                triggerToast('Export started', `Your ${format.toUpperCase()} file will download shortly.`, 'success');
+              }
+            }} />
           </div>
           
           <div className="divide-y divide-[var(--border-default)]">
-            {groupedByMember.map(group => {
+            {groupedByMember.length === 0 ? (
+              <div className="py-12">
+                <EmptyState
+                  icon={Filter}
+                  title="No data matches your filters"
+                  description="Try adjusting the date range, member, or project filters above to see results."
+                />
+              </div>
+            ) : groupedByMember.map(group => {
               const mem = group.member;
               const isExpanded = expandedMembersTable[mem?.id];
               const utilPct = mem ? (group.totalHours / Math.max(1, (mem.hoursWeek || 40))) * 100 : 0;

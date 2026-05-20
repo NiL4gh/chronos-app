@@ -7,10 +7,12 @@ import Reports from './pages/Reports';
 import Invoices from './pages/Invoices';
 import MyTime from './pages/MyTime';
 import Settings from './pages/Settings';
+import DesktopHelper from './pages/DesktopHelper';
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/desktop-helper" element={<DesktopHelper />} />
       <Route path="/" element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />

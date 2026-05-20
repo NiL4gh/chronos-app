@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
@@ -9,8 +9,8 @@ import Input, { Select } from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import Toggle from '../ui/Toggle.jsx';
-import { projects } from '../../data/mockData.js';
-import { AlertTriangle } from 'lucide-react';
+import { projects, timeLogs, invoices } from '../../data/mockData.js';
+import { AlertTriangle, Clock } from 'lucide-react';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -27,8 +27,45 @@ export default function AppShell() {
   // Manual time drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerEntry, setDrawerEntry] = useState({
-    task: '', projectId: '', date: '', startTime: '', endTime: '', billable: false,
+    task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
   });
+
+  // Shared logs state
+  const [logs, setLogs] = useState(timeLogs);
+
+  // Shared invoices state
+  const [invoiceList, setInvoiceList] = useState(invoices);
+
+  // Help drawer state
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  // Theme state
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+
+  // Keybindings state
+  const [keyBindings, setKeyBindings] = useState({
+    toggleTimer: 't',
+    newEntry: 'n',
+    openPalette: 'p',
+    goTeam: 't',
+    goProjects: 'p',
+    goReports: 'r',
+    goInvoices: 'i',
+    goMyTime: 'm',
+    goSettings: 's',
+  });
+
+  const lastKeyRef = useRef('');
+
+  // Sync theme
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
   // Toast
   const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });
@@ -62,7 +99,42 @@ export default function AppShell() {
 
   const stopTimer = useCallback(() => {
     setTimerRunning(false);
-  }, []);
+    if (timerSeconds > 0) {
+      const proj = projects.find(p => p.id === timerProjectId) || projects[0];
+      const startMs = Date.now() - timerSeconds * 1000;
+      const startStr = new Date(startMs).toTimeString().slice(0, 5);
+      const endStr = new Date().toTimeString().slice(0, 5);
+      const durationHours = Number((timerSeconds / 3600).toFixed(2)) || 0.01;
+
+      const newLog = {
+        id: `log-${Date.now()}`,
+        userId: 'u1',
+        projectName: proj.name,
+        projectId: proj.id,
+        task: timerTaskLabel || 'Auto Tracked Task',
+        date: new Date().toISOString().slice(0, 10),
+        startTime: startStr,
+        endTime: endStr,
+        duration: durationHours,
+        source: 'auto',
+        billable: true
+      };
+
+      setLogs(prev => [newLog, ...prev]);
+      triggerToast('Timer saved', `Logged ${durationHours}h to ${proj.name}.`, 'success');
+    }
+    setTimerSeconds(0);
+  }, [timerSeconds, timerTaskLabel, timerProjectId, triggerToast]);
+
+  // Guarded stop timer — asks confirmation if > 5 min
+  const guardedStopTimer = useCallback(() => {
+    if (timerSeconds > 300) {
+      if (!window.confirm(`You have ${Math.floor(timerSeconds / 60)} minutes tracked. Stop and save this entry?`)) {
+        return;
+      }
+    }
+    stopTimer();
+  }, [timerSeconds, stopTimer]);
 
   const resetTimer = useCallback(() => {
     setTimerRunning(false);
@@ -87,56 +159,106 @@ export default function AppShell() {
 
       if (inField) return;
 
-      switch (e.key) {
-        case 't':
-        case 'T':
-          // Toggle timer
-          if (timerRunning) stopTimer();
-          else startTimer();
-          break;
-        case 'n':
-        case 'N':
-          // Open new time entry drawer
-          setDrawerOpen(true);
-          break;
-        case 'p':
-        case 'P':
-          // Open command palette focused on projects
-          setCommandPaletteOpen(true);
-          break;
-        case ' ':
-          // Space — toggle timer
-          e.preventDefault();
-          if (timerRunning) stopTimer();
-          else startTimer();
-          break;
-        case 'Escape':
-          setDrawerOpen(false);
-          setCommandPaletteOpen(false);
-          break;
-        default:
-          break;
+      const key = e.key.toLowerCase();
+      const prevKey = lastKeyRef.current.toLowerCase();
+
+      // Sequential go shortcuts
+      if (prevKey === 'g') {
+        if (key === keyBindings.goTeam.toLowerCase() && activeRole === 'admin') {
+          navigate('/team');
+          lastKeyRef.current = '';
+          return;
+        }
+        if (key === keyBindings.goProjects.toLowerCase()) {
+          navigate('/projects');
+          lastKeyRef.current = '';
+          return;
+        }
+        if (key === keyBindings.goReports.toLowerCase() && activeRole === 'admin') {
+          navigate('/reports');
+          lastKeyRef.current = '';
+          return;
+        }
+        if (key === keyBindings.goInvoices.toLowerCase() && activeRole === 'admin') {
+          navigate('/invoices');
+          lastKeyRef.current = '';
+          return;
+        }
+        if (key === keyBindings.goMyTime.toLowerCase()) {
+          navigate('/my-time');
+          lastKeyRef.current = '';
+          return;
+        }
+        if (key === keyBindings.goSettings.toLowerCase()) {
+          navigate('/settings');
+          lastKeyRef.current = '';
+          return;
+        }
       }
+
+      // Single-key shortcuts
+      if (key === keyBindings.toggleTimer.toLowerCase() || e.key === ' ') {
+        if (e.key === ' ') e.preventDefault();
+        if (timerRunning) guardedStopTimer();
+        else startTimer();
+      } else if (key === keyBindings.newEntry.toLowerCase()) {
+        setDrawerOpen(true);
+      } else if (key === keyBindings.openPalette.toLowerCase()) {
+        setCommandPaletteOpen(true);
+      } else if (e.key === 'Escape') {
+        setDrawerOpen(false);
+        setCommandPaletteOpen(false);
+        setHelpOpen(false);
+      }
+
+      lastKeyRef.current = e.key;
     };
 
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
+  }, [timerRunning, startTimer, guardedStopTimer, activeRole, keyBindings, navigate]);
+
+  // Electron global hotkey listener
+  useEffect(() => {
+    if (window.require) {
+      try {
+        const { ipcRenderer } = window.require('electron');
+        const handleShortcut = (e, arg) => {
+          if (arg === 'toggle-timer') {
+            if (timerRunning) stopTimer();
+            else startTimer();
+          }
+        };
+        ipcRenderer.on('global-shortcut', handleShortcut);
+        return () => {
+          ipcRenderer.removeListener('global-shortcut', handleShortcut);
+        };
+      } catch (err) {
+        console.error(err);
+      }
+    }
   }, [timerRunning, startTimer, stopTimer]);
 
   // ─── Outlet context ──────────────────────────────────
   const outletContext = {
     timerRunning, timerSeconds, timerTaskLabel, timerProjectId,
-    startTimer, stopTimer, resetTimer,
+    startTimer, stopTimer: guardedStopTimer, resetTimer,
     triggerToast,
     activeRole,
+    theme, setTheme,
+    keyBindings, setKeyBindings,
+    logs, setLogs,
+    invoiceList, setInvoiceList,
+    setDrawerOpen,
+    onOpenHelp: () => setHelpOpen(true),
   };
 
   const isEmployee = activeRole === 'employee';
 
   return (
     <div
-      className="flex h-screen overflow-hidden"
-      style={{ background: 'var(--bg-base)', minHeight: '100vh' }}
+      className="flex h-screen overflow-hidden relative"
+      style={{ minHeight: '100vh' }}
     >
       {/* Sidebar */}
       <Sidebar
@@ -144,6 +266,10 @@ export default function AppShell() {
         onToggleCollapse={() => setSidebarCollapsed(v => !v)}
         activeRole={activeRole}
         onRoleSwitch={() => setActiveRole(r => r === 'admin' ? 'employee' : 'admin')}
+        triggerToast={triggerToast}
+        onOpenHelp={() => setHelpOpen(true)}
+        theme={theme}
+        setTheme={setTheme}
       />
 
       {/* Main area */}
@@ -165,15 +291,17 @@ export default function AppShell() {
         )}
 
         {/* Topbar */}
-        <Topbar
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          onOpenDrawer={() => setDrawerOpen(true)}
-          timerRunning={timerRunning}
-          timerSeconds={timerSeconds}
-          timerTaskLabel={timerTaskLabel}
-          onStopTimer={stopTimer}
-          onStartTimer={() => startTimer()}
-        />
+        <div className="relative z-50">
+          <Topbar
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+            onOpenDrawer={() => setDrawerOpen(true)}
+            timerRunning={timerRunning}
+            timerSeconds={timerSeconds}
+            timerTaskLabel={timerTaskLabel}
+            onStopTimer={guardedStopTimer}
+            onStartTimer={() => startTimer()}
+          />
+        </div>
 
         {/* Page content */}
         <main className="flex-1 overflow-y-auto px-6 py-5">
@@ -184,7 +312,17 @@ export default function AppShell() {
       {/* Manual Time Entry Drawer */}
       <SlideOutDrawer
         isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        onClose={() => {
+          const { task, projectId, startTime, endTime } = drawerEntry;
+          const hasData = task || projectId || startTime || endTime;
+          if (hasData) {
+            if (!window.confirm('You have unsaved changes. Discard this entry?')) return;
+          }
+          setDrawerOpen(false);
+          setDrawerEntry({
+            task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
+          });
+        }}
         title="Log Time Entry"
         footer={
           <>
@@ -195,7 +333,41 @@ export default function AppShell() {
               variant="primary"
               size="sm"
               onClick={() => {
+                const { task, projectId, date, startTime, endTime, billable } = drawerEntry;
+                if (!task || !projectId || !startTime || !endTime) {
+                  triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
+                  return;
+                }
+                const proj = projects.find(p => p.id === projectId) || projects[0];
+
+                // Calculate duration in hours
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+                const startMin = startH * 60 + startM;
+                const endMin = endH * 60 + endM;
+                let diffMin = endMin - startMin;
+                if (diffMin < 0) diffMin += 1440; // overnight handling
+                const duration = Number((diffMin / 60).toFixed(2));
+
+                const newLog = {
+                  id: `log-${Date.now()}`,
+                  userId: 'u1',
+                  projectName: proj.name,
+                  projectId: proj.id,
+                  task,
+                  date,
+                  startTime,
+                  endTime,
+                  duration,
+                  source: 'manual',
+                  billable
+                };
+
+                setLogs(prev => [newLog, ...prev]);
                 setDrawerOpen(false);
+                setDrawerEntry({
+                  task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
+                });
                 triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
               }}
             >
@@ -204,19 +376,22 @@ export default function AppShell() {
           </>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-5">
+          {/* FIELD GROUP 1 — Task Description */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
-              Task Description
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+              What did you work on?
             </label>
             <Input
-              placeholder="What did you work on?"
+              placeholder="e.g. Client call, Design review…"
               value={drawerEntry.task}
               onChange={e => setDrawerEntry(prev => ({ ...prev, task: e.target.value }))}
             />
           </div>
+
+          {/* FIELD GROUP 2 — Project */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
               Project
             </label>
             <Select
@@ -224,42 +399,106 @@ export default function AppShell() {
               value={drawerEntry.projectId}
               onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
             >
-              <option value="">Select project…</option>
+              <option value="">— Select a project —</option>
               {projects.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
           </div>
-          <DateTimePicker
-            label="Date"
-            value={drawerEntry.date}
-            onChange={date => setDrawerEntry(prev => ({ ...prev, date }))}
-            placeholder="Select date"
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <DateTimePicker
-              label="Start Time"
-              value=""
-              timeValue={drawerEntry.startTime}
-              onChange={() => {}}
-              onTimeChange={t => setDrawerEntry(prev => ({ ...prev, startTime: t }))}
-              showTime={true}
-              placeholder="Start"
-            />
-            <DateTimePicker
-              label="End Time"
-              value=""
-              timeValue={drawerEntry.endTime}
-              onChange={() => {}}
-              onTimeChange={t => setDrawerEntry(prev => ({ ...prev, endTime: t }))}
-              showTime={true}
-              placeholder="End"
-            />
+
+          {/* FIELD GROUP 3 — WHEN DID YOU WORK? */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+              When did you work?
+            </label>
+            
+            <div className="space-y-3">
+              {/* Date row */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">
+                  Date
+                </label>
+                <div className="flex-1">
+                  <DateTimePicker
+                    value={drawerEntry.date}
+                    onChange={val => setDrawerEntry(prev => ({ ...prev, date: val }))}
+                  />
+                </div>
+              </div>
+
+              {/* Time range row */}
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">
+                  From
+                </label>
+                <div className="relative inline-flex items-center flex-1">
+                  <DateTimePicker
+                    mode="time"
+                    timeValue={drawerEntry.startTime}
+                    onTimeChange={val => setDrawerEntry(prev => ({ ...prev, startTime: val }))}
+                  />
+                </div>
+                <span className="text-sm text-[var(--text-muted)] px-1">–</span>
+                <label className="text-xs text-[var(--text-secondary)] shrink-0 mr-2">
+                  to
+                </label>
+                <div className="relative inline-flex items-center flex-1">
+                  <DateTimePicker
+                    mode="time"
+                    timeValue={drawerEntry.endTime}
+                    onTimeChange={val => setDrawerEntry(prev => ({ ...prev, endTime: val }))}
+                  />
+                </div>
+              </div>
+
+              {/* Duration Preview and Validation */}
+              {(() => {
+                const { startTime, endTime } = drawerEntry;
+                if (!startTime || !endTime) return null;
+                
+                const [startH, startM] = startTime.split(':').map(Number);
+                const [endH, endM] = endTime.split(':').map(Number);
+                const startMin = startH * 60 + startM;
+                const endMin = endH * 60 + endM;
+
+                if (endMin > startMin) {
+                  const diff = endMin - startMin;
+                  const hours = Math.floor(diff / 60);
+                  const mins = diff % 60;
+                  const durationString = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+                  return (
+                    <div style={{ paddingLeft: '4.5rem' }}>
+                      <div 
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                        style={{
+                          background: 'var(--accent-subtle)',
+                          border: '1px solid var(--accent-border)',
+                          color: 'var(--accent-text)',
+                        }}
+                      >
+                        <Clock size={11} className="shrink-0" />
+                        <span>{durationString}</span>
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div style={{ paddingLeft: '4.5rem' }}>
+                      <p className="text-xs text-red-500 mt-1">
+                        End time must be after start time
+                      </p>
+                    </div>
+                  );
+                }
+              })()}
+            </div>
           </div>
+
+          {/* FIELD GROUP 4 — Billable toggle */}
           <div className="flex items-center justify-between pt-1">
             <div>
               <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Billable</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Count toward client invoice</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Include this entry in billing calculations</p>
             </div>
             <Toggle
               checked={drawerEntry.billable}
@@ -277,6 +516,77 @@ export default function AppShell() {
           onNavigate={(path) => { navigate(path); setCommandPaletteOpen(false); }}
         />
       )}
+
+      {/* Help & Documentation Drawer */}
+      <SlideOutDrawer
+        isOpen={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        title="Help & Documentation"
+        footer={
+          <Button variant="primary" onClick={() => setHelpOpen(false)}>
+            Got it
+          </Button>
+        }
+      >
+        <div className="space-y-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <div>
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">⏱️ Live Timer & Logs</h3>
+            <p className="mb-2">
+              Start tracking time instantly by clicking the **Start Timer** amber CTA in the Topbar or pressing the <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">T</kbd> key (or your custom shortcut).
+            </p>
+            <p>
+              When running, a live ticking indicator is displayed in the Topbar. Clicking stop automatically creates a verified, auditable <strong>Auto-tracked log</strong>.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🛡️ Trust & Source Verification</h3>
+            <p className="mb-2">
+              Chronos distinguishes between verified tracking and manual entry:
+            </p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li>
+                <span className="font-semibold text-emerald-600">Auto (CPU icon):</span> Logged automatically by the live timer or desktop app. Fully auditable and trusted.
+              </li>
+              <li>
+                <span className="font-semibold text-amber-600">Manual (Pen icon):</span> Entered retroactively via the drawer or timesheet strip.
+              </li>
+            </ul>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🎯 Project Goal Engine</h3>
+            <p className="mb-2">
+              Each project card features an embedded Goal tracking circle. The colors update dynamically based on progress:
+            </p>
+            <ul className="list-disc pl-4 space-y-1">
+              <li><strong className="text-emerald-500">Emerald:</strong> Above 85% of budget/goal.</li>
+              <li><strong className="text-amber-500">Amber:</strong> Under 85% of budget/goal.</li>
+              <li><strong className="text-red-500">Red:</strong> Over budget/goal.</li>
+            </ul>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">✍️ Invoicing & Digital Signatures</h3>
+            <p className="mb-2">
+              Create professional client bills directly from tracked timesheets.
+            </p>
+            <p>
+              Enable the <strong>Digital Signature</strong> toggle to reveal a signature drawing pad where clients can sign invoices electronically before payment.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🖥️ Desktop App Integration</h3>
+            <p className="mb-2">
+              Chronos is available as a lightweight desktop application (Electron).
+            </p>
+            <p>
+              It integrates natively with your OS taskbar, supports custom keyboard shortcuts global to your machine, and provides a continuous autologging background service. Run <code className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">npm run electron:dev</code> to launch it locally.
+            </p>
+          </div>
+        </div>
+      </SlideOutDrawer>
 
       {/* Toast */}
       <Toast

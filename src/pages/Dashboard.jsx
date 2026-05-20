@@ -1,8 +1,9 @@
-﻿import React, { useState, useMemo } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { 
   BarChart3, Clock, DollarSign, AlertCircle, ChevronDown, 
-  ChevronUp, CheckCircle2, TrendingUp, Calendar, AlertTriangle
+  ChevronUp, CheckCircle2, TrendingUp, Calendar, AlertTriangle,
+  Timer, Play, Square, Plus, Zap, X
 } from 'lucide-react';
 
 import { 
@@ -12,8 +13,139 @@ import {
   invoices 
 } from '../data/mockData';
 
+import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
+import { ProgressBar, CircularProgress } from '../components/ui/ProgressBar';
+import EmptyState from '../components/ui/EmptyState';
+import Input, { Select } from '../components/ui/Input';
+import Button from '../components/ui/Button';
+
 export default function Dashboard() {
-  const { role, handleToast } = useOutletContext();
+  const { 
+    activeRole, 
+    triggerToast, 
+    timerRunning, 
+    timerSeconds, 
+    timerTaskLabel, 
+    timerProjectId, 
+    startTimer, 
+    stopTimer 
+  } = useOutletContext();
+  const role = activeRole;
+  const handleToast = triggerToast;
+
+  const navigate = useNavigate();
+  const [timerTask, setTimerTask] = useState('');
+  
+  // Find projects Niloy (u1) is member of
+  const myProjects = useMemo(() => projects.filter(p => p.members.includes('u1')), []);
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+
+  useEffect(() => {
+    if (myProjects.length > 0 && !selectedProjectId) {
+      setSelectedProjectId(myProjects[0].id);
+    }
+  }, [myProjects, selectedProjectId]);
+
+  const ME = useMemo(() => teamMembers.find(m => m.id === 'u1'), []);
+  const myLogs = useMemo(() => timeLogs.filter(l => l.userId === 'u1'), []);
+  const TODAY = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const todayLogs = useMemo(() => myLogs.filter(l => l.date === TODAY), [myLogs, TODAY]);
+  
+  const hoursToday = useMemo(() => {
+    const sum = todayLogs.reduce((acc, l) => acc + l.duration, 0);
+    return Number(sum.toFixed(1));
+  }, [todayLogs]);
+  
+  const dailyGoal = 8;
+  const todayGoalPct = Math.min(100, Math.round((hoursToday / dailyGoal) * 100));
+
+  const weekLogs = useMemo(() => {
+    return myLogs.filter(l => {
+      const d = new Date(l.date + 'T00:00:00');
+      const now = new Date();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+      monday.setHours(0,0,0,0);
+      return d >= monday;
+    });
+  }, [myLogs]);
+
+  const hoursWeek = useMemo(() => {
+    const sum = weekLogs.reduce((acc, l) => acc + l.duration, 0);
+    return Number(sum.toFixed(1));
+  }, [weekLogs]);
+
+  const weekGoal = ME?.availableHoursPerWeek || 40;
+  const weekGoalPct = Math.min(100, Math.round((hoursWeek / weekGoal) * 100));
+
+  const currentProject = useMemo(() => {
+    return myProjects.find(p => p.id === (timerProjectId || myProjects[0]?.id));
+  }, [myProjects, timerProjectId]);
+
+  const billableToday = useMemo(() => {
+    const sum = todayLogs.filter(l => l.billable).reduce((acc, l) => acc + l.duration, 0);
+    return Number(sum.toFixed(1));
+  }, [todayLogs]);
+
+  const recentLogs = useMemo(() => {
+    return [...myLogs].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+  }, [myLogs]);
+
+  const hasGap = useMemo(() => {
+    const totalLoggedToday = hoursToday;
+    const currentHour = new Date().getHours();
+    const expectedByNow = Math.min(8, Math.max(0, currentHour - 9));
+    const gapHours = Math.max(0, expectedByNow - totalLoggedToday);
+    return gapHours > 0.5;
+  }, [hoursToday]);
+
+  const gapHours = useMemo(() => {
+    const totalLoggedToday = hoursToday;
+    const currentHour = new Date().getHours();
+    const expectedByNow = Math.min(8, Math.max(0, currentHour - 9));
+    return Math.max(0, expectedByNow - totalLoggedToday);
+  }, [hoursToday]);
+
+  const dailyBreakdown = useMemo(() => {
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    monday.setHours(0,0,0,0);
+
+    const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayLogs = weekLogs.filter(l => l.date === dateStr);
+      const hours = dayLogs.reduce((sum, l) => sum + l.duration, 0);
+      const pct = Math.min(100, (hours / dailyGoal) * 100);
+      return {
+        label: DAY_LABELS[i],
+        hours,
+        pct,
+        dateStr
+      };
+    });
+  }, [weekLogs, dailyGoal]);
+
+  const dateStr = useMemo(() => {
+    const d = new Date();
+    const options = { weekday: 'short', month: 'short', day: 'numeric' };
+    return d.toLocaleDateString('en-US', options);
+  }, []);
+
+  const projectListStr = useMemo(() => {
+    return myProjects.slice(0, 2).map(p => p.name).join(' · ');
+  }, [myProjects]);
+
+  const formatTimer = (secs) => {
+    const h = Math.floor(secs / 3600).toString().padStart(2, '0');
+    const m = Math.floor((secs % 3600) / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${h}:${m}:${s}`;
+  };
+
   const [cadence, setCadence] = useState('Week');
   
   // KPI Expansion State
@@ -55,20 +187,25 @@ export default function Dashboard() {
     const bars = [];
     const count = cadence === 'Today' ? 12 : cadence === 'Week' ? 7 : 30;
     const today = new Date();
+    // Seeded pseudo-random based on date index for consistency
+    const seed = (i) => {
+      const x = Math.sin(i * 127.1 + count * 311.7) * 43758.5453;
+      return x - Math.floor(x);
+    };
     for (let i = count - 1; i >= 0; i--) {
       const d = new Date(today);
       if (cadence === 'Today') {
         d.setHours(d.getHours() - i);
         bars.push({
           label: `${d.getHours()}:00`,
-          value: Math.random() * 5 + 1,
+          value: seed(i) * 5 + 1,
           dateStr: d.toISOString(),
         });
       } else {
         d.setDate(d.getDate() - i);
         bars.push({
           label: d.toLocaleDateString('en-US', { weekday: 'short' }),
-          value: Math.random() * 8 + 2,
+          value: seed(i) * 8 + 2,
           dateStr: d.toISOString().split('T')[0],
         });
       }
@@ -77,6 +214,334 @@ export default function Dashboard() {
   }, [cadence]);
 
   const maxChartValue = Math.max(...chartBars.map(b => b.value), 10);
+
+  if (role !== 'admin') {
+    return (
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 animate-fade-in">
+        {/* SECTION 1 — Page Header */}
+        <div className="flex justify-between items-center pb-2">
+          <h1 className="text-lg font-bold text-[var(--text-primary)]">
+            My Dashboard
+          </h1>
+          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+            <Calendar size={12} />
+            {dateStr}
+          </div>
+        </div>
+
+        {/* SECTION 2 — Gap Alert Banner */}
+        {hasGap && (
+          <div 
+            className="glass-card flex items-center justify-between p-4 rounded-xl border-l-[3px] border-l-amber-400"
+            style={{ background: 'var(--accent-subtle)' }}
+          >
+            <div className="flex items-center gap-2">
+              <AlertCircle className="text-amber-500" size={18} />
+              <span className="text-sm font-medium text-[var(--accent-text)]">
+                You have ~{gapHours.toFixed(1)}h unlogged today. Want to add an entry?
+              </span>
+            </div>
+            <Button 
+              variant="primary" 
+              size="sm"
+              onClick={() => {
+                if (triggerToast) {
+                  triggerToast('Open the Manual Entry drawer to log missing time.', 'info');
+                }
+              }}
+            >
+              + Log Missing Time
+            </Button>
+          </div>
+        )}
+
+        {/* SECTION 3 — Hero Timer Card */}
+        <div 
+          className="glass-card rounded-2xl p-8"
+          style={{
+            borderLeft: timerRunning ? '4px solid #10b981' : '1px solid var(--border-default)',
+            boxShadow: timerRunning ? '0 0 20px rgba(16,185,129,0.1)' : 'var(--shadow-sm)'
+          }}
+        >
+          {!timerRunning ? (
+            <div className="flex flex-col items-center gap-5 text-center max-w-sm mx-auto">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                  Ready to Track
+                </span>
+              </div>
+              <div className="text-5xl font-sans font-bold tabular-nums text-[var(--text-primary)] tracking-tight">
+                00:00:00
+              </div>
+              <div className="w-full space-y-3">
+                <Input
+                  value={timerTask}
+                  onChange={e => setTimerTask(e.target.value)}
+                  placeholder="What are you working on?"
+                  className="w-full text-center"
+                />
+                <Select
+                  value={selectedProjectId}
+                  onChange={e => setSelectedProjectId(e.target.value)}
+                  className="w-full text-center"
+                >
+                  {myProjects.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </Select>
+              </div>
+              <button
+                onClick={() => startTimer(timerTask || 'Working...', selectedProjectId)}
+                className="timer-cta-pulse press-on-click w-full py-3 rounded-xl font-semibold text-base text-white transition-all duration-150"
+                style={{
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  boxShadow: '0 2px 8px rgba(245,158,11,0.35)'
+                }}
+              >
+                Start Timer
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-5 text-center max-w-sm mx-auto">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 timer-glow-emerald flex-shrink-0" />
+                <span className="text-xs font-semibold uppercase tracking-widest text-emerald-600">
+                  Tracking Now
+                </span>
+              </div>
+              <div className="text-5xl font-sans font-bold tabular-nums text-emerald-600 tracking-tight">
+                {formatTimer(timerSeconds)}
+              </div>
+              <div>
+                <div className="text-base font-semibold text-[var(--text-primary)]">
+                  {timerTaskLabel || 'Working...'}
+                </div>
+                <div className="text-xs text-[var(--text-muted)] mt-1.5">
+                  {currentProject ? currentProject.name : 'No Project'}
+                </div>
+              </div>
+              <button
+                onClick={() => stopTimer()}
+                className="w-full py-3 rounded-xl font-semibold text-base transition-all duration-200 press-on-click"
+                style={{
+                  background: 'rgba(239,68,68,0.15)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  color: 'rgb(220,38,38)',
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.25)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.15)'}
+              >
+                Stop Timer
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* SECTION 4 — Stats Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+          {/* Card 1: Today */}
+          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
+            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+              Today
+            </div>
+            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+              {hoursToday.toFixed(1)}h
+            </div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+              {dailyGoal}h goal
+            </div>
+            <div className="mt-3">
+              <ProgressBar value={todayGoalPct} />
+            </div>
+          </div>
+
+          {/* Card 2: This Week */}
+          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
+            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+              This Week
+            </div>
+            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+              {hoursWeek.toFixed(1)}h
+            </div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+              {weekGoal}h goal
+            </div>
+            <div className="mt-3">
+              <ProgressBar value={weekGoalPct} />
+            </div>
+          </div>
+
+          {/* Card 3: Billable Today */}
+          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
+            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+              Billable Today
+            </div>
+            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+              {billableToday.toFixed(1)}h
+            </div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+              {todayLogs.length} {todayLogs.length === 1 ? 'entry' : 'entries'}
+            </div>
+          </div>
+
+          {/* Card 4: My Projects */}
+          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
+            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+              My Projects
+            </div>
+            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+              {myProjects.length}
+            </div>
+            <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate" title={projectListStr}>
+              {projectListStr}
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 5 — Two-Column Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {/* Left Column: Today's Entries */}
+          <div className="glass-card rounded-xl p-5 lg:col-span-2 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                  Today's Entries
+                </h2>
+                <span 
+                  className="text-xs font-medium rounded-full px-2.5 py-0.5"
+                  style={{
+                    background: 'var(--accent-subtle)',
+                    border: '1px solid var(--accent-border)',
+                    color: 'var(--accent-text)',
+                  }}
+                >
+                  {todayLogs.length} {todayLogs.length === 1 ? 'entry' : 'entries'}
+                </span>
+              </div>
+
+              {todayLogs.length === 0 ? (
+                <EmptyState 
+                  icon={Clock} 
+                  title="No entries logged today yet." 
+                />
+              ) : (
+                <div className="space-y-1">
+                  {todayLogs.map(log => {
+                    const projColor = projects.find(p => p.id === log.projectId)?.color || '#a8a29e';
+                    return (
+                      <div key={log.id} className="flex items-center gap-3 py-2.5 border-b border-[var(--border-default)] last:border-0">
+                        <span 
+                          className="w-2.5 h-2.5 rounded-full shrink-0" 
+                          style={{ backgroundColor: projColor }}
+                        />
+                        <span className="text-sm font-medium text-[var(--text-primary)] flex-1 truncate">
+                          {log.task}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)] truncate max-w-[120px]">
+                          {log.projectName}
+                        </span>
+                        <span className="text-xs font-sans tabular-nums text-[var(--text-secondary)] whitespace-nowrap">
+                          {log.startTime} – {log.endTime}
+                        </span>
+                        <span className="text-xs font-semibold text-[var(--text-primary)] whitespace-nowrap">
+                          {log.duration.toFixed(1)}h
+                        </span>
+                        <TrackingSourceBadge source={log.source} />
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {todayLogs.length > 0 && (
+              <div className="mt-4 flex justify-end">
+                <button 
+                  onClick={() => navigate('/my-time')} 
+                  className="text-xs font-semibold text-amber-600 hover:text-amber-700 transition-colors flex items-center gap-1"
+                >
+                  View all in My Time →
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column: Weekly Progress */}
+          <div className="glass-card rounded-xl p-5 lg:col-span-1">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)] mb-4">
+              Week Progress
+            </h2>
+            <div className="flex justify-center my-6">
+              <CircularProgress 
+                value={hoursWeek} 
+                max={weekGoal} 
+                size={120} 
+                strokeWidth={8} 
+                label={`${weekGoalPct}%`} 
+              />
+            </div>
+            <div className="text-sm text-center text-[var(--text-secondary)] font-medium mb-6">
+              {hoursWeek.toFixed(1)}h of {weekGoal}h
+            </div>
+
+            <div className="space-y-3 mt-6">
+              {dailyBreakdown.map((day, idx) => (
+                <div key={idx} className="flex items-center gap-3">
+                  <span className="w-4 text-[10px] font-bold text-[var(--text-muted)] text-center">
+                    {day.label}
+                  </span>
+                  <div className="flex-1 h-1.5 rounded-full bg-[var(--border-default)] overflow-hidden">
+                    <div 
+                      className="h-full bg-amber-500 rounded-full transition-all duration-300"
+                      style={{ width: `${day.pct}%` }}
+                    />
+                  </div>
+                  <span className="w-8 text-[10px] font-mono text-[var(--text-secondary)] text-right">
+                    {day.hours > 0 ? `${day.hours.toFixed(1)}h` : '—'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 6 — Team Activity */}
+        <div className="glass-card flex flex-col overflow-hidden rounded-xl">
+          <div className="p-5 border-b border-[var(--border-default)]">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Team Activity</h2>
+          </div>
+          <div className="divide-y divide-[var(--border-default)]">
+            {teamMembers.filter(m => m.id !== 'u1').slice(0, 4).map(member => (
+              <div key={member.id} className="p-4 flex items-center justify-between hover:bg-[var(--bg-sunken)] transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-8 h-8 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-xs text-[var(--text-secondary)] shrink-0">
+                      {member.name.split(' ').map(n => n[0]).join('')}
+                    </div>
+                    {member.status === 'active' && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-emerald-500"></span>
+                    )}
+                    {member.status === 'idle' && (
+                      <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[var(--bg-surface)] bg-amber-500"></span>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-[var(--text-primary)]">{member.name}</h3>
+                    <p className="text-xs text-[var(--text-secondary)] truncate max-w-[200px]">
+                      {member.status === 'active' ? `Working on ${member.currentTask || 'a task'}` : 'Offline / Idle'}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right hidden sm:block">
+                  <div className="text-xs font-medium text-[var(--text-primary)]">{member.currentProject || 'No Project'}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 animate-fade-in">
@@ -110,7 +575,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI CARDS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
         {/* Total Hours */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
           <div 
@@ -118,7 +583,7 @@ export default function Dashboard() {
             onClick={() => handleKpiClick('hours')}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-xl bg-violet-500/10 text-violet-500">
+              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                 <Clock className="w-5 h-5" />
               </div>
               <span className="text-xs font-medium text-emerald-500 flex items-center bg-emerald-500/10 px-2 py-1 rounded-full">
@@ -308,8 +773,8 @@ export default function Dashboard() {
             <div className="mt-6 p-4 rounded-xl bg-[var(--bg-sunken)] border border-[var(--border-default)] animate-fade-in">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="font-bold text-sm text-[var(--text-primary)]">Activity for {selectedChartDay}</h3>
-                <button onClick={() => setSelectedChartDay(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)]">
-                  <AlertCircle className="w-4 h-4" /> {/* Just a visual close icon placeholder */}
+                <button onClick={() => setSelectedChartDay(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="space-y-3">
@@ -345,8 +810,8 @@ export default function Dashboard() {
               <p className="text-xs text-[var(--text-secondary)]">Brand Redesign project has consumed 85% of allocated hours.</p>
             </div>
 
-            <div className="p-4 rounded-xl bg-violet-500/10 border border-violet-500/20 lift-on-hover cursor-pointer transition-all duration-300">
-              <h3 className="text-sm font-bold text-violet-600 dark:text-violet-400 mb-1">Missing Time Logs</h3>
+            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 lift-on-hover cursor-pointer transition-all duration-300">
+              <h3 className="text-sm font-bold text-amber-600 dark:text-amber-400 mb-1">Missing Time Logs</h3>
               <p className="text-xs text-[var(--text-secondary)]">Aiko Tanaka has 0 logged hours this week.</p>
             </div>
           </div>

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import Toggle from '../components/ui/Toggle';
 import { ProgressBar } from '../components/ui/ProgressBar';
@@ -7,12 +7,35 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import { 
-  MessageSquare, Calendar, Layers, GitBranch, Mail, Video, Sun, Moon 
+  MessageSquare, Calendar, Layers, GitBranch, Mail, Video, Sun, Moon, CheckCircle2 
 } from 'lucide-react';
 
 export default function Settings() {
-  const { triggerToast } = useOutletContext();
+  const { theme, setTheme, keyBindings, setKeyBindings, triggerToast } = useOutletContext();
   const [activeSection, setActiveSection] = useState('workspace');
+  const [editingKey, setEditingKey] = useState(null);
+
+  useEffect(() => {
+    if (!editingKey) return;
+    const handleCapture = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      let key = e.key;
+      if (key === ' ') key = 'Space';
+      if (['Control', 'Shift', 'Alt', 'Meta'].includes(key)) return;
+
+      setKeyBindings(prev => ({
+        ...prev,
+        [editingKey]: key
+      }));
+      triggerToast('Shortcut updated', `Action updated to key: "${key.toUpperCase()}"`, 'success');
+      setEditingKey(null);
+    };
+
+    window.addEventListener('keydown', handleCapture, true);
+    return () => window.removeEventListener('keydown', handleCapture, true);
+  }, [editingKey, setKeyBindings, triggerToast]);
 
   const navItems = [
     { id: 'workspace', label: 'Workspace' },
@@ -58,7 +81,7 @@ export default function Settings() {
   const [collapsedSidebar, setCollapsedSidebar] = useState(false);
 
   return (
-    <div className="flex px-8 py-6 gap-6 h-full animate-fade-in" style={{ background: 'var(--bg-base)' }}>
+    <div className="flex px-8 py-6 gap-6 h-full animate-fade-in" style={{ background: 'transparent' }}>
       {/* LEFT SIDEBAR */}
       <div className="w-52 flex-shrink-0 glass-card p-4 self-start">
         <h2 className="text-base font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Settings</h2>
@@ -261,18 +284,39 @@ export default function Settings() {
             <div>
               <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Theme</h4>
               <div className="grid grid-cols-2 gap-4 max-w-sm">
-                <div className="glass-interactive p-4 rounded-xl text-center flex flex-col items-center border border-amber-500 bg-amber-500/5 cursor-pointer relative overflow-hidden">
-                  <div className="absolute top-2 right-2 text-amber-500">
-                    <CheckCircle2 size={16} />
-                  </div>
-                  <Sun size={24} className="mb-2 text-amber-500" />
+                <div
+                  onClick={() => {
+                    setTheme('light');
+                    triggerToast('Theme changed', 'Light mode applied.', 'success');
+                  }}
+                  className={`glass-interactive p-4 rounded-xl text-center flex flex-col items-center cursor-pointer relative overflow-hidden ${
+                    theme === 'light' ? 'border border-amber-500 bg-amber-500/5' : ''
+                  }`}
+                >
+                  {theme === 'light' && (
+                    <div className="absolute top-2 right-2 text-amber-500">
+                      <CheckCircle2 size={16} />
+                    </div>
+                  )}
+                  <Sun size={24} className={`mb-2 ${theme === 'light' ? 'text-amber-500' : ''}`} style={theme !== 'light' ? { color: 'var(--text-secondary)' } : {}} />
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Light</span>
                 </div>
-                <div className="glass-interactive p-4 rounded-xl text-center flex flex-col items-center opacity-50 cursor-not-allowed relative">
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="neutral" className="text-[10px]">Coming soon</Badge>
-                  </div>
-                  <Moon size={24} className="mb-2" style={{ color: 'var(--text-secondary)' }} />
+
+                <div
+                  onClick={() => {
+                    setTheme('dark');
+                    triggerToast('Theme changed', 'Dark mode applied.', 'success');
+                  }}
+                  className={`glass-interactive p-4 rounded-xl text-center flex flex-col items-center cursor-pointer relative overflow-hidden ${
+                    theme === 'dark' ? 'border border-amber-500 bg-amber-500/5' : ''
+                  }`}
+                >
+                  {theme === 'dark' && (
+                    <div className="absolute top-2 right-2 text-amber-500">
+                      <CheckCircle2 size={16} />
+                    </div>
+                  )}
+                  <Moon size={24} className={`mb-2 ${theme === 'dark' ? 'text-amber-500' : ''}`} style={theme !== 'dark' ? { color: 'var(--text-secondary)' } : {}} />
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Dark</span>
                 </div>
               </div>
@@ -311,79 +355,107 @@ export default function Settings() {
         )}
 
         {/* Shortcuts Section */}
-        {activeSection === 'shortcuts' && (
-          <div className="glass-card p-6 animate-fade-in">
-            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Keyboard Shortcuts</h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Use these shortcuts to navigate Chronos faster</p>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-              <div>
-                <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>Navigation</h4>
-                <div className="space-y-1">
-                  {[
-                    { label: 'Go to Team', kbd: ['T'] },
-                    { label: 'Go to Projects', kbd: ['P'] },
-                    { label: 'Go to Reports', kbd: ['R'] },
-                    { label: 'Go to Invoices', kbd: ['I'] },
-                    { label: 'Go to My Time', kbd: ['M'] },
-                    { label: 'Go to Settings', kbd: ['G', 'S'] },
-                  ].map((s, i) => (
-                    <div key={i} className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
-                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                      <div className="flex gap-1">
-                        {s.kbd.map(k => (
-                          <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {activeSection === 'shortcuts' && (() => {
+          const navShortcuts = [
+            { label: 'Go to Team', kbd: ['G', keyBindings.goTeam.toUpperCase()], actionKey: 'goTeam' },
+            { label: 'Go to Projects', kbd: ['G', keyBindings.goProjects.toUpperCase()], actionKey: 'goProjects' },
+            { label: 'Go to Reports', kbd: ['G', keyBindings.goReports.toUpperCase()], actionKey: 'goReports' },
+            { label: 'Go to Invoices', kbd: ['G', keyBindings.goInvoices.toUpperCase()], actionKey: 'goInvoices' },
+            { label: 'Go to My Time', kbd: ['G', keyBindings.goMyTime.toUpperCase()], actionKey: 'goMyTime' },
+            { label: 'Go to Settings', kbd: ['G', keyBindings.goSettings.toUpperCase()], actionKey: 'goSettings' },
+          ];
 
-              <div className="space-y-8">
+          const timerShortcuts = [
+            { label: 'Start / Stop timer', kbd: [keyBindings.toggleTimer.toUpperCase(), 'Space'], actionKey: 'toggleTimer' },
+            { label: 'New manual entry', kbd: [keyBindings.newEntry.toUpperCase()], actionKey: 'newEntry' },
+            { label: 'Open command palette', kbd: [keyBindings.openPalette.toUpperCase(), '⌘ K'], actionKey: 'openPalette' },
+          ];
+
+          const generalShortcuts = [
+            { label: 'Close panel or drawer', kbd: ['Esc'] },
+            { label: 'Open shortcuts reference', kbd: ['?'] },
+            { label: 'Save current form', kbd: ['⌘', 'S'] },
+          ];
+
+          return (
+            <div className="glass-card p-6 animate-fade-in">
+              <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Keyboard Shortcuts</h3>
+              <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Use these shortcuts to navigate Chronos faster</p>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                 <div>
-                  <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>Timer</h4>
+                  <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>Navigation</h4>
                   <div className="space-y-1">
-                    {[
-                      { label: 'Start / Stop timer', kbd: ['Space'] },
-                      { label: 'New manual entry', kbd: ['N'] },
-                      { label: 'Open command palette', kbd: ['⌘', 'K'] },
-                    ].map((s, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
+                    {navShortcuts.map((s, i) => (
+                      <div key={i} className="flex justify-between items-center py-2 border-b animate-fade-in" style={{ borderColor: 'var(--border-default)' }}>
                         <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                        <div className="flex gap-1">
-                          {s.kbd.map(k => (
-                            <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
-                          ))}
+                        <div className="flex items-center gap-3">
+                          <div className="flex gap-1">
+                            {s.kbd.map(k => (
+                              <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
+                            ))}
+                          </div>
+                          {s.actionKey && (
+                            <button
+                              onClick={() => setEditingKey(s.actionKey)}
+                              className="text-xs text-amber-500 hover:text-amber-600 font-semibold cursor-pointer min-w-[70px] text-right"
+                            >
+                              {editingKey === s.actionKey ? 'Press key...' : 'Customize'}
+                            </button>
+                          )}
                         </div>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>General</h4>
-                  <div className="space-y-1">
-                    {[
-                      { label: 'Close panel or drawer', kbd: ['Esc'] },
-                      { label: 'Open shortcuts reference', kbd: ['?'] },
-                      { label: 'Save current form', kbd: ['⌘', 'S'] },
-                    ].map((s, i) => (
-                      <div key={i} className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
-                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
-                        <div className="flex gap-1">
-                          {s.kbd.map(k => (
-                            <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
-                          ))}
+                <div className="space-y-8">
+                  <div>
+                    <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>Timer</h4>
+                    <div className="space-y-1">
+                      {timerShortcuts.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center py-2 border-b animate-fade-in" style={{ borderColor: 'var(--border-default)' }}>
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1">
+                              {s.kbd.map(k => (
+                                <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
+                              ))}
+                            </div>
+                            {s.actionKey && (
+                              <button
+                                onClick={() => setEditingKey(s.actionKey)}
+                                className="text-xs text-amber-500 hover:text-amber-600 font-semibold cursor-pointer min-w-[70px] text-right"
+                              >
+                                {editingKey === s.actionKey ? 'Press key...' : 'Customize'}
+                              </button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs uppercase tracking-widest mb-4" style={{ color: 'var(--text-muted)' }}>General</h4>
+                    <div className="space-y-1">
+                      {generalShortcuts.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center py-2 border-b" style={{ borderColor: 'var(--border-default)' }}>
+                          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{s.label}</span>
+                          <div className="flex gap-1">
+                            {s.kbd.map(k => (
+                              <kbd key={k} className="rounded-md px-2 py-0.5 text-xs font-mono" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-strong)', color: 'var(--text-primary)' }}>{k}</kbd>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Integrations Section */}
         {activeSection === 'integrations' && (
@@ -497,26 +569,5 @@ export default function Settings() {
         )}
       </div>
     </div>
-  );
-}
-
-// Ensure the CheckCircle2 icon is defined for appearance
-function CheckCircle2(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
   );
 }
