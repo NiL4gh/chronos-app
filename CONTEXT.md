@@ -13,7 +13,7 @@
 ```
 chronos-app/
   index.html                  ← Google Fonts loads Inter (variable wght@300;400;500;600;700;800;900) + JetBrains Mono (wght@400;500;600) via two preconnect + link tags. DM Sans and DM Mono links are gone.
-  package.json                ← React 18, Vite 5, React Router v6, Lucide React, Tailwind CSS 3 (Node 20.x specified)
+  package.json                ← React 18, Vite 5, React Router v6, Lucide React, Tailwind CSS 3 (Node 20.x specified, Rollup overridden to @rollup/wasm-node for platform compatibility)
   .npmrc                      ← Sets legacy-peer-deps=true to ensure stable, reliable builds on Vercel
   tailwind.config.js          ← fontFamily.sans extended with Inter, fontFamily.mono with JetBrains Mono. animation and keyframes blocks added for bar-grow and status-pulse.
   postcss.config.js
