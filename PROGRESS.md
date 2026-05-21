@@ -14,7 +14,7 @@
   - Added `useEffect` to sync `viewYear`/`viewMonth` when the `value` prop changes externally (fixes invisible selected date issue on re-open).
   - Added `w-full justify-center` to the Calendar trigger pill button for consistent layout across all usages.
 - **index.css**: Removed `input[type="time"]` from the `::-webkit-calendar-picker-indicator { display: none }` suppression rule (only `date` type now suppressed).
-- **package.json / package-lock.json**: Added `"overrides"` mapping `rollup` to `npm:@rollup/wasm-node` to bypass Rollup native binary loading failures on Vercel (Linux x64 environment) and ensure smooth cross-platform building.
+- **package.json / package-lock.json**: Configured `"optionalDependencies"` for `@rollup/rollup-linux-x64-gnu` and `@rollup/rollup-win32-x64-msvc` to ensure cross-platform Rollup native binaries are written to the lockfile and successfully downloaded during Vercel builds.
 - **Team.jsx**: Converted status badges to borderless glass pills; compact metric card layout (3-column); adjusted activity level sections.
 
 ## ❌ Incomplete / Pending
