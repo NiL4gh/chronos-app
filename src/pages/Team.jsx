@@ -28,15 +28,7 @@ const DOT_COLOR = {
 function StatCard({ icon: Icon, label, value }) {
   return (
     <div className="glass-card p-5 flex items-center gap-4">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{
-          background: 'var(--accent-subtle)',
-          border: '1px solid var(--accent-border)',
-        }}
-      >
-        <Icon size={18} style={{ color: 'var(--accent)' }} />
-      </div>
+      <Icon size={16} className="text-[var(--text-muted)]" />
       <div>
         <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
         <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
@@ -54,8 +46,8 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 
   return (
     <div
-      className="glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer"
-      onClick={onClickName}
+      className={`glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
+      onClick={(e) => { e.preventDefault(); onClickName(); }}
       style={{
         border: selected
           ? '1px solid var(--accent-border)'
@@ -81,7 +73,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
           <div className="min-w-0">
             {/* Name — zone click → profile overview */}
             <button
-              onClick={(e) => { e.stopPropagation(); onClickName(); }}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickName(); }}
               className="text-sm font-medium text-left block truncate hover:text-amber-600 transition-colors duration-100"
               style={{ color: 'var(--text-primary)' }}
             >
@@ -92,7 +84,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
             </p>
           </div>
         </div>
-        <button onClick={(e) => { e.stopPropagation(); onClickStatus(); }} className="shrink-0">
+        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickStatus(); }} className="shrink-0">
           <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
         </button>
       </div>
@@ -108,7 +100,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
         <div className="flex items-center gap-2.5 overflow-hidden w-full">
           <span className={`w-2 h-2 rounded-full flex-shrink-0 ${member.status === 'active' ? 'bg-emerald-500 timer-glow-emerald' : 'bg-[var(--text-disabled)]'}`} />
           <button
-            onClick={(e) => { e.stopPropagation(); onClickProject(); }}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickProject(); }}
             className="text-xs font-medium text-left truncate w-full hover:text-amber-600 transition-colors duration-100"
             style={{ color: member.currentTask !== 'Offline' ? 'var(--text-primary)' : 'var(--text-disabled)' }}
           >
@@ -150,7 +142,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
       {/* Footer actions */}
       <div className="flex gap-3 pt-2" style={{ borderTop: '1px solid var(--border-default)' }}>
         <button
-          onClick={(e) => { e.stopPropagation(); window.open(`mailto:${member.email}`); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); window.open(`mailto:${member.email}`); }}
           onMouseEnter={() => setHoverMsg(true)}
           onMouseLeave={() => setHoverMsg(false)}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
@@ -163,7 +155,7 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
           <Mail size={14} /> Message
         </button>
         <button
-          onClick={(e) => { e.stopPropagation(); (onClickLogs || onClickName)(); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); (onClickLogs || onClickName)(); }}
           onMouseEnter={() => setHoverLogs(true)}
           onMouseLeave={() => setHoverLogs(false)}
           className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all duration-150"
@@ -186,8 +178,8 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
   const [hover, setHover] = useState(false);
   return (
     <div
-      className="flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0 cursor-pointer"
-      onClick={onClickName}
+      className={`flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
+      onClick={(e) => { e.preventDefault(); onClickName(); }}
       style={{
         borderBottom: '1px solid var(--border-default)',
         background: selected ? 'var(--accent-subtle)' : hover ? 'var(--bg-sunken)' : 'transparent',
@@ -204,7 +196,7 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
       </div>
       <div className="flex-1 min-w-0">
         <button
-          onClick={(e) => { e.stopPropagation(); onClickName(); }}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickName(); }}
           className="text-sm font-bold text-left block hover:text-amber-600 transition-colors duration-100"
           style={{ color: 'var(--text-primary)' }}
         >
@@ -212,7 +204,7 @@ function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
         </button>
         <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{member.role}</p>
       </div>
-      <button onClick={(e) => { e.stopPropagation(); onClickStatus(); }} className="shrink-0">
+      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickStatus(); }} className="shrink-0">
         <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
       </button>
       <p className="text-xs font-sans tabular-nums font-semibold w-20 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
@@ -498,9 +490,9 @@ export default function Team() {
   const avgHours     = (teamMembers.reduce((s, m) => s + m.hoursWeek, 0) / teamMembers.length).toFixed(1);
 
   return (
-    <div className="px-8 py-6 animate-fade-in h-full" style={{ background: 'transparent' }}>
+    <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full" style={{ background: 'transparent' }}>
       {/* ── Stat row ── */}
-      <div className="grid grid-cols-4 gap-5 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <StatCard icon={Users}    label="Total Members" value={teamMembers.length} />
         <StatCard icon={Activity} label="Active Now"     value={activeCount} />
         <StatCard icon={Clock}    label="Idle"           value={idleCount} />
@@ -509,7 +501,7 @@ export default function Team() {
 
       {/* ── Main split layout ── */}
       <div
-        className="flex gap-0 overflow-hidden rounded-2xl"
+        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl"
         style={{
           border: '1px solid var(--border-default)',
           background: 'var(--bg-surface)',
@@ -518,9 +510,8 @@ export default function Team() {
       >
         {/* Left — member list */}
         <div
-          className="flex flex-col transition-all duration-300 ease-in-out bg-base"
+          className={`flex flex-col transition-all duration-300 ease-in-out bg-base w-full ${selectedMember ? 'md:w-[45%]' : 'md:w-full'}`}
           style={{
-            width: selectedMember ? '45%' : '100%',
             borderRight: selectedMember ? '1px solid var(--border-default)' : 'none',
             minWidth: 0,
             background: 'var(--bg-base)'
@@ -594,12 +585,7 @@ export default function Team() {
           <div className="flex-1 overflow-y-auto">
             {viewMode === 'grid' ? (
               <div
-                className="p-5 grid gap-5"
-                style={{
-                  gridTemplateColumns: selectedMember
-                    ? 'repeat(1, 1fr)'
-                    : 'repeat(auto-fill, minmax(280px, 1fr))',
-                }}
+                className={`p-5 grid gap-5 ${selectedMember ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}
               >
                 {filtered.map(member => (
                   <MemberGridCard
@@ -614,8 +600,9 @@ export default function Team() {
                 ))}
               </div>
             ) : (
-              <div className="py-2">
-                {filtered.map(member => (
+              <div className="py-2 overflow-x-auto w-full">
+                <div className="min-w-[800px]">
+                  {filtered.map(member => (
                   <MemberTableRow
                     key={member.id}
                     member={member}
@@ -624,6 +611,7 @@ export default function Team() {
                     onClickStatus={() => openDetail(member, 'Overview')}
                   />
                 ))}
+                </div>
               </div>
             )}
           </div>
@@ -632,8 +620,7 @@ export default function Team() {
         {/* Right — inline detail panel */}
         {selectedMember && (
           <div
-            className="flex-1 min-w-0 overflow-hidden"
-            style={{ minWidth: '55%' }}
+            className="w-full md:flex-1 min-w-0 overflow-hidden"
           >
             <MemberDetailPanel
               member={selectedMember}

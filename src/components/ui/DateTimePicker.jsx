@@ -193,6 +193,10 @@ export default function DateTimePicker({
   const [activePanel, setActivePanel] = useState(null); // null | 'date' | 'time'
   const [slideDir, setSlideDir] = useState(null);
   const containerRef = useRef(null);
+  const dateTriggerRef = useRef(null);
+  const timeTriggerRef = useRef(null);
+  const [dateOpenUp, setDateOpenUp] = useState(false);
+  const [timeOpenUp, setTimeOpenUp] = useState(false);
 
   // Calendar view state
   const todayDate = new Date();
@@ -290,8 +294,19 @@ export default function DateTimePicker({
       <div className="flex items-center gap-2 flex-wrap">
         {mode !== 'time' && (
           <button
+            ref={dateTriggerRef}
             type="button"
-            onClick={() => setActivePanel(activePanel === 'date' ? null : 'date')}
+            onClick={() => {
+              if (activePanel === 'date') {
+                setActivePanel(null);
+              } else {
+                if (dateTriggerRef.current) {
+                  const rect = dateTriggerRef.current.getBoundingClientRect();
+                  setDateOpenUp(rect.bottom > window.innerHeight / 2);
+                }
+                setActivePanel('date');
+              }
+            }}
             className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)] w-full justify-center"
             style={{
               background: 'var(--bg-surface)',
@@ -306,8 +321,19 @@ export default function DateTimePicker({
 
         {(showTime || mode === 'time') && (
           <button
+            ref={timeTriggerRef}
             type="button"
-            onClick={() => setActivePanel(activePanel === 'time' ? null : 'time')}
+            onClick={() => {
+              if (activePanel === 'time') {
+                setActivePanel(null);
+              } else {
+                if (timeTriggerRef.current) {
+                  const rect = timeTriggerRef.current.getBoundingClientRect();
+                  setTimeOpenUp(rect.bottom > window.innerHeight / 2);
+                }
+                setActivePanel('time');
+              }
+            }}
             className="glass-interactive rounded-full px-3 py-1.5 text-sm font-medium flex items-center gap-2 transition-all duration-150 hover:bg-[var(--bg-sunken)] w-full justify-center"
             style={{
               background: 'var(--bg-surface)',
@@ -366,7 +392,7 @@ export default function DateTimePicker({
           {/* Calendar Panel */}
           {activePanel === 'date' && (
             <div
-              className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4"
+              className={`animate-slide-up glass-elevated rounded-xl p-4 ${dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
               style={{ width: '280px' }}
             >
               <div className="flex items-center justify-between mb-3">
@@ -417,7 +443,7 @@ export default function DateTimePicker({
           {/* Time Panel */}
           {activePanel === 'time' && (
             <div
-              className="absolute left-0 top-1 z-50 animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3"
+              className={`flex flex-col items-center gap-3 animate-slide-up glass-elevated rounded-xl p-4 ${timeOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
               style={{ width: '220px' }}
             >
               <div className="flex items-center justify-center gap-3">

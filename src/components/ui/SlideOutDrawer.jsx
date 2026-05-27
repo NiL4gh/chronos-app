@@ -71,10 +71,7 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
 
         {/* Footer */}
         {footer && (
-          <div
-            className="shrink-0 flex items-center justify-end gap-3 px-6 py-4"
-            style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
-          >
+          <div className="flex-shrink-0 border-t border-[var(--border-default)] bg-[var(--bg-elevated)] px-6 py-4 flex items-center justify-end gap-3">
             {footer}
           </div>
         )}

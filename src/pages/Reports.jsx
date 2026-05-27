@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Download, Filter, TrendingUp, Clock, DollarSign, Users, 
-  ChevronDown, ChevronUp, X, CheckCircle2 
+  ChevronDown, ChevronUp, X, CheckCircle2, FileText
 } from 'lucide-react';
 import Button from '../components/ui/Button';
 import SplitButton from '../components/ui/SplitButton';
@@ -118,30 +118,236 @@ export default function Reports() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Date', 'Member', 'Project', 'Task', 'Start', 'End',
-      'Duration (h)', 'Source', 'Billable'];
+    const headers = ['Date', 'Member', 'Project', 'Task', 'Duration (h)',
+      'Billable', 'Source'];
     const rows = filteredLogs.map(log => [
       log.date,
       log.userName,
       log.projectName,
-      `"${log.task.replace(/"/g, '""')}"`,
-      log.startTime,
-      log.endTime,
-      log.duration.toFixed(2),
-      log.source,
-      log.billable ? 'Yes' : 'No'
+      log.task,
+      log.duration,
+      log.billable ? 'Yes' : 'No',
+      log.source
     ]);
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const csvContent = [headers, ...rows]
+      .map(row => row.map(cell =>
+        `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `chronos-report-${new Date().toISOString().slice(0,10)}.csv`;
+    const dateRange = `${filterStart}_to_${filterEnd}`;
+    link.download = `chronos-report-${dateRange}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    triggerToast('Report exported as CSV.', 'success');
+  };
+
+  const handleExportPDF = () => {
+    const totalHours = filteredLogs.reduce((s, l) => s + l.duration, 0)
+      .toFixed(1);
+    const billableHours = filteredLogs
+      .filter(l => l.billable)
+      .reduce((s, l) => s + l.duration, 0)
+      .toFixed(1);
+    const revenue = (parseFloat(billableHours) * (billingRates?.default || 95)).toFixed(0);
+    const activeMembers = [...new Set(filteredLogs.map(l =>
+      l.userName))].length;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Chronos Report</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter',
+              sans-serif;
+            color: #1c1917;
+            padding: 40px;
+            font-size: 13px;
+          }
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 32px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #1c1917;
+          }
+          .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+          .meta { text-align: right; color: #78716c; font-size: 12px;
+            line-height: 1.6; }
+          .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 32px;
+          }
+          .metric-card {
+            padding: 16px;
+            border: 1px solid #e8e3dc;
+            border-radius: 8px;
+          }
+          .metric-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #78716c;
+            margin-bottom: 6px;
+          }
+          .metric-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: #1c1917;
+          }
+          .section-title {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #78716c;
+            margin-bottom: 12px;
+            margin-top: 28px;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #78716c;
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e8e3dc;
+            background: #faf9f7;
+          }
+          td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #f0ede8;
+            color: #1c1917;
+            font-size: 12px;
+          }
+          tr:last-child td { border-bottom: none; }
+          .billable-yes {
+            color: #166534;
+            font-weight: 600;
+          }
+          .billable-no { color: #78716c; }
+          .source-auto {
+            color: #166534;
+            font-size: 11px;
+          }
+          .source-manual {
+            color: #92400e;
+            font-size: 11px;
+          }
+          .footer {
+            margin-top: 40px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e3dc;
+            font-size: 11px;
+            color: #a8a29e;
+            display: flex;
+            justify-content: space-between;
+          }
+          @media print {
+            body { padding: 24px; }
+            @page { margin: 16mm; size: A4; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="logo">Chronos</div>
+            <div style="color:#78716c;font-size:12px;margin-top:4px">
+              Time Report
+            </div>
+          </div>
+          <div class="meta">
+            <div><strong>Period:</strong> ${filterStart} — ${filterEnd}</div>
+            <div><strong>Generated:</strong>
+              ${new Date().toLocaleDateString('en-US', {
+                year: 'numeric', month: 'long', day: 'numeric'
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div class="metrics">
+          <div class="metric-card">
+            <div class="metric-label">Total Hours</div>
+            <div class="metric-value">${totalHours}h</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Billable Hours</div>
+            <div class="metric-value">${billableHours}h</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Est. Revenue</div>
+            <div class="metric-value">$${parseInt(revenue)
+              .toLocaleString()}</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Active Members</div>
+            <div class="metric-value">${activeMembers}</div>
+          </div>
+        </div>
+
+        <div class="section-title">Time Log Detail</div>
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Member</th>
+              <th>Project</th>
+              <th>Task</th>
+              <th>Hours</th>
+              <th>Billable</th>
+              <th>Source</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filteredLogs.map(log => `
+              <tr>
+                <td>${log.date}</td>
+                <td>${log.userName}</td>
+                <td>${log.projectName}</td>
+                <td>${log.task}</td>
+                <td>${log.duration}h</td>
+                <td class="${log.billable ? 'billable-yes' : 'billable-no'}">
+                  ${log.billable ? 'Yes' : 'No'}
+                </td>
+                <td class="source-${log.source}">${log.source}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="footer">
+          <span>Chronos — Time Intelligence Platform</span>
+          <span>Confidential</span>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '_blank',
+      'width=900,height=700,scrollbars=yes');
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
   };
 
   const selectedMemberData = selectedReportsMember ? teamMembers.find(m => m.id === selectedReportsMember) : null;
@@ -150,7 +356,7 @@ export default function Reports() {
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
         
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
@@ -178,11 +384,26 @@ export default function Reports() {
                 {projectOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
               </Select>
             </div>
+            
+            <div className="flex items-center gap-2 ml-auto flex-shrink-0">
+              <button 
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-[var(--border-default)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm font-medium transition-all duration-150 flex-shrink-0"
+                onClick={handleExportCSV}
+              >
+                <Download size={14} /> CSV
+              </button>
+              <button 
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--text-active)] hover:bg-neutral-800 text-white text-sm font-medium transition-all duration-150 flex-shrink-0"
+                onClick={handleExportPDF}
+              >
+                <FileText size={14} /> Export PDF
+              </button>
+            </div>
           </div>
         </div>
 
         {/* SUMMARY METRICS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {[
             { id: 'total', label: 'Total Hours', val: totalHours.toFixed(1), icon: Clock },
             { id: 'billable', label: 'Billable Hours', val: billableHours.toFixed(1), icon: TrendingUp },
@@ -195,9 +416,7 @@ export default function Reports() {
               onClick={() => setExpandedMetric(expandedMetric === metric.id ? null : metric.id)}
             >
               <div className="flex items-center gap-2 mb-3">
-                <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-500">
-                  <metric.icon size={16} />
-                </div>
+                <metric.icon size={16} className="text-[var(--text-muted)]" />
               </div>
               <p className="font-mono text-3xl font-black text-[var(--text-primary)] tracking-tight">{metric.val}</p>
               <p className="text-xs text-[var(--text-secondary)] mt-1">{metric.label}</p>
@@ -362,17 +581,11 @@ export default function Reports() {
         <div className="glass-card p-0 overflow-hidden flex flex-col">
           <div className="px-6 py-4 flex justify-between items-center border-b border-[var(--border-default)]">
             <h3 className="font-bold text-[var(--text-primary)]">Detailed Breakdown</h3>
-            <SplitButton onExport={(format) => {
-              if (format === 'CSV' || format === 'Export to CSV') {
-                handleExportCSV();
-              } else {
-                triggerToast('Export started', `Your ${format.toUpperCase()} file will download shortly.`, 'success');
-              }
-            }} />
           </div>
           
-          <div className="divide-y divide-[var(--border-default)]">
-            {groupedByMember.length === 0 ? (
+          <div className="overflow-x-auto w-full">
+            <div className="divide-y divide-[var(--border-default)] min-w-[800px]">
+              {groupedByMember.length === 0 ? (
               <div className="py-12">
                 <EmptyState
                   icon={Filter}
@@ -446,12 +659,13 @@ export default function Reports() {
                 </div>
               );
             })}
+            </div>
           </div>
 
           {/* TOTALS ROW */}
-          <div className="px-6 py-4 bg-amber-500/10 font-semibold flex justify-between items-center text-sm">
+          <div className="px-6 py-4 bg-amber-500/10 font-semibold flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-sm gap-4 sm:gap-0">
             <span className="text-amber-800 dark:text-amber-400 uppercase tracking-wider text-xs">Total</span>
-            <div className="flex gap-8 items-center">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-8 items-start sm:items-center">
               <span className="font-mono text-amber-900 dark:text-amber-300">{totalHours.toFixed(1)}h</span>
               <span className="font-mono text-amber-900 dark:text-amber-300">{billableHours.toFixed(1)}h billable</span>
               <span className="font-mono text-amber-900 dark:text-amber-300">${revenue.toLocaleString()}</span>

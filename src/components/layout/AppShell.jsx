@@ -257,7 +257,7 @@ export default function AppShell() {
 
   return (
     <div
-      className="flex h-screen overflow-hidden relative"
+      className="flex min-h-screen h-screen overflow-hidden relative"
       style={{ minHeight: '100vh' }}
     >
       {/* Sidebar */}
@@ -273,7 +273,7 @@ export default function AppShell() {
       />
 
       {/* Main area */}
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden pb-16 md:pb-0">
 
         {/* Employee warning banner */}
         {isEmployee && (

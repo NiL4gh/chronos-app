@@ -433,3 +433,15 @@ export const reportRows = [
   { member: 'Daniel Osei', project: 'Infrastructure Migration', mon: 8.5, tue: 9.0, wed: 7.5, thu: 8.5, fri: 6.75, total: 40.25, billable: 40.25 },
   { member: 'Sofia Reyes', project: 'Redesign Landing Page', mon: 5.0, tue: 6.0, wed: 5.5, thu: 5.5, fri: 4.0, total: 26.0, billable: 26.0 },
 ];
+
+// ─── TODOS ────────────────────────────────────────────────────────────────────
+export const todos = [
+  { id: 'todo-1', userId: 'u1', title: 'Review API documentation updates', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-30', createdDate: '2026-05-25' },
+  { id: 'todo-2', userId: 'u1', title: 'Update project estimates for Q3', status: 'done', assignedBy: null, assignedByName: null, dueDate: '2026-05-27', createdDate: '2026-05-20' },
+  { id: 'todo-3', userId: 'u2', title: 'Write unit tests for auth module', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-31', createdDate: '2026-05-24' },
+  { id: 'todo-4', userId: 'u1', title: 'Prepare sprint retrospective notes', status: 'pending-acceptance', assignedBy: 'u3', assignedByName: 'Aiko Tanaka', dueDate: '2026-05-29', createdDate: '2026-05-27' },
+  { id: 'todo-5', userId: 'u2', title: 'Fix rate limiting bug in staging', status: 'pending-acceptance', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-05-28', createdDate: '2026-05-27' },
+  { id: 'todo-6', userId: 'u3', title: 'Review design mockups for dashboard', status: 'active', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-06-02', createdDate: '2026-05-26' },
+  { id: 'todo-7', userId: 'u4', title: 'Provision staging environment', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-30', createdDate: '2026-05-23' },
+  { id: 'todo-8', userId: 'u2', title: 'Document Kubernetes setup steps', status: 'done', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-05-25', createdDate: '2026-05-22' },
+];

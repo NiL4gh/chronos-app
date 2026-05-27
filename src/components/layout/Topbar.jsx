@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import { projects } from '../../data/mockData.js';
 
 const PAGE_META = {
   '/dashboard': { title: 'Dashboard',   subtitle: 'Team overview & activity' },
@@ -25,6 +26,7 @@ export default function Topbar({
   timerRunning,
   timerSeconds,
   timerTaskLabel,
+  timerProjectId,
   onStopTimer,
   onStartTimer,
   triggerToast = () => {},
@@ -87,7 +89,10 @@ export default function Topbar({
 
   return (
     <header
-      className="px-6 flex items-center justify-between gap-4 h-16 shrink-0 topbar-glass"
+      className="px-6 flex items-center justify-between gap-4 h-14 md:h-16 shrink-0 topbar-glass"
+      style={timerRunning ? {
+        boxShadow: 'inset 0 -2px 0 0 rgba(245, 158, 11, 0.4)'
+      } : {}}
     >
       {/* LEFT ZONE — Page identity */}
       <div className="flex-shrink-0 flex flex-col items-start min-w-0">
@@ -104,45 +109,38 @@ export default function Topbar({
         >
           {meta.title}
         </h1>
-        <div className="mt-1 flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+        <div className="mt-1 hidden sm:flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
           <Calendar size={12} />
           {dateStr}
         </div>
       </div>
 
-      {/* CENTER ZONE — Search */}
-      <div className="flex-1 max-w-sm mx-auto">
-        <button
-          onClick={onOpenCommandPalette}
-          onMouseEnter={() => setHoverSearch(true)}
-          onMouseLeave={() => setHoverSearch(false)}
-          className="relative flex items-center w-full transition-all duration-150"
-          style={{
-            background: 'var(--bg-surface)',
-            backdropFilter: 'blur(8px)',
-            border: `1px solid ${hoverSearch ? 'var(--border-strong)' : 'var(--border-default)'}`,
-            borderRadius: '10px',
-            height: '36px',
-            padding: '0 12px 0 36px',
-            fontSize: '13px',
-            color: 'var(--text-muted)',
-            boxShadow: hoverSearch ? '0 0 0 3px rgba(245,158,11,0.08)' : 'none'
-          }}
-          aria-label="Open command palette"
-        >
-          <Search size={13} style={{ color: 'var(--text-muted)', position: 'absolute', left: '12px' }} />
-          <span className="truncate">Search…</span>
-          <kbd
-            className="absolute right-[10px] font-mono text-xs rounded px-1 py-0.5"
-            style={{
-              color: 'var(--text-disabled)',
-              border: '1px solid var(--border-default)',
-              lineHeight: 1
-            }}
+      {/* CENTER ZONE — Active Task */}
+      <div className="hidden md:flex flex-1 max-w-sm mx-auto justify-center">
+        {timerRunning ? (() => {
+          const matchedProject = projects.find(p => p.id === timerProjectId);
+          const projectName = matchedProject ? matchedProject.name : null;
+          return (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border-default)] bg-white max-w-xs cursor-default">
+              <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse"></div>
+              <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[160px]">
+                {timerTaskLabel || 'Working...'}
+              </span>
+              <span className="text-[var(--text-muted)] text-xs flex-shrink-0">·</span>
+              <span className="text-xs text-[var(--text-muted)] truncate max-w-[80px] flex-shrink-0">
+                {projectName || 'No project'}
+              </span>
+            </div>
+          );
+        })() : (
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-dashed border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-150 cursor-pointer text-sm"
+            onClick={onStartTimer ? onStartTimer : () => {}}
           >
-            ⌘K
-          </kbd>
-        </button>
+            <Play size={13} />
+            <span>What are you working on?</span>
+          </button>
+        )}
       </div>
 
       {/* RIGHT ZONE — Timer CTA group */}
@@ -179,7 +177,7 @@ export default function Topbar({
             <button
               onClick={onOpenDrawer}
               title="Manual entry (N)"
-              className="flex items-center justify-center transition-colors duration-150"
+              className="hidden md:flex items-center justify-center transition-colors duration-150"
               style={{
                 width: '32px',
                 height: '32px',
@@ -249,6 +247,14 @@ export default function Topbar({
             </button>
           </>
         )}
+
+        <button
+          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors duration-150"
+          onClick={onOpenCommandPalette ? () => onOpenCommandPalette(true) : () => {}}
+          title="Search (⌘K)"
+        >
+          <Search size={15} />
+        </button>
 
         <div className="relative">
           <button

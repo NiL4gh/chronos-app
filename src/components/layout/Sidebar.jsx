@@ -43,9 +43,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
   }, []);
 
   return (
+    <>
     <aside
       className={[
-        'relative flex flex-col h-full shrink-0 transition-all duration-300 ease-in-out',
+        'hidden md:flex relative flex-col h-full shrink-0 transition-all duration-300 ease-in-out',
         collapsed ? 'w-16' : 'w-60',
       ].join(' ')}
       style={{ 
@@ -86,26 +87,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
             key={to}
             to={to}
             className={({ isActive }) => [
-              'group flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium transition-colors duration-150',
+              'group flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
               collapsed ? 'justify-center' : '',
+              isActive
+                ? 'bg-[var(--bg-active)] text-[var(--text-active)] border border-[var(--border-default)] font-medium'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
             ].join(' ')}
-            style={({ isActive }) => ({
-              background: isActive ? 'var(--accent-subtle)' : 'transparent',
-              color: isActive ? 'var(--accent-text)' : 'var(--text-tertiary)',
-              borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-            })}
-            onMouseEnter={(e) => {
-              if (!e.currentTarget.classList.contains('active')) {
-                e.currentTarget.style.background = 'var(--bg-sunken)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!e.currentTarget.classList.contains('active')) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--text-tertiary)';
-              }
-            }}
             title={collapsed ? label : undefined}
           >
             {({ isActive }) => (
@@ -141,22 +128,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
                 key={label}
                 onClick={onOpenHelp}
                 className={[
-                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium transition-colors duration-150',
+                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
                   collapsed ? 'justify-center' : '',
+                  'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
                 ].join(' ')}
-                style={{
-                  background: 'transparent',
-                  color: 'var(--text-tertiary)',
-                  borderLeft: '2px solid transparent',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'var(--bg-sunken)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-tertiary)';
-                }}
                 title={collapsed ? label : undefined}
               >
                 <Icon size={16} className="shrink-0" />
@@ -169,26 +144,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
               key={label}
               to={to}
               className={({ isActive }) => [
-                'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium transition-colors duration-150',
+                'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
                 collapsed ? 'justify-center' : '',
+                isActive
+                  ? 'bg-[var(--bg-active)] text-[var(--text-active)] border border-[var(--border-default)] font-medium'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
               ].join(' ')}
-              style={({ isActive }) => ({
-                background: isActive ? 'var(--accent-subtle)' : 'transparent',
-                color: isActive ? 'var(--accent-text)' : 'var(--text-tertiary)',
-                borderLeft: isActive ? '2px solid var(--accent)' : '2px solid transparent',
-              })}
-              onMouseEnter={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.background = 'var(--bg-sunken)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!e.currentTarget.classList.contains('active')) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = 'var(--text-tertiary)';
-                }
-              }}
               title={collapsed ? label : undefined}
             >
               {({ isActive }) => (
@@ -438,5 +399,56 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
     </aside>
+
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[var(--border-default)] flex items-center justify-around px-2 py-2 h-16">
+      <NavLink to="/dashboard" className={({ isActive }) =>
+        `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
+          ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+        }`
+      }>
+        <LayoutDashboard size={20} />
+        <span className="text-[10px] font-medium">Home</span>
+      </NavLink>
+      <NavLink to="/my-time" className={({ isActive }) =>
+        `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
+          ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+        }`
+      }>
+        <Clock size={20} />
+        <span className="text-[10px] font-medium">My Time</span>
+      </NavLink>
+      <NavLink to="/projects" className={({ isActive }) =>
+        `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
+          ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+        }`
+      }>
+        <FolderKanban size={20} />
+        <span className="text-[10px] font-medium">Projects</span>
+      </NavLink>
+      {activeRole === 'admin' && (
+        <NavLink to="/team" className={({ isActive }) =>
+          `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
+            ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
+            : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+          }`
+        }>
+          <Users size={20} />
+          <span className="text-[10px] font-medium">Team</span>
+        </NavLink>
+      )}
+      <NavLink to="/settings" className={({ isActive }) =>
+        `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
+          ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
+          : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+        }`
+      }>
+        <Settings size={20} />
+        <span className="text-[10px] font-medium">Settings</span>
+      </NavLink>
+    </nav>
+    </>
   );
 }

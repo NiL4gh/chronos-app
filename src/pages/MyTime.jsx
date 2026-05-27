@@ -98,7 +98,7 @@ export default function MyTime() {
   }
 
   return (
-    <div style={{ background: 'transparent' }} className="px-8 py-6 animate-fade-in space-y-6">
+    <div style={{ background: 'transparent' }} className="px-4 md:px-6 py-4 md:py-5 animate-fade-in space-y-6">
 
       {/* ── Live Timer ──────────────────────────────────────────────────────── */}
       <div 
@@ -108,9 +108,9 @@ export default function MyTime() {
           boxShadow: timerRunning ? '0 0 0 3px rgba(16,185,129,0.15)' : 'none'
         }}
       >
-        <div className="flex items-center gap-6">
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
           {/* Timer display */}
-          <div className="flex-1 pl-4">
+          <div className="flex-1 pl-0 md:pl-4">
             <div className="flex items-center gap-2 mb-3">
               <div className={`w-2 h-2 rounded-full transition-colors duration-300 ${timerRunning ? 'bg-emerald-500 animate-pulse-dot' : 'bg-[var(--text-muted)]'}`} />
               <span className={`text-xs font-medium transition-colors duration-300 ${timerRunning ? 'text-emerald-600' : 'text-[var(--text-muted)]'}`}>{timerRunning ? 'Timer running' : 'Timer stopped'}</span>
@@ -133,7 +133,7 @@ export default function MyTime() {
           </div>
 
           {/* Project select */}
-          <div className="w-44">
+          <div className="w-full md:w-44">
             <label className="text-xs text-[var(--text-muted)] mb-1.5 block uppercase tracking-wider">Project</label>
             <Select className="w-full">
               {projects.filter(p => p.status === 'active').map(p => (
@@ -146,7 +146,7 @@ export default function MyTime() {
           {timerRunning ? (
             <button
               onClick={() => stopTimer()}
-              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150"
+              className="w-full md:w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-150"
               style={{ background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger-text)' }}
             >
               <Square size={18} />
@@ -155,7 +155,7 @@ export default function MyTime() {
             <Button
               variant="primary"
               onClick={() => startTimer(currentTask)}
-              className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+              className="w-full md:w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
             >
               <Play size={18} />
             </Button>
@@ -164,7 +164,7 @@ export default function MyTime() {
       </div>
 
       {/* ── Personal Stats ──────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Today', value: totalToday.toFixed(1) + 'h', sub: 'of 8h goal', pct: Math.round((totalToday / 8) * 100) },
           { label: 'This Week', value: totalWeek.toFixed(1) + 'h', sub: 'of 40h goal', pct: Math.round((totalWeek / 40) * 100) },
@@ -234,8 +234,9 @@ export default function MyTime() {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-7 gap-2">
-          {(() => {
+        <div className="overflow-x-auto w-full pb-2">
+          <div className="grid grid-cols-7 gap-2 min-w-[500px]">
+            {(() => {
             const todayStr = new Date().toISOString().split('T')[0];
             const dayOfWeek = baseDate.getDay();
             const monday = new Date(baseDate);
@@ -279,6 +280,7 @@ export default function MyTime() {
               </button>
             )
           })}
+          </div>
         </div>
       </div>
 
@@ -329,8 +331,10 @@ export default function MyTime() {
             Add Entry
           </Button>
         </div>
-        <Table>
-          <TableHead>
+        <div className="overflow-x-auto w-full">
+          <div className="min-w-[800px]">
+            <Table>
+              <TableHead>
             <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Project</Th>
             <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Task</Th>
             <Th className="text-[var(--text-muted)] text-xs uppercase tracking-wider">Date</Th>
@@ -378,6 +382,8 @@ export default function MyTime() {
             ))}
           </TableBody>
         </Table>
+          </div>
+        </div>
 
         {/* Pagination */}
         {totalPages > 1 && (

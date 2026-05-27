@@ -3,7 +3,7 @@
 > **Who reads this:** Antigravity (the coding agent) and Claude (the reasoning Brain).
 > **What it is:** The accurate, verified state of every file in the repository. This is the single source of truth about what HAS been built and what HAS NOT. If it isn't listed as complete here, treat it as not existing.
 >
-> **Last verified:** 2026-05-21 (DateTimePicker mode=time + Projects due date picker upgrade)
+> **Last verified:** 2026-05-27 (Passes 1-10B Complete: Bugs fixed, UI simplified, Topbar active task, Todo tab, functional Exports, and full Mobile Responsiveness)
 > **DESIGN STATUS:** All UI components and pages have been rewritten to use the warm-light palette. See DESIGN.md for the design system specification.
 
 ---
@@ -99,14 +99,16 @@ All MVP Phase 1 requirements complete. Visual polish (Passes 1–6 of the Warm L
 ---
 
 ## What Is Incomplete or Missing
+- Passes 10A/10B complete but mobile testing on real devices recommended — edge cases may surface
+- Todo tab state is local only, resets when drawer closes (expected — no backend)
+- PDF export uses window.open print approach — popup blockers may interfere on some browsers
 - Real timer persistence across page refresh (expected — state in React memory only)
 - ProofOfWorkTab.jsx remains Phase 2 placeholder
 - Desktop App (Phase 2)
-- Working CSV/PDF/Excel export (Blob API) — currently triggers toast
 - Settings changes do not persist (local state only, no backend)
 - Integration cards are all "Coming Soon"
 - Notification bell panel not yet built (shows count badge only)
-- Light/Dark mode toggle UI exists in Settings but dark mode not yet wired (Phase 2)
+- Dark mode toggle exists in Settings but is not yet wired (still Phase 2)
 
 ---
 

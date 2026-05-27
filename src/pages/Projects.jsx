@@ -48,15 +48,7 @@ function formatDue(dateStr) {
 function StatCard({ icon: Icon, label, value, sub }) {
   return (
     <div className="glass-card p-5 flex items-center gap-4">
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-        style={{
-          background: 'var(--accent-subtle)',
-          border: '1px solid var(--accent-border)',
-        }}
-      >
-        <Icon size={18} style={{ color: 'var(--accent)' }} />
-      </div>
+      <Icon size={16} className="text-[var(--text-muted)]" />
       <div>
         <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
         <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
@@ -192,14 +184,14 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
 
   return (
     <div
-      className="glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer"
+      className={`glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
       style={{
         border: selected
           ? '1px solid var(--accent-border)'
           : '1px solid var(--border-default)',
         boxShadow: selected ? 'var(--shadow-md)' : undefined,
       }}
-      onClick={() => !editingGoal && onSelect(project)}
+      onClick={(e) => { e.preventDefault(); if (!editingGoal) onSelect(project); }}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -227,7 +219,7 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
 
       {/* Goal ring + budget progress */}
       <div className="flex items-center gap-6">
-        <div onClick={e => { e.stopPropagation(); setEditingGoal(v => !v); }}>
+        <div onClick={e => { e.preventDefault(); e.stopPropagation(); setEditingGoal(v => !v); }}>
           <GoalRing project={project} onClickRing={() => {}} />
         </div>
         <div className="flex-1 min-w-0">
@@ -263,7 +255,7 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
         {/* Member avatar cluster — click zone */}
         <div
           className="flex items-center"
-          onClick={e => { e.stopPropagation(); onSelect(project); }}
+          onClick={e => { e.preventDefault(); e.stopPropagation(); onSelect(project); }}
         >
           {members.slice(0, 4).map((m, i) => (
             <div
@@ -628,10 +620,10 @@ export default function Projects() {
   const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
 
   return (
-    <div className="px-8 py-6 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
+    <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
 
       {/* ── Stat row ── */}
-      <div className="grid grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard icon={FolderKanban} label="Total Projects" value={projectData.length} />
         <StatCard icon={CheckCircle2} label="Active"         value={active} />
         <StatCard icon={Clock}        label="Hours Logged"   value={`${totalLogged}h`} />
@@ -643,7 +635,7 @@ export default function Projects() {
 
       {/* ── Main split layout ── */}
       <div
-        className="flex gap-0 overflow-hidden rounded-2xl flex-1"
+        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl flex-1"
         style={{
           border: '1px solid var(--border-default)',
           background: 'var(--bg-surface)',
@@ -652,9 +644,8 @@ export default function Projects() {
       >
         {/* Left — project grid */}
         <div
-          className="flex flex-col transition-all duration-300 ease-in-out bg-base"
+          className={`flex flex-col transition-all duration-300 ease-in-out bg-base w-full ${selectedProject ? 'md:w-[55%]' : 'md:w-full'}`}
           style={{
-            width: selectedProject ? '55%' : '100%',
             borderRight: selectedProject ? '1px solid var(--border-default)' : 'none',
             minWidth: 0,
             background: 'var(--bg-base)',
@@ -666,7 +657,7 @@ export default function Projects() {
             style={{ borderBottom: '1px solid var(--border-default)' }}
           >
             {/* Status filter tabs */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {STATUS_FILTERS.map(f => (
                 <button
                   key={f}
@@ -732,12 +723,7 @@ export default function Projects() {
               />
             ) : (
               <div
-                className="grid gap-5"
-                style={{
-                  gridTemplateColumns: selectedProject
-                    ? 'repeat(1, 1fr)'
-                    : 'repeat(auto-fill, minmax(340px, 1fr))',
-                }}
+                className={`grid gap-5 ${selectedProject ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}
               >
                 {filtered.map(project => (
                   <ProjectCard
@@ -756,7 +742,7 @@ export default function Projects() {
 
         {/* Right — inline detail panel */}
         {selectedProject && (
-          <div className="flex-1 min-w-0 overflow-hidden">
+          <div className="w-full md:flex-1 min-w-0 overflow-hidden">
             <ProjectDetailPanel
               project={projectData.find(p => p.id === selectedProject.id) || selectedProject}
               onClose={() => setSelectedProject(null)}

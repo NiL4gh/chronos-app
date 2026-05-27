@@ -1,11 +1,11 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import SlideOutDrawer from '../ui/SlideOutDrawer';
 import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';
 import { ActivityBar, ProgressBar } from '../ui/ProgressBar';
 import TrackingSourceBadge from '../ui/TrackingSourceBadge';
-import { timeLogs, projects } from '../../data/mockData';
-import { Clock, FolderKanban, BarChart2, Activity } from 'lucide-react';
+import { timeLogs, projects, todos } from '../../data/mockData';
+import { Clock, FolderKanban, BarChart2, Activity, Check, X, ChevronDown, Plus, UserPlus } from 'lucide-react';
 
 // Context controls which tabs are shown:
 // 'team'      → Overview, Time Logs, Projects, Activity
@@ -13,7 +13,7 @@ import { Clock, FolderKanban, BarChart2, Activity } from 'lucide-react';
 // 'reports'   → Overview, Time Breakdown
 
 const TAB_CONFIG = {
-  team: ['Overview', 'Time Logs', 'Projects', 'Activity'],
+  team: ['Overview', 'Time Logs', 'Projects', 'Todo', 'Activity'],
   dashboard: ['Overview', 'Today'],
   reports: ['Overview', 'Time Breakdown'],
 };
@@ -26,10 +26,21 @@ const StatusColors = {
 
 const MemberProfileDrawer = ({ member, context = 'team', initialTab = 'Overview', isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState(initialTab);
+  const [memberTodos, setMemberTodos] = useState(() =>
+    todos ? todos.filter(t => t.userId === member?.id) : []
+  );
+  const [newTodoText, setNewTodoText] = useState('');
+  const [showDone, setShowDone] = useState(false);
 
   useEffect(() => {
     setActiveTab(initialTab);
   }, [initialTab, member]);
+
+  useEffect(() => {
+    if (member && todos) {
+      setMemberTodos(todos.filter(t => t.userId === member.id));
+    }
+  }, [member]);
 
   if (!member) return null;
 
@@ -181,6 +192,139 @@ const MemberProfileDrawer = ({ member, context = 'team', initialTab = 'Overview'
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* ── TODO tab ── */}
+          {activeTab === 'Todo' && (
+            <div className="space-y-4">
+              {/* SECTION 1 — PENDING ACCEPTANCE */}
+              {memberTodos.some(t => t.status === 'pending-acceptance') && (
+                <div>
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-amber-700 mb-3">
+                    Awaiting Your Response
+                  </h4>
+                  {memberTodos.filter(t => t.status === 'pending-acceptance').map(todo => (
+                    <div key={todo.id} className="p-3 rounded-xl border border-amber-200 bg-amber-50 mb-2">
+                      <div className="text-xs text-amber-700 font-medium mb-1 flex items-center gap-1">
+                        <UserPlus size={11} /> Requested by {todo.assignedByName}
+                      </div>
+                      <div className="text-sm font-medium text-[var(--text-primary)] mb-2">
+                        {todo.title}
+                      </div>
+                      <div className="flex items-center">
+                        <button
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-medium transition-colors"
+                          onClick={() => setMemberTodos(prev => prev.map(t => t.id === todo.id ? { ...t, status: 'active' } : t))}
+                        >
+                          <Check size={11} /> Accept
+                        </button>
+                        <button
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[var(--border-default)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] text-xs font-medium transition-colors ml-2"
+                          onClick={() => setMemberTodos(prev => prev.filter(t => t.id !== todo.id))}
+                        >
+                          <X size={11} /> Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* SECTION 2 — ACTIVE TODOS */}
+              <div>
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3 mt-4">
+                  To Do
+                </h4>
+                {memberTodos.filter(t => t.status === 'active').map(todo => (
+                  <div key={todo.id} className="flex items-start gap-2.5 py-2.5 border-b border-[var(--border-default)] last:border-0">
+                    <div
+                      className="w-4 h-4 rounded border-2 border-[var(--border-strong)] flex-shrink-0 mt-0.5 hover:border-amber-400 transition-colors cursor-pointer"
+                      onClick={() => setMemberTodos(prev => prev.map(t => t.id === todo.id ? { ...t, status: 'done' } : t))}
+                    />
+                    <div className="flex-1 flex flex-col items-start">
+                      <span className="text-sm text-[var(--text-primary)]">{todo.title}</span>
+                      {todo.assignedBy !== null && (
+                        <span className="inline-flex items-center gap-1 text-xs text-[var(--text-muted)] mt-0.5">
+                          <UserPlus size={10} /> from {todo.assignedByName}
+                        </span>
+                      )}
+                      {todo.dueDate && (
+                        <span className={`text-xs mt-0.5 ${new Date(todo.dueDate) < new Date() ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
+                          Due {todo.dueDate}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* SECTION 3 — DONE TODOS */}
+              <div>
+                <button
+                  className="text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] flex items-center gap-1 mt-4 mb-2"
+                  onClick={() => setShowDone(!showDone)}
+                >
+                  <ChevronDown size={12} style={{ transform: showDone ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                  Completed ({memberTodos.filter(t => t.status === 'done').length})
+                </button>
+                {showDone && memberTodos.filter(t => t.status === 'done').map(todo => (
+                  <div key={todo.id} className="flex items-start gap-2.5 py-2 opacity-50">
+                    <div className="w-4 h-4 rounded border-2 border-emerald-400 bg-emerald-400 flex-shrink-0 mt-0.5 flex items-center justify-center">
+                      <Check size={10} className="text-white" />
+                    </div>
+                    <span className="text-sm text-[var(--text-muted)] line-through">{todo.title}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* SECTION 4 — ADD NEW TODO INPUT */}
+              <div className="mt-4 pt-4 border-t border-[var(--border-default)]">
+                <div className="flex">
+                  <input
+                    type="text"
+                    className="flex-1 text-sm px-3 py-2 rounded-xl border border-[var(--border-default)] bg-white focus:outline-none focus:border-[var(--border-focus)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)]"
+                    placeholder="Add a task..."
+                    value={newTodoText}
+                    onChange={(e) => setNewTodoText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newTodoText.trim() !== '') {
+                        setMemberTodos(prev => [...prev, {
+                          id: 'todo-local-' + Date.now(),
+                          userId: member.id,
+                          title: newTodoText.trim(),
+                          status: 'active',
+                          assignedBy: null,
+                          assignedByName: null,
+                          dueDate: null,
+                          createdDate: new Date().toISOString().split('T')[0]
+                        }]);
+                        setNewTodoText('');
+                      }
+                    }}
+                  />
+                  <button
+                    className="ml-2 w-8 h-8 flex items-center justify-center rounded-xl bg-amber-400 hover:bg-amber-300 text-white flex-shrink-0 transition-colors"
+                    onClick={() => {
+                      if (newTodoText.trim() !== '') {
+                        setMemberTodos(prev => [...prev, {
+                          id: 'todo-local-' + Date.now(),
+                          userId: member.id,
+                          title: newTodoText.trim(),
+                          status: 'active',
+                          assignedBy: null,
+                          assignedByName: null,
+                          dueDate: null,
+                          createdDate: new Date().toISOString().split('T')[0]
+                        }]);
+                        setNewTodoText('');
+                      }
+                    }}
+                  >
+                    <Plus size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 

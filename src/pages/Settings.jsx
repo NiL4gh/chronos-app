@@ -81,18 +81,18 @@ export default function Settings() {
   const [collapsedSidebar, setCollapsedSidebar] = useState(false);
 
   return (
-    <div className="flex px-8 py-6 gap-6 h-full animate-fade-in" style={{ background: 'transparent' }}>
+    <div className="flex flex-col md:flex-row px-4 md:px-6 py-4 md:py-5 gap-6 h-full animate-fade-in" style={{ background: 'transparent' }}>
       {/* LEFT SIDEBAR */}
-      <div className="w-52 flex-shrink-0 glass-card p-4 self-start">
+      <div className="w-full md:w-52 flex-shrink-0 glass-card p-4 self-start">
         <h2 className="text-base font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Settings</h2>
-        <nav className="flex flex-col gap-1">
+        <nav className="flex md:flex-col gap-2 md:gap-1 overflow-x-auto w-full pb-2 md:pb-0">
           {navItems.map(item => {
             const isActive = activeSection === item.id;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`text-left text-sm transition-colors ${isActive ? 'font-semibold rounded-r-lg pl-3 pr-3 py-2' : 'rounded-lg px-3 py-2'}`}
+                className={`shrink-0 text-center md:text-left text-sm transition-colors ${isActive ? 'font-semibold rounded-lg md:rounded-l-none md:rounded-r-lg px-3 py-2' : 'rounded-lg px-3 py-2'}`}
                 style={isActive ? {
                   background: 'var(--accent-subtle)',
                   color: 'var(--accent-text)',
@@ -474,9 +474,7 @@ export default function Settings() {
               ].map(integration => (
                 <div key={integration.name} className="glass-interactive p-4 rounded-xl flex items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ border: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}>
-                      <integration.icon size={20} style={{ color: 'var(--text-secondary)' }} />
-                    </div>
+                    <integration.icon size={16} className="text-[var(--text-muted)]" />
                     <div>
                       <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{integration.name}</h4>
                       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{integration.desc}</p>
@@ -541,7 +539,7 @@ export default function Settings() {
             <div className="p-5 rounded-xl mt-8" style={{ border: '1px solid var(--danger-border)', background: 'var(--danger-subtle)' }}>
               <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--danger-text)' }}>Danger Zone</h4>
               <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Export all data</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Download a complete export of your workspace</p>
@@ -549,7 +547,7 @@ export default function Settings() {
                   <Button variant="ghost">Export Data</Button>
                 </div>
                 <div className="h-px w-full my-2" style={{ background: 'var(--danger-border)', opacity: 0.2 }} />
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Delete workspace</p>
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Permanently delete all data</p>

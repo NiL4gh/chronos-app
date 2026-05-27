@@ -575,7 +575,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI CARDS ROW */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
         {/* Total Hours */}
         <div className="glass-card flex flex-col relative overflow-hidden transition-all duration-300">
           <div 
@@ -583,9 +583,7 @@ export default function Dashboard() {
             onClick={() => handleKpiClick('hours')}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
-                <Clock className="w-5 h-5" />
-              </div>
+              <Clock size={16} className="text-[var(--text-muted)]" />
               <span className="text-xs font-medium text-emerald-500 flex items-center bg-emerald-500/10 px-2 py-1 rounded-full">
                 <TrendingUp className="w-3 h-3 mr-1" /> +12%
               </span>
@@ -624,9 +622,7 @@ export default function Dashboard() {
             onClick={() => handleKpiClick('utilization')}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
-                <BarChart3 className="w-5 h-5" />
-              </div>
+              <BarChart3 size={16} className="text-[var(--text-muted)]" />
               <span className="text-xs font-medium text-emerald-500 flex items-center bg-emerald-500/10 px-2 py-1 rounded-full">
                 <TrendingUp className="w-3 h-3 mr-1" /> +5%
               </span>
@@ -665,9 +661,7 @@ export default function Dashboard() {
             onClick={() => handleKpiClick('revenue')}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
-                <DollarSign className="w-5 h-5" />
-              </div>
+              <DollarSign size={16} className="text-[var(--text-muted)]" />
             </div>
             <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Est. Revenue</h3>
             <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
@@ -703,9 +697,7 @@ export default function Dashboard() {
             onClick={() => handleKpiClick('uninvoiced')}
           >
             <div className="flex justify-between items-start mb-4">
-              <div className="p-2 rounded-xl bg-red-500/10 text-red-500">
-                <AlertCircle className="w-5 h-5" />
-              </div>
+              <AlertCircle size={16} className="text-[var(--text-muted)]" />
             </div>
             <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Uninvoiced Hours</h3>
             <div className="text-3xl font-bold text-red-500 tracking-tight">
@@ -846,17 +838,21 @@ export default function Dashboard() {
                 </div>
                 
                 <div className="hidden md:block flex-1 max-w-xs mx-8">
-                  <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[var(--text-secondary)]">Utilization</span>
-                    <span className={`font-medium ${member.activityLevel > 80 ? 'text-emerald-500' : member.activityLevel > 40 ? 'text-amber-500' : 'text-red-500'}`}>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="w-20 flex-shrink-0 text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+                      Utilization
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="w-full bg-[var(--border-default)] rounded-full h-1.5 overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full ${member.activityLevel > 80 ? 'bg-emerald-500' : member.activityLevel > 40 ? 'bg-amber-500' : 'bg-red-500'}`} 
+                          style={{ width: `${member.activityLevel}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                    <span className="w-10 flex-shrink-0 text-right text-xs font-mono text-[var(--text-secondary)]">
                       {member.activityLevel}%
                     </span>
-                  </div>
-                  <div className="w-full bg-[var(--border-default)] rounded-full h-1.5 overflow-hidden">
-                    <div 
-                      className={`h-full rounded-full ${member.activityLevel > 80 ? 'bg-emerald-500' : member.activityLevel > 40 ? 'bg-amber-500' : 'bg-red-500'}`} 
-                      style={{ width: `${member.activityLevel}%` }}
-                    ></div>
                   </div>
                 </div>
                 
