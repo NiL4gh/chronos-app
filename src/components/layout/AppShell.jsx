@@ -43,16 +43,22 @@ export default function AppShell() {
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
 
   // Keybindings state
-  const [keyBindings, setKeyBindings] = useState({
-    toggleTimer: 't',
-    newEntry: 'n',
-    openPalette: 'p',
-    goTeam: 't',
-    goProjects: 'p',
-    goReports: 'r',
-    goInvoices: 'i',
-    goMyTime: 'm',
-    goSettings: 's',
+  const [keyBindings, setKeyBindings] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chronos_keybindings');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      toggleTimer: 't',
+      newEntry: 'n',
+      openPalette: 'p',
+      goTeam: 't',
+      goProjects: 'p',
+      goReports: 'r',
+      goInvoices: 'i',
+      goMyTime: 'm',
+      goSettings: 's',
+    };
   });
 
   const lastKeyRef = useRef('');
@@ -66,6 +72,13 @@ export default function AppShell() {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Persist key bindings
+  useEffect(() => {
+    try {
+      localStorage.setItem('chronos_keybindings', JSON.stringify(keyBindings));
+    } catch {}
+  }, [keyBindings]);
 
   // Toast
   const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });

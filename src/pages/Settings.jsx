@@ -47,14 +47,31 @@ export default function Settings() {
     { id: 'billing', label: 'Billing' }
   ];
 
-  // Workspace State
-  const [orgName, setOrgName] = useState('Chronos Demo Co.');
-  const [industry, setIndustry] = useState('Technology');
-  const [timezone, setTimezone] = useState('UTC');
-  const [dateFormat, setDateFormat] = useState('MM/DD/YYYY');
-  const [billingRate, setBillingRate] = useState('95');
+  // Workspace State — persisted
+  const [orgName, setOrgName] = useState(() => {
+    try { return localStorage.getItem('ws_orgName') || 'Chronos Demo Co.'; } catch { return 'Chronos Demo Co.'; }
+  });
+  const [industry, setIndustry] = useState(() => {
+    try { return localStorage.getItem('ws_industry') || 'Technology'; } catch { return 'Technology'; }
+  });
+  const [timezone, setTimezone] = useState(() => {
+    try { return localStorage.getItem('ws_timezone') || 'UTC'; } catch { return 'UTC'; }
+  });
+  const [dateFormat, setDateFormat] = useState(() => {
+    try { return localStorage.getItem('ws_dateFormat') || 'MM/DD/YYYY'; } catch { return 'MM/DD/YYYY'; }
+  });
+  const [billingRate, setBillingRate] = useState(() => {
+    try { return localStorage.getItem('ws_billingRate') || '95'; } catch { return '95'; }
+  });
 
   const handleSaveWorkspace = () => {
+    try {
+      localStorage.setItem('ws_orgName', orgName);
+      localStorage.setItem('ws_industry', industry);
+      localStorage.setItem('ws_timezone', timezone);
+      localStorage.setItem('ws_dateFormat', dateFormat);
+      localStorage.setItem('ws_billingRate', billingRate);
+    } catch {}
     triggerToast("Settings saved", "Workspace settings updated.", "success");
   };
 
