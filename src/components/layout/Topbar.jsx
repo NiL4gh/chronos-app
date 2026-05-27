@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar, X } from 'lucide-react';
 import { projects } from '../../data/mockData.js';
 
 const PAGE_META = {
@@ -38,6 +38,81 @@ export default function Topbar({
   const [hoverBell, setHoverBell] = useState(false);
   
   const [notifOpen, setNotifOpen] = useState(false);
+
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [taskInput, setTaskInput] = useState('');
+  const [projectInput, setProjectInput] = useState('');
+
+  const getAppShellStartTimer = () => {
+    try {
+      const header = document.querySelector('header');
+      if (!header) return null;
+      const key = Object.keys(header).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactContainer$'));
+      if (!key) return null;
+      let fiber = header[key];
+      while (fiber) {
+        if (fiber.type && fiber.type.name === 'AppShell') {
+          let hook = fiber.memoizedState;
+          while (hook) {
+            if (hook.memoizedState && Array.isArray(hook.memoizedState)) {
+              const fn = hook.memoizedState[0];
+              if (typeof fn === 'function' && (fn.name === 'startTimer' || fn.toString().includes('setTimerTaskLabel'))) {
+                return fn;
+              }
+            }
+            hook = hook.next;
+          }
+        }
+        fiber = fiber.return;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return null;
+  };
+
+  const getAppShellTimerProjectId = () => {
+    try {
+      const header = document.querySelector('header');
+      if (!header) return null;
+      const key = Object.keys(header).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactContainer$'));
+      if (!key) return null;
+      let fiber = header[key];
+      while (fiber) {
+        if (fiber.type && fiber.type.name === 'AppShell') {
+          let hook = fiber.memoizedState;
+          let states = [];
+          while (hook) {
+            states.push(hook.memoizedState);
+            hook = hook.next;
+          }
+          for (let i = 0; i < states.length - 3; i++) {
+            if (typeof states[i] === 'boolean' && typeof states[i+1] === 'number' && typeof states[i+2] === 'string') {
+              return states[i+3];
+            }
+          }
+        }
+        fiber = fiber.return;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return null;
+  };
+
+  const handleStartWithTask = () => {
+    if (!taskInput.trim()) {
+      setIsExpanded(true);
+      return;
+    }
+    const realStartTimer = getAppShellStartTimer() || onStartTimer;
+    realStartTimer(taskInput.trim(), projectInput || null);
+    setIsExpanded(false);
+    setTaskInput('');
+    setProjectInput('');
+  };
+
+  const activeProjectId = getAppShellTimerProjectId() || timerProjectId;
 
   const mockNotifications = [
     {
@@ -96,20 +171,10 @@ export default function Topbar({
     >
       {/* LEFT ZONE — Page identity */}
       <div className="flex-shrink-0 flex flex-col items-start min-w-0">
-        <h1 
-          className="truncate"
-          style={{
-            fontFamily: 'var(--font-sans)',
-            fontWeight: 700,
-            fontSize: '15px',
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.01em',
-            lineHeight: 1.2
-          }}
-        >
+        <h1 className="text-sm font-normal text-[var(--text-muted)] truncate">
           {meta.title}
         </h1>
-        <div className="mt-1 hidden sm:flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
+        <div className="mt-1 hidden sm:flex items-center gap-1 text-xs text-[var(--text-muted)]">
           <Calendar size={12} />
           {dateStr}
         </div>
@@ -118,7 +183,7 @@ export default function Topbar({
       {/* CENTER ZONE — Active Task */}
       <div className="hidden md:flex flex-1 max-w-sm mx-auto justify-center">
         {timerRunning ? (() => {
-          const matchedProject = projects.find(p => p.id === timerProjectId);
+          const matchedProject = projects.find(p => p.id === activeProjectId);
           const projectName = matchedProject ? matchedProject.name : null;
           return (
             <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border-default)] bg-white max-w-xs cursor-default">
@@ -133,13 +198,56 @@ export default function Topbar({
             </div>
           );
         })() : (
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-full border border-dashed border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-150 cursor-pointer text-sm"
-            onClick={onStartTimer ? onStartTimer : () => {}}
-          >
-            <Play size={13} />
-            <span>What are you working on?</span>
-          </button>
+          !isExpanded ? (
+            <button
+              className="flex items-center gap-2 px-4 py-2 rounded-full border border-dashed border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-150 cursor-pointer text-sm animate-fade-in"
+              onClick={() => setIsExpanded(true)}
+            >
+              <Play size={13} />
+              <span>What are you working on?</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 max-w-md w-full animate-fade-in">
+              <input
+                autoFocus
+                type="text"
+                value={taskInput}
+                onChange={e => setTaskInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Escape') {
+                    setIsExpanded(false);
+                    setTaskInput('');
+                    setProjectInput('');
+                  }
+                  if (e.key === 'Enter' && taskInput.trim()) {
+                    handleStartWithTask();
+                  }
+                }}
+                placeholder="What are you working on?"
+                className="flex-1 text-sm px-3 py-1.5 rounded-xl border border-[var(--border-focus)] bg-white focus:outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] min-w-0"
+              />
+              <select
+                value={projectInput}
+                onChange={e => setProjectInput(e.target.value)}
+                className="text-sm px-2 py-1.5 rounded-xl border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)] flex-shrink-0 max-w-[140px]"
+              >
+                <option value="">No project</option>
+                {projects.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={() => {
+                  setIsExpanded(false);
+                  setTaskInput('');
+                  setProjectInput('');
+                }}
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded-lg hover:bg-[var(--bg-sunken)] flex-shrink-0"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          )
         )}
       </div>
 
@@ -148,7 +256,14 @@ export default function Topbar({
         {!timerRunning ? (
           <>
             <button
-              onClick={onStartTimer}
+              onClick={() => {
+                if (timerRunning) return;
+                if (!isExpanded) {
+                  setIsExpanded(true);
+                } else {
+                  handleStartWithTask();
+                }
+              }}
               className="timer-cta-pulse press-on-click flex items-center justify-center gap-1.5 transition-all duration-150"
               style={{
                 background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
@@ -221,7 +336,12 @@ export default function Topbar({
               </span>
             </div>
             <button
-              onClick={onStopTimer}
+              onClick={() => {
+                onStopTimer?.();
+                setIsExpanded(false);
+                setTaskInput('');
+                setProjectInput('');
+              }}
               className="flex items-center justify-center transition-all duration-200 press-on-click"
               style={{
                 width: '32px',

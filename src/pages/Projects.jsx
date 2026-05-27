@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Plus, Search, CheckCircle2, PauseCircle, Circle,
@@ -50,9 +50,9 @@ function StatCard({ icon: Icon, label, value, sub }) {
     <div className="glass-card p-5 flex items-center gap-4">
       <Icon size={16} className="text-[var(--text-muted)]" />
       <div>
-        <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-        <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
-        {sub && <p className="text-[10px] uppercase tracking-wider mt-1" style={{ color: 'var(--text-disabled)' }}>{sub}</p>}
+        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{label}</p>
+        <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
+        {sub && <p className="text-xs text-[var(--text-muted)] mt-1">{sub}</p>}
       </div>
     </div>
   );
@@ -571,6 +571,49 @@ export default function Projects() {
     name: '', client: '', description: '', dueDate: '', budget: '', status: 'active',
   });
 
+  const dueDateTriggerRef = useRef(null);
+  const [calendarStyle, setCalendarStyle] = useState({});
+
+  const calculateCalendarPosition = () => {
+    if (!dueDateTriggerRef.current) return;
+    const rect = dueDateTriggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    let style = {};
+    if (spaceBelow < 320) {
+      style = {
+        position: 'fixed',
+        bottom: `${window.innerHeight - rect.top + 4}px`,
+        left: `${rect.left}px`,
+        zIndex: '9999'
+      };
+    } else {
+      style = {
+        position: 'fixed',
+        top: `${rect.bottom + 4}px`,
+        left: `${rect.left}px`,
+        zIndex: '9999'
+      };
+    }
+    setCalendarStyle(style);
+
+    setTimeout(() => {
+      const panel = dueDateTriggerRef.current?.querySelector('.glass-elevated');
+      if (panel) {
+        panel.style.position = style.position;
+        if (style.top) {
+          panel.style.top = style.top;
+          panel.style.bottom = 'auto';
+        }
+        if (style.bottom) {
+          panel.style.bottom = style.bottom;
+          panel.style.top = 'auto';
+        }
+        panel.style.left = style.left;
+        panel.style.zIndex = style.zIndex;
+      }
+    }, 0);
+  };
+
   const handleCreateProject = () => {
     if (!newProject.name.trim()) {
       triggerToast?.('Validation error', 'Project name is required.', 'warning');
@@ -619,8 +662,17 @@ export default function Projects() {
   const totalSpent  = projectData.reduce((s, p) => s + p.spent, 0);
   const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
 
+  const activeProjectCount = active;
+  const totalProjectCount = projectData.length;
+
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Projects</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          {activeProjectCount} active · {totalProjectCount} total
+        </p>
+      </div>
 
       {/* ── Stat row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -763,7 +815,7 @@ export default function Projects() {
           </>
         }
       >
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-y-auto">
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Project Name *</label>
             <Input
@@ -796,12 +848,14 @@ export default function Projects() {
                 <option value="paused">Paused</option>
               </Select>
             </div>
-            <div>
+            <div className="relative z-50" ref={dueDateTriggerRef}>
               <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Due Date</label>
-              <DateTimePicker
-                value={newProject.dueDate}
-                onChange={val => setNewProject(p => ({ ...p, dueDate: val }))}
-              />
+              <div onClickCapture={calculateCalendarPosition}>
+                <DateTimePicker
+                  value={newProject.dueDate}
+                  onChange={val => setNewProject(p => ({ ...p, dueDate: val }))}
+                />
+              </div>
             </div>
           </div>
           <div>

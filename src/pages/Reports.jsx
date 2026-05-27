@@ -357,7 +357,13 @@ export default function Reports() {
     <div className="flex w-full h-full overflow-hidden">
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
-        
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Reports</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
+            Analyse team performance and export time data.
+          </p>
+        </div>
+
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
           <div className="flex flex-col md:flex-row gap-4 items-end">
@@ -412,14 +418,14 @@ export default function Reports() {
           ].map(metric => (
             <div 
               key={metric.id} 
-              className="glass-interactive lift-on-hover p-5 cursor-pointer relative"
+              className="glass-interactive p-5 cursor-pointer relative"
               onClick={() => setExpandedMetric(expandedMetric === metric.id ? null : metric.id)}
             >
-              <div className="flex items-center gap-2 mb-3">
+              <div className="flex items-center gap-2 mb-4">
                 <metric.icon size={16} className="text-[var(--text-muted)]" />
               </div>
-              <p className="font-mono text-3xl font-black text-[var(--text-primary)] tracking-tight">{metric.val}</p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1">{metric.label}</p>
+              <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{metric.label}</p>
+              <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">{metric.val}</p>
             </div>
           ))}
         </div>
@@ -578,9 +584,9 @@ export default function Reports() {
         </div>
 
         {/* DETAILED BREAKDOWN TABLE */}
-        <div className="glass-card p-0 overflow-hidden flex flex-col">
-          <div className="px-6 py-4 flex justify-between items-center border-b border-[var(--border-default)]">
-            <h3 className="font-bold text-[var(--text-primary)]">Detailed Breakdown</h3>
+        <div className="mt-6 border-t border-[var(--border-default)] pt-4 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Detailed Breakdown</h2>
           </div>
           
           <div className="overflow-x-auto w-full">

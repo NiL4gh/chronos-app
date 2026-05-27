@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 export function Table({ children, className = '' }) {
   return (
     <div className={`w-full overflow-x-auto ${className}`}>
-      <table className="w-full text-sm border-collapse">
+      <table className="w-full border-collapse">
         {children}
       </table>
     </div>
@@ -13,9 +13,7 @@ export function Table({ children, className = '' }) {
 export function TableHead({ children }) {
   return (
     <thead>
-      <tr style={{ borderBottom: '1px solid var(--border-default)' }}>
-        {children}
-      </tr>
+      {children}
     </thead>
   );
 }
@@ -23,8 +21,7 @@ export function TableHead({ children }) {
 export function Th({ children, className = '' }) {
   return (
     <th
-      className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider ${className}`}
-      style={{ color: 'var(--text-muted)' }}
+      className={`text-left text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] px-4 py-3 border-b border-[var(--border-default)] whitespace-nowrap ${className}`}
     >
       {children}
     </th>
@@ -33,21 +30,16 @@ export function Th({ children, className = '' }) {
 
 export function TableBody({ children }) {
   return (
-    <tbody className="divide-y divide-[var(--border-default)]">
+    <tbody>
       {children}
     </tbody>
   );
 }
 
-export function Tr({ children, className = '', onClick, interactive = false }) {
-  const [hover, setHover] = useState(false);
-  
+export function Tr({ children, className = '', onClick, interactive = false, selected = false }) {
   return (
     <tr
-      className={`transition-colors duration-100 ${interactive || onClick ? 'cursor-pointer' : ''} ${className}`}
-      style={{ background: hover && (interactive || onClick) ? 'var(--bg-sunken)' : 'transparent' }}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
+      className={`border-b border-[var(--border-default)] transition-colors duration-100 hover:bg-[var(--bg-sunken)] last:border-0 ${selected ? 'bg-[var(--bg-active)]' : ''} ${interactive || onClick ? 'cursor-pointer' : ''} ${className}`}
       onClick={onClick}
     >
       {children}
@@ -57,7 +49,7 @@ export function Tr({ children, className = '', onClick, interactive = false }) {
 
 export function Td({ children, className = '' }) {
   return (
-    <td className={`px-4 py-3 text-sm ${className}`} style={{ color: 'var(--text-secondary)' }}>
+    <td className={`px-4 py-3 text-sm text-[var(--text-secondary)] align-middle ${className}`}>
       {children}
     </td>
   );

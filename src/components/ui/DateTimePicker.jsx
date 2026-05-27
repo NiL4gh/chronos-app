@@ -347,10 +347,11 @@ export default function DateTimePicker({
         )}
       </div>
 
-      {/* Inline time panel for mode=time (avoids overflow clipping in drawers) */}
+      {/* Absolute time panel for mode=time (avoids row squishing and layout overlap) */}
       {mode === 'time' && activePanel === 'time' && (
         <div
-          className="animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 mt-1"
+          className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-50 absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
+          style={{ width: '200px' }}
         >
           <div className="flex items-center justify-center gap-3">
             <TimeWheel

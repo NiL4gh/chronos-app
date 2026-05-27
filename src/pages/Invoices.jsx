@@ -189,7 +189,7 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle, signature, onSaveSign
 
       {/* Scrollable detail body */}
       <div className="flex-1 overflow-y-auto bg-[var(--bg-base)]">
-        <div className="mx-6 my-4 p-8 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl shadow-[var(--shadow-sm)] space-y-6">
+        <div className="mx-6 my-4 p-8 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl space-y-6">
 
           {/* Header row */}
           <div className="flex flex-col sm:flex-row justify-between items-start p-4 rounded-lg bg-[var(--bg-sunken)] border border-[var(--border-default)] gap-4 sm:gap-0">
@@ -453,10 +453,17 @@ export default function Invoices() {
   };
 
   return (
-    <div
-      className="animate-fade-in flex flex-col md:flex-row -mx-4 md:-mx-6 -my-4 md:-my-5 overflow-hidden h-full"
-      style={{ background: 'transparent' }}
-    >
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Invoices</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Manage and send client invoices.
+        </p>
+      </div>
+      <div
+        className="animate-fade-in flex flex-col md:flex-row flex-1 overflow-hidden"
+        style={{ background: 'transparent' }}
+      >
       {/* ── Left Panel ── */}
       <div className="w-full md:w-72 shrink-0 flex flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)] overflow-y-auto">
 
@@ -547,6 +554,7 @@ export default function Invoices() {
             />
           </div>
         )}
+      </div>
       </div>
 
       {/* Create Invoice Drawer */}

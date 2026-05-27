@@ -99,6 +99,12 @@ export default function MyTime() {
 
   return (
     <div style={{ background: 'transparent' }} className="px-4 md:px-6 py-4 md:py-5 animate-fade-in space-y-6">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">My Time</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Track your work and manage time entries.
+        </p>
+      </div>
 
       {/* ── Live Timer ──────────────────────────────────────────────────────── */}
       <div 
@@ -171,12 +177,12 @@ export default function MyTime() {
           { label: 'Billable (week)', value: myLogs.filter(l => l.billable).reduce((a, l) => a + l.duration, 0).toFixed(1) + 'h', sub: '100% billable', pct: 100 },
           { label: 'Entries (week)', value: myLogs.length, sub: 'time entries', pct: null },
         ].map(s => (
-          <div key={s.label} className="glass-card p-4">
-            <p className="text-2xl font-semibold font-mono text-[var(--text-primary)]">{s.value}</p>
-            <p className="text-xs text-[var(--text-muted)] mt-1">{s.label}</p>
-            <p className="text-xs text-[var(--text-secondary)]">{s.sub}</p>
+          <div key={s.label} className="glass-card p-5">
+            <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{s.label}</p>
+            <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">{s.value}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{s.sub}</p>
             {s.pct !== null && (
-              <div className="mt-2 h-1 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+              <div className="mt-3 h-1 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
                 <div
                   className="h-full rounded-full bg-amber-400"
                   style={{ width: `${Math.min(100, s.pct)}%` }}
@@ -320,10 +326,10 @@ export default function MyTime() {
       )}
 
       {/* ── My Time Logs ───────────────────────────────────────────────────── */}
-      <div className="glass-card p-0">
-        <div className="px-6 pt-5 pb-4 border-b border-[var(--border-default)] flex items-center justify-between">
+      <div className="mt-6 border-t border-[var(--border-default)] pt-4 flex flex-col">
+        <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-base font-medium text-[var(--text-primary)]">My Time Entries</h3>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">My Time Entries</h2>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">All your logged time this period</p>
           </div>
           <Button variant="primary" size="sm" onClick={() => setDrawerOpen(true)}>

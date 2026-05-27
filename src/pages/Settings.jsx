@@ -81,9 +81,17 @@ export default function Settings() {
   const [collapsedSidebar, setCollapsedSidebar] = useState(false);
 
   return (
-    <div className="flex flex-col md:flex-row px-4 md:px-6 py-4 md:py-5 gap-6 h-full animate-fade-in" style={{ background: 'transparent' }}>
-      {/* LEFT SIDEBAR */}
-      <div className="w-full md:w-52 flex-shrink-0 glass-card p-4 self-start">
+    <div className="px-4 md:px-6 py-4 md:py-5 h-full animate-fade-in" style={{ background: 'transparent' }}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Settings</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          Manage your workspace, profile, and preferences.
+        </p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* LEFT SIDEBAR */}
+        <div className="w-full md:w-52 flex-shrink-0 glass-card p-4 self-start">
         <h2 className="text-base font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Settings</h2>
         <nav className="flex md:flex-col gap-2 md:gap-1 overflow-x-auto w-full pb-2 md:pb-0">
           {navItems.map(item => {
@@ -567,5 +575,6 @@ export default function Settings() {
         )}
       </div>
     </div>
+  </div>
   );
 }

@@ -30,8 +30,8 @@ function StatCard({ icon: Icon, label, value }) {
     <div className="glass-card p-5 flex items-center gap-4">
       <Icon size={16} className="text-[var(--text-muted)]" />
       <div>
-        <p className="text-xs uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</p>
-        <p className="text-2xl font-semibold font-sans tabular-nums mt-1" style={{ color: 'var(--text-primary)' }}>{value}</p>
+        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{label}</p>
+        <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
       </div>
     </div>
   );
@@ -491,6 +491,13 @@ export default function Team() {
 
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full" style={{ background: 'transparent' }}>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Team</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          {activeCount} active · {teamMembers.length} total members
+        </p>
+      </div>
+
       {/* ── Stat row ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
         <StatCard icon={Users}    label="Total Members" value={teamMembers.length} />

@@ -218,16 +218,12 @@ export default function Dashboard() {
   if (role !== 'admin') {
     return (
       <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 animate-fade-in">
-        {/* SECTION 1 — Page Header */}
-        <div className="flex justify-between items-center pb-2">
-          <h1 className="text-lg font-bold text-[var(--text-primary)]">
-            My Dashboard
-          </h1>
-          <div className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-secondary)]">
-            <Calendar size={12} />
-            {dateStr}
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">My Dashboard</h1>
+        <p className="text-sm text-[var(--text-muted)] mt-1">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </p>
+      </div>
 
         {/* SECTION 2 — Gap Alert Banner */}
         {hasGap && (
@@ -340,14 +336,14 @@ export default function Dashboard() {
         {/* SECTION 4 — Stats Row */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-start">
           {/* Card 1: Today */}
-          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+          <div className="glass-card glass-interactive rounded-xl p-5">
+            <div className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">
               Today
             </div>
-            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">
               {hoursToday.toFixed(1)}h
             </div>
-            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+            <div className="text-xs text-[var(--text-muted)] mt-1">
               {dailyGoal}h goal
             </div>
             <div className="mt-3">
@@ -356,14 +352,14 @@ export default function Dashboard() {
           </div>
 
           {/* Card 2: This Week */}
-          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+          <div className="glass-card glass-interactive rounded-xl p-5">
+            <div className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">
               This Week
             </div>
-            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">
               {hoursWeek.toFixed(1)}h
             </div>
-            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+            <div className="text-xs text-[var(--text-muted)] mt-1">
               {weekGoal}h goal
             </div>
             <div className="mt-3">
@@ -372,27 +368,27 @@ export default function Dashboard() {
           </div>
 
           {/* Card 3: Billable Today */}
-          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+          <div className="glass-card glass-interactive rounded-xl p-5">
+            <div className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">
               Billable Today
             </div>
-            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">
               {billableToday.toFixed(1)}h
             </div>
-            <div className="text-xs text-[var(--text-muted)] mt-0.5">
+            <div className="text-xs text-[var(--text-muted)] mt-1">
               {todayLogs.length} {todayLogs.length === 1 ? 'entry' : 'entries'}
             </div>
           </div>
 
           {/* Card 4: My Projects */}
-          <div className="glass-card glass-interactive rounded-xl p-4 lift-on-hover">
-            <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
+          <div className="glass-card glass-interactive rounded-xl p-5">
+            <div className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">
               My Projects
             </div>
-            <div className="text-2xl font-black font-sans text-[var(--text-primary)]">
+            <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">
               {myProjects.length}
             </div>
-            <div className="text-xs text-[var(--text-muted)] mt-0.5 truncate" title={projectListStr}>
+            <div className="text-xs text-[var(--text-muted)] mt-1 truncate" title={projectListStr}>
               {projectListStr}
             </div>
           </div>
@@ -545,13 +541,10 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8 relative z-10 space-y-8 animate-fade-in">
-      {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">
-            Command Center
-          </h1>
-          <p className="text-sm text-[var(--text-secondary)] mt-1">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Command Center</h1>
+          <p className="text-sm text-[var(--text-muted)] mt-1">
             Overview of team performance and financial health.
           </p>
         </div>
@@ -588,7 +581,7 @@ export default function Dashboard() {
                 <TrendingUp className="w-3 h-3 mr-1" /> +12%
               </span>
             </div>
-            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Total Hours</h3>
+            <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">Total Hours</h3>
             <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               {metrics.hours}
             </div>
@@ -627,7 +620,7 @@ export default function Dashboard() {
                 <TrendingUp className="w-3 h-3 mr-1" /> +5%
               </span>
             </div>
-            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Utilization Rate</h3>
+            <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">Utilization Rate</h3>
             <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               {metrics.utilization}%
             </div>
@@ -663,7 +656,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start mb-4">
               <DollarSign size={16} className="text-[var(--text-muted)]" />
             </div>
-            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Est. Revenue</h3>
+            <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">Est. Revenue</h3>
             <div className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">
               ${metrics.revenue}
             </div>
@@ -699,7 +692,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-start mb-4">
               <AlertCircle size={16} className="text-[var(--text-muted)]" />
             </div>
-            <h3 className="text-sm font-medium text-[var(--text-secondary)] mb-1">Uninvoiced Hours</h3>
+            <h3 className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">Uninvoiced Hours</h3>
             <div className="text-3xl font-bold text-red-500 tracking-tight">
               {metrics.uninvoiced}
             </div>

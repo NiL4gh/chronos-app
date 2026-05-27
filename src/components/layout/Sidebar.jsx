@@ -4,12 +4,13 @@ import {
   LayoutDashboard, Users, FolderKanban, BarChart3,
   FileText, Clock, Settings, HelpCircle, Timer,
   ChevronLeft, ChevronRight, UserCog, ChevronUp, ChevronDown,
-  Sun, Moon,
+  Sun, Moon, CheckSquare
 } from 'lucide-react';
 import Avatar from '../ui/Avatar.jsx';
 
 const NAV_ITEMS = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D' },
+  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false },
   { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T' },
   { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P' },
   { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: true,  shortcut: 'G R' },
@@ -50,54 +51,44 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
         collapsed ? 'w-16' : 'w-60',
       ].join(' ')}
       style={{ 
-        background: 'var(--bg-surface)',
+        background: 'var(--sidebar-bg)',
         borderRight: '1px solid var(--border-default)',
-        boxShadow: 'var(--shadow-sm)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
       }}
     >
       {/* Logo */}
-      <div
-        className="flex items-center px-4 py-4 shrink-0"
-        style={{ borderBottom: '1px solid var(--border-default)' }}
-      >
+      <div className="flex items-center px-4 py-4 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
-          <div
-            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-          >
-            <Timer size={15} style={{ color: 'var(--accent)' }} />
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0">
+            <Timer size={15} className="text-amber-500" />
           </div>
           {!collapsed && (
-            <span className="text-base font-semibold tracking-tight truncate" style={{ color: 'var(--text-primary)' }}>
+            <span className="text-base font-bold text-[var(--text-primary)] tracking-tight truncate">
               Chronos
             </span>
           )}
         </div>
-      </div>
-
-      {/* Nav */}
+      </div>      {/* Nav */}
       <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
-        {!collapsed && (
-          <p className="text-xs uppercase tracking-widest px-4 mb-1" style={{ color: 'var(--text-muted)' }}>
-            Workspace
-          </p>
-        )}
-
         {visibleNav.map(({ to, icon: Icon, label, shortcut }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) => [
-              'group flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
               collapsed ? 'justify-center' : '',
               isActive
-                ? 'bg-[var(--bg-active)] text-[var(--text-active)] border border-[var(--border-default)] font-medium'
-                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
+                ? 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium text-[var(--text-primary)] bg-white border border-[var(--border-default)] transition-colors'
+                : 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
             ].join(' ')}
             title={collapsed ? label : undefined}
           >
             {({ isActive }) => (
               <>
-                <Icon size={16} className="shrink-0" />
+                <Icon
+                  size={16}
+                  className={isActive ? "flex-shrink-0 text-[var(--text-primary)]" : "flex-shrink-0 text-[var(--text-muted)]"}
+                />
                 {!collapsed && (
                   <>
                     <span className="truncate flex-1">{label}</span>
@@ -128,13 +119,12 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
                 key={label}
                 onClick={onOpenHelp}
                 className={[
-                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
                   collapsed ? 'justify-center' : '',
-                  'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
+                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
                 ].join(' ')}
                 title={collapsed ? label : undefined}
               >
-                <Icon size={16} className="shrink-0" />
+                <Icon size={16} className="flex-shrink-0 text-[var(--text-muted)]" />
                 {!collapsed && <span className="truncate">{label}</span>}
               </button>
             );
@@ -144,17 +134,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
               key={label}
               to={to}
               className={({ isActive }) => [
-                'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm transition-colors duration-150',
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'bg-[var(--bg-active)] text-[var(--text-active)] border border-[var(--border-default)] font-medium'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-active)] border border-transparent font-normal'
+                  ? 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium text-[var(--text-primary)] bg-white border border-[var(--border-default)] transition-colors'
+                  : 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
               ].join(' ')}
               title={collapsed ? label : undefined}
             >
               {({ isActive }) => (
                 <>
-                  <Icon size={16} className="shrink-0" />
+                  <Icon
+                    size={16}
+                    className={isActive ? "flex-shrink-0 text-[var(--text-primary)]" : "flex-shrink-0 text-[var(--text-muted)]"}
+                  />
                   {!collapsed && <span className="truncate">{label}</span>}
                 </>
               )}
@@ -241,10 +233,10 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
             {!collapsed && (
               <>
                 <div className="flex-1 text-left min-w-0">
-                  <p className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                  <p className="text-sm font-medium text-[var(--text-primary)] truncate">
                     Niloy Pal
                   </p>
-                  <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                  <p className="text-xs text-[var(--text-muted)] truncate">
                     {activeRole === 'admin' ? 'Admin' : 'Employee'}
                   </p>
                 </div>
@@ -419,14 +411,14 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
         <Clock size={20} />
         <span className="text-[10px] font-medium">My Time</span>
       </NavLink>
-      <NavLink to="/projects" className={({ isActive }) =>
+      <NavLink to="/tasks" className={({ isActive }) =>
         `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
           ? 'text-[var(--text-active)] bg-[var(--bg-active)]'
           : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
         }`
       }>
-        <FolderKanban size={20} />
-        <span className="text-[10px] font-medium">Projects</span>
+        <CheckSquare size={20} />
+        <span className="text-[10px] font-medium">Tasks</span>
       </NavLink>
       {activeRole === 'admin' && (
         <NavLink to="/team" className={({ isActive }) =>

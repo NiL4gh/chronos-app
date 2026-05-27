@@ -332,7 +332,28 @@ const generateMockLogs = () => {
   return logs;
 };
 
-export const timeLogs = generateMockLogs();
+const rawLogs = generateMockLogs();
+
+const filterLogs = (removeAutoTracked) => {
+  const clean = [];
+  const seen = new Set();
+  for (const log of rawLogs) {
+    if (log.duration < 0.1) continue;
+    if (removeAutoTracked && log.task === "Auto Tracked Task") continue;
+    const key = `${log.userId}|${log.date}|${log.startTime}|${log.endTime}|${log.task}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    clean.push(log);
+  }
+  return clean;
+};
+
+let processedLogs = filterLogs(true);
+if (processedLogs.length < 20) {
+  processedLogs = filterLogs(false);
+}
+
+export const timeLogs = processedLogs;
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
 export const invoices = [
@@ -444,4 +465,175 @@ export const todos = [
   { id: 'todo-6', userId: 'u3', title: 'Review design mockups for dashboard', status: 'active', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-06-02', createdDate: '2026-05-26' },
   { id: 'todo-7', userId: 'u4', title: 'Provision staging environment', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-30', createdDate: '2026-05-23' },
   { id: 'todo-8', userId: 'u2', title: 'Document Kubernetes setup steps', status: 'done', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-05-25', createdDate: '2026-05-22' },
+];
+
+export const tasks = [
+  {
+    id: 'task-1',
+    title: 'Implement rate limiting middleware',
+    projectId: 'p2',
+    projectName: 'API Gateway v2',
+    assignedTo: 'u2',
+    assignedToName: 'Marcus Webb',
+    createdBy: 'u1',
+    status: 'in-progress',
+    priority: 'high',
+    dueDate: '2026-05-30',
+    timeLogged: 4.25,
+    description: 'Add token bucket rate limiting to all API endpoints.'
+  },
+  {
+    id: 'task-2',
+    title: 'Write E2E tests for auth flow',
+    projectId: 'p2',
+    projectName: 'API Gateway v2',
+    assignedTo: 'u5',
+    assignedToName: 'Sofia Reyes',
+    createdBy: 'u1',
+    status: 'todo',
+    priority: 'high',
+    dueDate: '2026-06-02',
+    timeLogged: 0,
+    description: 'Cover login, refresh token, and logout flows.'
+  },
+  {
+    id: 'task-3',
+    title: 'Design hero section component',
+    projectId: 'p1',
+    projectName: 'Redesign Landing Page',
+    assignedTo: 'u1',
+    assignedToName: 'Priya Sharma',
+    createdBy: 'u1',
+    status: 'in-progress',
+    priority: 'medium',
+    dueDate: '2026-05-31',
+    timeLogged: 5.5,
+    description: 'Responsive hero with animation and CTA.'
+  },
+  {
+    id: 'task-4',
+    title: 'Set up Kubernetes cluster',
+    projectId: 'p3',
+    projectName: 'Infrastructure Migration',
+    assignedTo: 'u4',
+    assignedToName: 'Daniel Osei',
+    createdBy: 'u1',
+    status: 'done',
+    priority: 'high',
+    dueDate: '2026-05-25',
+    timeLogged: 6.75,
+    description: 'Provision and configure prod cluster on GCP.'
+  },
+  {
+    id: 'task-5',
+    title: 'Create component library documentation',
+    projectId: 'p4',
+    projectName: 'Design System v3',
+    assignedTo: 'u7',
+    assignedToName: 'Priya Sharma',
+    createdBy: 'u1',
+    status: 'in-progress',
+    priority: 'medium',
+    dueDate: '2026-06-05',
+    timeLogged: 5.5,
+    description: 'Document all components with usage examples.'
+  },
+  {
+    id: 'task-6',
+    title: 'Review dashboard mockups',
+    projectId: 'p1',
+    projectName: 'Redesign Landing Page',
+    assignedTo: 'u3',
+    assignedToName: 'Aiko Tanaka',
+    createdBy: 'u1',
+    status: 'todo',
+    priority: 'low',
+    dueDate: '2026-06-01',
+    timeLogged: 0,
+    description: 'Review and provide feedback on new dashboard designs.'
+  },
+  {
+    id: 'task-7',
+    title: 'Fix mobile navigation breakpoints',
+    projectId: 'p1',
+    projectName: 'Redesign Landing Page',
+    assignedTo: 'u1',
+    assignedToName: 'Priya Sharma',
+    createdBy: 'u1',
+    status: 'todo',
+    priority: 'medium',
+    dueDate: '2026-06-03',
+    timeLogged: 0,
+    description: 'Ensure nav works correctly on all screen sizes.'
+  },
+  {
+    id: 'task-8',
+    title: 'Configure CI/CD pipeline',
+    projectId: 'p3',
+    projectName: 'Infrastructure Migration',
+    assignedTo: 'u4',
+    assignedToName: 'Daniel Osei',
+    createdBy: 'u1',
+    status: 'done',
+    priority: 'high',
+    dueDate: '2026-05-20',
+    timeLogged: 12,
+    description: 'Set up GitHub Actions for automated deployment.'
+  },
+  {
+    id: 'task-9',
+    title: 'Integrate Stripe payment API',
+    projectId: 'p5',
+    projectName: 'Client Portal',
+    assignedTo: 'u6',
+    assignedToName: 'Tom Eriksson',
+    createdBy: 'u1',
+    status: 'todo',
+    priority: 'high',
+    dueDate: '2026-06-10',
+    timeLogged: 0,
+    description: 'Payment flow for client subscription management.'
+  },
+  {
+    id: 'task-10',
+    title: 'QA regression testing sprint',
+    projectId: 'p2',
+    projectName: 'API Gateway v2',
+    assignedTo: 'u8',
+    assignedToName: 'James Liu',
+    createdBy: 'u1',
+    status: 'in-progress',
+    priority: 'medium',
+    dueDate: '2026-05-29',
+    timeLogged: 1,
+    description: 'Full regression test suite before v2 release.'
+  },
+  {
+    id: 'task-11',
+    title: 'Update API documentation',
+    projectId: 'p2',
+    projectName: 'API Gateway v2',
+    assignedTo: 'u2',
+    assignedToName: 'Marcus Webb',
+    createdBy: 'u2',
+    status: 'todo',
+    priority: 'low',
+    dueDate: '2026-06-07',
+    timeLogged: 0,
+    description: 'Update OpenAPI spec with new endpoints.'
+  },
+  {
+    id: 'task-12',
+    title: 'Brand color system tokens',
+    projectId: 'p6',
+    projectName: 'Brand Redesign',
+    assignedTo: 'u7',
+    assignedToName: 'Priya Sharma',
+    createdBy: 'u7',
+    status: 'done',
+    priority: 'high',
+    dueDate: '2026-05-22',
+    timeLogged: 3.5,
+    description: 'Define and document all brand color tokens.'
+  }
 ];

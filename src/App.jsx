@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
 import Dashboard from './pages/Dashboard';
+import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import Projects from './pages/Projects';
 import Reports from './pages/Reports';
@@ -16,6 +17,7 @@ export default function App() {
       <Route path="/" element={<AppShell />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
+        <Route path="tasks" element={<Tasks />} />
         <Route path="team" element={<Team />} />
         <Route path="projects" element={<Projects />} />
         <Route path="reports" element={<Reports />} />
