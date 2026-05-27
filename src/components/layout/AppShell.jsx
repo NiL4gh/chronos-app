@@ -79,17 +79,44 @@ export default function AppShell() {
   // Command palette
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Live timer
-  const [timerRunning, setTimerRunning] = useState(false);
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [timerTaskLabel, setTimerTaskLabel] = useState('');
-  const [timerProjectId, setTimerProjectId] = useState('');
+  // Live timer — persisted to localStorage
+  const [timerRunning, setTimerRunning] = useState(() => {
+    try { return localStorage.getItem('timer_running') === 'true'; } catch { return false; }
+  });
+  const [timerSeconds, setTimerSeconds] = useState(() => {
+    try {
+      const saved = localStorage.getItem('timer_seconds');
+      const savedAt = localStorage.getItem('timer_saved_at');
+      if (saved && savedAt && localStorage.getItem('timer_running') === 'true') {
+        const elapsed = Math.floor((Date.now() - Number(savedAt)) / 1000);
+        return Number(saved) + elapsed;
+      }
+      return Number(saved) || 0;
+    } catch { return 0; }
+  });
+  const [timerTaskLabel, setTimerTaskLabel] = useState(() => {
+    try { return localStorage.getItem('timer_task') || ''; } catch { return ''; }
+  });
+  const [timerProjectId, setTimerProjectId] = useState(() => {
+    try { return localStorage.getItem('timer_project') || ''; } catch { return ''; }
+  });
 
   useEffect(() => {
     if (!timerRunning) return;
     const id = setInterval(() => setTimerSeconds(s => s + 1), 1000);
     return () => clearInterval(id);
   }, [timerRunning]);
+
+  // Persist timer state to localStorage
+  useEffect(() => {
+    try {
+      localStorage.setItem('timer_running', String(timerRunning));
+      localStorage.setItem('timer_seconds', String(timerSeconds));
+      localStorage.setItem('timer_task', timerTaskLabel);
+      localStorage.setItem('timer_project', timerProjectId);
+      localStorage.setItem('timer_saved_at', String(Date.now()));
+    } catch {}
+  }, [timerRunning, timerSeconds, timerTaskLabel, timerProjectId]);
 
   const startTimer = useCallback((task = '', projectId = '') => {
     setTimerTaskLabel(task);
@@ -124,6 +151,13 @@ export default function AppShell() {
       triggerToast('Timer saved', `Logged ${durationHours}h to ${proj.name}.`, 'success');
     }
     setTimerSeconds(0);
+    try {
+      localStorage.removeItem('timer_running');
+      localStorage.removeItem('timer_seconds');
+      localStorage.removeItem('timer_task');
+      localStorage.removeItem('timer_project');
+      localStorage.removeItem('timer_saved_at');
+    } catch {}
   }, [timerSeconds, timerTaskLabel, timerProjectId, triggerToast]);
 
   // Guarded stop timer — asks confirmation if > 5 min
@@ -141,6 +175,13 @@ export default function AppShell() {
     setTimerSeconds(0);
     setTimerTaskLabel('');
     setTimerProjectId('');
+    try {
+      localStorage.removeItem('timer_running');
+      localStorage.removeItem('timer_seconds');
+      localStorage.removeItem('timer_task');
+      localStorage.removeItem('timer_project');
+      localStorage.removeItem('timer_saved_at');
+    } catch {}
   }, []);
 
   // ─── Global keyboard shortcuts ───────────────────────
