@@ -291,11 +291,7 @@ export default function Reports() {
             <div class="metric-label">Billable Hours</div>
             <div class="metric-value">${billableHours}h</div>
           </div>
-          <div class="metric-card">
-            <div class="metric-label">Est. Revenue</div>
-            <div class="metric-value">$${parseInt(revenue)
-              .toLocaleString()}</div>
-          </div>
+
           <div class="metric-card">
             <div class="metric-label">Active Members</div>
             <div class="metric-value">${activeMembers}</div>
@@ -413,7 +409,6 @@ export default function Reports() {
           {[
             { id: 'total', label: 'Total Hours', val: totalHours.toFixed(1), icon: Clock },
             { id: 'billable', label: 'Billable Hours', val: billableHours.toFixed(1), icon: TrendingUp },
-            { id: 'rev', label: 'Est. Revenue', val: '$' + revenue.toLocaleString(), icon: DollarSign },
             { id: 'active', label: 'Active Members', val: activeMembersCount, icon: Users },
           ].map(metric => (
             <div 
@@ -436,7 +431,6 @@ export default function Reports() {
             <p className="text-sm text-[var(--text-secondary)]">
               {expandedMetric === 'total' && "Total hours logged across all applied filters in the specified period."}
               {expandedMetric === 'billable' && `This represents ${billablePct}% of total logged time.`}
-              {expandedMetric === 'rev' && "Calculated using the default blended rate of $" + (billingRates?.default || 95) + "/hr."}
               {expandedMetric === 'active' && "Count of unique team members who have logged time matching filters."}
             </p>
           </div>
@@ -669,12 +663,11 @@ export default function Reports() {
           </div>
 
           {/* TOTALS ROW */}
-          <div className="px-6 py-4 bg-amber-500/10 font-semibold flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-sm gap-4 sm:gap-0">
-            <span className="text-amber-800 dark:text-amber-400 uppercase tracking-wider text-xs">Total</span>
+          <div className="px-6 py-4 bg-[var(--bg-sunken)] border border-[var(--border-default)] font-semibold flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-sm gap-4 sm:gap-0 rounded-b-xl">
+            <span className="text-[var(--text-secondary)] uppercase tracking-wider text-xs">Total</span>
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-8 items-start sm:items-center">
-              <span className="font-mono text-amber-900 dark:text-amber-300">{totalHours.toFixed(1)}h</span>
-              <span className="font-mono text-amber-900 dark:text-amber-300">{billableHours.toFixed(1)}h billable</span>
-              <span className="font-mono text-amber-900 dark:text-amber-300">${revenue.toLocaleString()}</span>
+              <span className="font-mono text-[var(--text-primary)]">{totalHours.toFixed(1)}h</span>
+              <span className="font-mono text-[var(--text-primary)]">{billableHours.toFixed(1)}h billable</span>
             </div>
           </div>
         </div>

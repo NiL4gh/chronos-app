@@ -8,16 +8,16 @@ const SIZES = {
   xl: 'w-14 h-14 text-lg',
 };
 
-// Warm-tinted avatar palette — amber/terracotta/sage tones
+// Warm-tinted avatar palette — amber/terracotta/sage tones (optimized for high-contrast light mode)
 const WARM_COLORS = [
-  'bg-amber-500/20 text-amber-300 border-amber-400/30',
-  'bg-orange-500/20 text-orange-300 border-orange-400/30',
-  'bg-rose-500/20 text-rose-300 border-rose-400/30',
-  'bg-emerald-600/20 text-emerald-300 border-emerald-400/30',
-  'bg-sky-500/20 text-sky-300 border-sky-400/30',
-  'bg-violet-500/20 text-violet-300 border-violet-400/30',
-  'bg-teal-500/20 text-teal-300 border-teal-400/30',
-  'bg-pink-500/20 text-pink-300 border-pink-400/30',
+  'bg-amber-500/10 text-amber-800 border-amber-200/60',
+  'bg-orange-500/10 text-orange-800 border-orange-200/60',
+  'bg-rose-500/10 text-rose-800 border-rose-200/60',
+  'bg-emerald-500/10 text-emerald-800 border-emerald-200/60',
+  'bg-sky-500/10 text-sky-800 border-sky-200/60',
+  'bg-violet-500/10 text-violet-800 border-violet-200/60',
+  'bg-teal-500/10 text-teal-800 border-teal-200/60',
+  'bg-pink-500/10 text-pink-800 border-pink-200/60',
 ];
 
 function hashName(name = '') {
@@ -40,8 +40,7 @@ export default function Avatar({ name = '', size = 'md', className = '' }) {
 
   return (
     <div
-      className={`${sizeClass} ${colorClass} rounded-full flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
-      style={{ border: '1px solid var(--border-default)' }}
+      className={`${sizeClass} ${colorClass} rounded-full border flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
       aria-label={name}
     >
       {getInitials(name)}

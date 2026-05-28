@@ -116,15 +116,6 @@ export default function Topbar({
 
   const mockNotifications = [
     {
-      id: 'n1',
-      type: 'warning',
-      icon: 'alert',
-      title: 'Invoice overdue',
-      body: 'INV-2024-003 from Acme Corp is 5 days past due.',
-      time: '2h ago',
-      read: false,
-    },
-    {
       id: 'n2',
       type: 'info',
       icon: 'clock',
@@ -132,15 +123,6 @@ export default function Topbar({
       body: "You haven't logged any time today. Don't forget to track!",
       time: '4h ago',
       read: false,
-    },
-    {
-      id: 'n3',
-      type: 'success',
-      icon: 'check',
-      title: 'Invoice paid',
-      body: 'INV-2024-001 from TechFlow Inc has been marked as paid.',
-      time: 'Yesterday',
-      read: true,
     },
   ];
 
@@ -155,11 +137,21 @@ export default function Topbar({
   }, []);
   
   const [dateStr, setDateStr] = useState('');
+  const [timeStr, setTimeStr] = useState('');
 
   useEffect(() => {
-    const d = new Date();
-    const options = { weekday: 'short', month: 'short', day: 'numeric' };
-    setDateStr(d.toLocaleDateString('en-US', options));
+    const updateDateTime = () => {
+      const d = new Date();
+      const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+      setDateStr(d.toLocaleDateString('en-US', dateOptions));
+      
+      const timeOptions = { hour: 'numeric', minute: '2-digit' };
+      setTimeStr(d.toLocaleTimeString(undefined, timeOptions));
+    };
+
+    updateDateTime();
+    const intervalId = setInterval(updateDateTime, 1000);
+    return () => clearInterval(intervalId);
   }, []);
 
   return (
@@ -171,12 +163,10 @@ export default function Topbar({
     >
       {/* LEFT ZONE — Page identity */}
       <div className="flex-shrink-0 flex flex-col items-start min-w-0">
-        <h1 className="text-sm font-normal text-[var(--text-muted)] truncate">
-          {meta.title}
-        </h1>
-        <div className="mt-1 hidden sm:flex items-center gap-1 text-xs text-[var(--text-muted)]">
-          <Calendar size={12} />
-          {dateStr}
+        <div className="hidden sm:flex items-center gap-1.5 text-xs">
+          <Calendar size={12} className="text-[var(--text-secondary)]" />
+          <span className="font-medium text-[var(--text-secondary)]">{dateStr}</span>
+          <span className="text-[var(--text-muted)] font-normal ml-1">{timeStr}</span>
         </div>
       </div>
 

@@ -10,12 +10,14 @@ export function ActivityBar({ value = 0, className = '' }) {
   return (
     <div
       title={`${value}% Activity (Requires Desktop App)`}
-      className={`h-1 w-full rounded-full overflow-hidden ${className}`}
-      style={{ background: 'var(--bg-sunken)' }}
+      className={`progress-track ${className}`}
     >
       <div
-        className={`h-full rounded-full transition-all duration-700 ${color}`}
-        style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
+        className={`progress-fill ${value > 75 ? 'progress-fill-emerald' : ''}`}
+        style={{ 
+          width: `${Math.min(100, Math.max(0, value))}%`,
+          ...(value <= 40 ? { background: '#ef4444' } : {}) 
+        }}
       />
     </div>
   );
@@ -30,13 +32,13 @@ export function ProgressBar({ value = 0, max = 100, className = '' }) {
     'bg-red-400';
 
   return (
-    <div
-      className={`h-1.5 w-full rounded-full overflow-hidden ${className}`}
-      style={{ background: 'var(--bg-sunken)' }}
-    >
+    <div className={`progress-track ${className}`}>
       <div
-        className={`h-full rounded-full transition-all duration-700 ${color}`}
-        style={{ width: `${Math.min(100, pct)}%` }}
+        className={`progress-fill ${pct >= 85 ? 'progress-fill-emerald' : ''}`}
+        style={{ 
+          width: `${Math.min(100, pct)}%`,
+          ...(pct < 50 ? { background: '#ef4444' } : {})
+        }}
       />
     </div>
   );

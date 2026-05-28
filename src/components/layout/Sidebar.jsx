@@ -9,13 +9,12 @@ import {
 import Avatar from '../ui/Avatar.jsx';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D' },
-  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false },
-  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T' },
-  { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P' },
-  { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: true,  shortcut: 'G R' },
-  { to: '/invoices',  icon: FileText,        label: 'Invoices',    adminOnly: true,  shortcut: 'G I' },
-  { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D', section: 'General' },
+  { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M', section: 'General' },
+  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false, section: 'Workspace' },
+  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T', section: 'Workspace' },
+  { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P', section: 'Workspace' },
+  { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: true,  shortcut: 'G R', section: 'Workspace' },
 ];
 
 const BOTTOM_NAV = [
@@ -53,8 +52,6 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
       style={{ 
         background: 'var(--sidebar-bg)',
         borderRight: '1px solid var(--border-default)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
       }}
     >
       {/* Logo */}
@@ -70,38 +67,47 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
           )}
         </div>
       </div>      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-3 space-y-0.5">
-        {visibleNav.map(({ to, icon: Icon, label, shortcut }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) => [
-              collapsed ? 'justify-center' : '',
-              isActive
-                ? 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium text-[var(--text-primary)] bg-white border border-[var(--border-default)] transition-colors'
-                : 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
-            ].join(' ')}
-            title={collapsed ? label : undefined}
-          >
-            {({ isActive }) => (
-              <>
-                <Icon
-                  size={16}
-                  className={isActive ? "flex-shrink-0 text-[var(--text-primary)]" : "flex-shrink-0 text-[var(--text-muted)]"}
-                />
-                {!collapsed && (
+      <nav className="flex-1 overflow-y-auto py-3 space-y-1">
+        {['General', 'Workspace'].map((section, idx) => (
+          <React.Fragment key={section}>
+            {!collapsed && (
+              <div className={`px-4 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] ${idx > 0 ? 'mt-4' : ''}`}>
+                {section}
+              </div>
+            )}
+            {visibleNav.filter(item => item.section === section).map(({ to, icon: Icon, label, shortcut }) => (
+              <NavLink
+                key={to}
+                to={to}
+                className={({ isActive }) => [
+                  collapsed ? 'justify-center' : '',
+                  isActive
+                    ? 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-sunken)] transition-colors'
+                    : 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
+                ].join(' ')}
+                title={collapsed ? label : undefined}
+              >
+                {({ isActive }) => (
                   <>
-                    <span className="truncate flex-1">{label}</span>
-                    {shortcut && (
-                      <span className="text-[10px] font-mono text-[var(--text-disabled)] opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
-                        {shortcut}
-                      </span>
+                    <Icon
+                      size={16}
+                      className={isActive ? "flex-shrink-0 text-[var(--text-primary)]" : "flex-shrink-0 text-[var(--text-muted)]"}
+                    />
+                    {!collapsed && (
+                      <>
+                        <span className="truncate flex-1">{label}</span>
+                        {shortcut && (
+                          <span className="text-[10px] font-mono text-[var(--text-disabled)] opacity-0 group-hover:opacity-100 transition-opacity duration-150 shrink-0">
+                            {shortcut}
+                          </span>
+                        )}
+                      </>
                     )}
                   </>
                 )}
-              </>
-            )}
-          </NavLink>
+              </NavLink>
+            ))}
+          </React.Fragment>
         ))}
       </nav>
 
@@ -120,7 +126,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
                 onClick={onOpenHelp}
                 className={[
                   collapsed ? 'justify-center' : '',
-                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
+                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
                 ].join(' ')}
                 title={collapsed ? label : undefined}
               >
@@ -136,8 +142,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
               className={({ isActive }) => [
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium text-[var(--text-primary)] bg-white border border-[var(--border-default)] transition-colors'
-                  : 'flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-normal text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white border border-transparent transition-colors'
+                  ? 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-sunken)] transition-colors'
+                  : 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
               ].join(' ')}
               title={collapsed ? label : undefined}
             >

@@ -46,15 +46,16 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 
   return (
     <div
-      className={`glass-card glass-interactive p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
+      className={`glass-card p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer border-l-4 ${
+        selected 
+          ? 'border-l-amber-500 bg-[var(--bg-active)] shadow-md' 
+          : 'border-l-transparent hover:border-l-neutral-300'
+      }`}
       onClick={(e) => { e.preventDefault(); onClickName(); }}
       style={{
-        border: selected
-          ? '1px solid var(--accent-border)'
-          : '1px solid var(--border-default)',
-        boxShadow: selected
-          ? 'var(--shadow-md)'
-          : undefined,
+        borderTop: '1px solid var(--border-default)',
+        borderRight: '1px solid var(--border-default)',
+        borderBottom: '1px solid var(--border-default)',
       }}
     >
       {/* Top — avatar + name + status */}
@@ -173,16 +174,27 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 }
 
 // ─── Member Table Row ─────────────────────────────────────
-function MemberTableRow({ member, selected, onClickName, onClickStatus }) {
+function MemberTableRow({ member, selected, onClickName, onClickStatus, idx }) {
   const statusInfo = STATUS_PILL[member.status] || STATUS_PILL.offline;
   const [hover, setHover] = useState(false);
+  
+  const bg = selected 
+    ? 'var(--bg-active)' 
+    : hover 
+      ? 'var(--bg-sunken)' 
+      : idx % 2 === 1 
+        ? 'var(--bg-sunken)' 
+        : 'transparent';
+
   return (
     <div
-      className={`flex items-center gap-4 px-5 py-3 transition-colors duration-100 rounded-xl mx-0 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
+      className={`flex items-center gap-4 px-5 py-3.5 transition-colors duration-100 cursor-pointer border-l-4 border-solid ${
+        selected ? 'border-l-amber-500' : 'border-l-transparent'
+      }`}
       onClick={(e) => { e.preventDefault(); onClickName(); }}
       style={{
         borderBottom: '1px solid var(--border-default)',
-        background: selected ? 'var(--accent-subtle)' : hover ? 'var(--bg-sunken)' : 'transparent',
+        background: bg,
       }}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -331,7 +343,6 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
                 { label: 'This Week', value: `${member.hoursWeek}h` },
                 { label: 'Billable', value: `${billableRatio}%` },
                 { label: 'Entries', value: memberLogs.length },
-                { label: 'Rate', value: member.hourlyRate ? `$${member.hourlyRate}/h` : '$85/h' },
                 { label: 'Capacity', value: member.availableHoursPerWeek ? `${member.availableHoursPerWeek}h` : '40h' },
               ].map(({ label, value }) => (
                 <div
@@ -590,9 +601,61 @@ export default function Team() {
 
           {/* Member list */}
           <div className="flex-1 overflow-y-auto">
-            {viewMode === 'grid' ? (
+            {selectedMember ? (
+              // ─── COMPACT MASTER-DETAIL LIST VIEW ───
+              <div className="divide-y divide-[var(--border-default)]">
+                {filtered.map((member, idx) => {
+                  const isSel = selectedMember.id === member.id;
+                  return (
+                    <div
+                      key={member.id}
+                      onClick={() => openDetail(member, 'Overview')}
+                      className={`relative flex items-center justify-between px-5 py-3.5 cursor-pointer transition-all duration-150 first:rounded-t-[15px] last:rounded-b-[15px] ${
+                        isSel 
+                          ? 'bg-[var(--bg-active)] font-medium' 
+                          : 'hover:bg-[var(--bg-sunken)]'
+                      }`}
+                      style={{
+                        backgroundColor: !isSel && idx % 2 === 1 ? 'var(--bg-sunken)' : undefined
+                      }}
+                    >
+                      {/* Active Selection Indicator Pill */}
+                      {isSel && (
+                        <div className="absolute left-1.5 top-1/2 -translate-y-1/2 h-6 w-1 bg-[var(--accent)] rounded-full" />
+                      )}
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="relative shrink-0">
+                          <Avatar name={member.name} size="sm" />
+                          <span
+                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                            style={{
+                              background: DOT_COLOR[member.status],
+                              borderColor: 'var(--bg-surface)',
+                            }}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
+                            {member.name}
+                          </p>
+                          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">
+                            {member.role}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <span className="text-xs font-mono font-semibold text-[var(--text-secondary)]">
+                          {member.hoursWeek}h
+                        </span>
+                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-medium">this week</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : viewMode === 'grid' ? (
               <div
-                className={`p-5 grid gap-5 ${selectedMember ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'}`}
+                className="p-5 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
               >
                 {filtered.map(member => (
                   <MemberGridCard
@@ -609,13 +672,14 @@ export default function Team() {
             ) : (
               <div className="py-2 overflow-x-auto w-full">
                 <div className="min-w-[800px]">
-                  {filtered.map(member => (
+                  {filtered.map((member, idx) => (
                   <MemberTableRow
                     key={member.id}
                     member={member}
                     selected={selectedMember?.id === member.id}
                     onClickName={() => openDetail(member, 'Overview')}
                     onClickStatus={() => openDetail(member, 'Overview')}
+                    idx={idx}
                   />
                 ))}
                 </div>

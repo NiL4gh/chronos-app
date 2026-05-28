@@ -44,14 +44,15 @@ function formatDue(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// ─── Stat Card ────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, sub }) {
   return (
     <div className="glass-card p-5 flex items-center gap-4">
-      <Icon size={16} className="text-[var(--text-muted)]" />
+      <div className="icon-container bg-amber-500/10 text-amber-600">
+        <Icon size={20} strokeWidth={2.5} />
+      </div>
       <div>
-        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{label}</p>
-        <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
+        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-1">{label}</p>
+        <p className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
         {sub && <p className="text-xs text-[var(--text-muted)] mt-1">{sub}</p>}
       </div>
     </div>
@@ -167,16 +168,14 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
   };
 
   const getHealthFlag = (project) => {
-    const budgetPct = project.spent / project.budget;
-    const goalPct = project.loggedHours / project.goalHours;
-    const daysUntilDue = Math.ceil(
+    const goalPct = project.goalHours > 0 ? project.loggedHours / project.goalHours : 0;
+    const daysUntilDue = project.dueDate ? Math.ceil(
       (new Date(project.dueDate) - new Date()) / (1000 * 60 * 60 * 24)
-    );
-    if (budgetPct >= 0.9) return { label: 'Over Budget', color: 'danger' };
-    if (budgetPct >= 0.8) return { label: 'Budget Risk', color: 'warning' };
-    if (daysUntilDue <= 7 && goalPct < 0.8)
+    ) : null;
+    if (goalPct >= 1) return { label: 'Goal Met', color: 'success' };
+    if (daysUntilDue !== null && daysUntilDue <= 7 && goalPct < 0.8 && daysUntilDue >= 0)
       return { label: 'Due Soon', color: 'warning' };
-    if (daysUntilDue < 0) return { label: 'Overdue', color: 'danger' };
+    if (daysUntilDue !== null && daysUntilDue < 0) return { label: 'Overdue', color: 'danger' };
     return null;
   };
 
@@ -217,7 +216,7 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
         </div>
       </div>
 
-      {/* Goal ring + budget progress */}
+      {/* Goal ring + goal progress text */}
       <div className="flex items-center gap-6">
         <div onClick={e => { e.preventDefault(); e.stopPropagation(); setEditingGoal(v => !v); }}>
           <GoalRing project={project} onClickRing={() => {}} />
@@ -226,12 +225,14 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs uppercase tracking-wider font-semibold"
-                style={{ color: 'var(--text-muted)' }}>Budget Spent</span>
+                style={{ color: 'var(--text-muted)' }}>Hours Logged</span>
               <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                ${project.spent.toLocaleString()} / ${project.budget.toLocaleString()}
+                {project.loggedHours}h / {project.goalHours}h
               </span>
             </div>
-            <ProgressBar value={project.spent} max={project.budget} />
+            <div className="progress-track mt-1">
+              <div className="progress-fill" style={{ width: `${project.goalHours > 0 ? Math.min(100, (project.loggedHours / project.goalHours) * 100) : 0}%` }} />
+            </div>
           </div>
         </div>
       </div>
@@ -327,7 +328,7 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
 // ─── Project Detail Panel ─────────────────────────────────
 function ProjectDetailPanel({ project, onClose }) {
   const [activeTab, setActiveTab] = useState('Overview');
-  const tabs = ['Overview', 'Team', 'Budget'];
+  const tabs = ['Overview', 'Team'];
 
   const members    = teamMembers.filter(m => project.members.includes(m.id));
   const budgetPct  = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
@@ -455,7 +456,9 @@ function ProjectDetailPanel({ project, onClose }) {
                   {project.loggedHours}h / {project.goalHours}h
                 </span>
               </div>
-              <ProgressBar value={project.loggedHours} max={project.goalHours} />
+              <div className="progress-track">
+                <div className="progress-fill" style={{ width: `${project.goalHours > 0 ? Math.min(100, (project.loggedHours / project.goalHours) * 100) : 0}%` }} />
+              </div>
             </div>
 
             {/* Tags */}
@@ -513,45 +516,7 @@ function ProjectDetailPanel({ project, onClose }) {
           </div>
         )}
 
-        {/* ── Budget tab ── */}
-        {activeTab === 'Budget' && (
-          <>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { label: 'Total Budget', value: `$${project.budget.toLocaleString()}` },
-                { label: 'Spent',        value: `$${project.spent.toLocaleString()}` },
-                { label: 'Remaining',    value: `$${(project.budget - project.spent).toLocaleString()}` },
-                { label: 'Used',         value: `${budgetPct}%` },
-              ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="glass-card rounded-xl p-4"
-                >
-                  <p className="text-xs uppercase tracking-wider font-semibold"
-                    style={{ color: 'var(--text-muted)' }}>{label}</p>
-                  <p className="text-lg font-semibold font-sans tabular-nums mt-2"
-                    style={{ color: 'var(--text-primary)' }}>{value}</p>
-                </div>
-              ))}
-            </div>
-            <div className="glass-card rounded-xl p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>
-                  Budget Utilisation
-                </p>
-                <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {budgetPct}%
-                </span>
-              </div>
-              <ProgressBar value={project.spent} max={project.budget} />
-              {budgetPct >= 85 && (
-                <p className="text-sm mt-3 text-amber-600 font-medium">
-                  ⚠ Budget nearly exhausted
-                </p>
-              )}
-            </div>
-          </>
-        )}
+
       </div>
     </div>
   );
@@ -661,6 +626,7 @@ export default function Projects() {
   const totalBudget = projectData.reduce((s, p) => s + p.budget, 0);
   const totalSpent  = projectData.reduce((s, p) => s + p.spent, 0);
   const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
+  const totalGoal   = projectData.reduce((s, p) => s + p.goalHours, 0);
 
   const activeProjectCount = active;
   const totalProjectCount = projectData.length;
@@ -679,10 +645,7 @@ export default function Projects() {
         <StatCard icon={FolderKanban} label="Total Projects" value={projectData.length} />
         <StatCard icon={CheckCircle2} label="Active"         value={active} />
         <StatCard icon={Clock}        label="Hours Logged"   value={`${totalLogged}h`} />
-        <StatCard icon={DollarSign}   label="Budget Used"
-          value={`$${totalSpent.toLocaleString()}`}
-          sub={`of $${totalBudget.toLocaleString()}`}
-        />
+        <StatCard icon={Target}       label="Total Goal"     value={`${totalGoal}h`} />
       </div>
 
       {/* ── Main split layout ── */}
@@ -858,15 +821,7 @@ export default function Projects() {
               </div>
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">Budget ($)</label>
-            <Input
-              type="number"
-              placeholder="e.g. 10000"
-              value={newProject.budget}
-              onChange={e => setNewProject(p => ({ ...p, budget: e.target.value }))}
-            />
-          </div>
+
         </div>
       </SlideOutDrawer>
     </div>

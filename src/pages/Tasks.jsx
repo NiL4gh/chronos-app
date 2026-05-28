@@ -71,42 +71,37 @@ export default function Tasks() {
   ];
 
   return (
-    <div className="px-6 py-5 max-w-none">
-      {/* PAGE HEADER */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Tasks</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
-          {isEmployee ? 'Assigned to me · ' : ''}
-          {todoCount} to do · {inProgressCount} in progress
-        </p>
-      </div>
-
+    <div className="px-5 py-5 max-w-none">
       {/* FILTER BAR */}
-      <div className="flex items-center gap-2 mb-6 flex-wrap">
+      <div className="flex items-center gap-2 mb-5 flex-wrap">
+        <span className="text-xs text-[var(--text-muted)] font-medium mr-1">
+          {isEmployee ? 'Mine · ' : ''}{todoCount} to do · {inProgressCount} in progress
+        </span>
+
         {/* Status Pills */}
-        {['all', 'todo', 'in-progress', 'done'].map((status) => {
-          const labels = { all: 'All', todo: 'To Do', 'in-progress': 'In Progress', done: 'Done' };
-          const isActive = filterStatus === status;
-          return (
-            <button
-              key={status}
-              onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-[var(--text-active)] text-white'
-                  : 'bg-white border border-[var(--border-default)] text-[var(--text-muted)] hover:text-[var(--text-primary)]'
-              }`}
-            >
-              {labels[status]}
-            </button>
-          );
-        })}
+        <div className="flex items-center bg-[var(--bg-sunken)] border border-[var(--border-default)] rounded-lg p-0.5">
+          {['all', 'todo', 'in-progress', 'done'].map((status) => {
+            const labels = { all: 'All', todo: 'To Do', 'in-progress': 'In Progress', done: 'Done' };
+            const isActive = filterStatus === status;
+            return (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-150 ${
+                  isActive ? 'bg-white shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
+                }`}
+              >
+                {labels[status]}
+              </button>
+            );
+          })}
+        </div>
 
         {/* Priority Select */}
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
-          className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)]"
+          className="text-xs px-2.5 py-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)]"
         >
           <option value="all">All Priorities</option>
           <option value="high">High</option>
@@ -119,7 +114,7 @@ export default function Tasks() {
           <select
             value={filterMember}
             onChange={(e) => setFilterMember(e.target.value)}
-            className="text-sm px-3 py-1.5 rounded-lg border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)]"
+            className="text-xs px-2.5 py-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)]"
           >
             <option value="all">All Members</option>
             {teamMembers.map((member) => (
@@ -136,7 +131,7 @@ export default function Tasks() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search tasks..."
-          className="ml-auto text-sm px-3 py-1.5 rounded-lg border border-[var(--border-default)] bg-white focus:outline-none focus:border-[var(--border-focus)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-48"
+          className="ml-auto text-xs px-3 py-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] focus:outline-none focus:border-[var(--border-focus)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] w-44"
         />
       </div>
 
@@ -145,7 +140,7 @@ export default function Tasks() {
         {/* TASK LIST PANEL */}
         <div
           className={`flex-1 min-w-0 transition-all duration-200 ${
-            currentSelectedTask ? 'hidden md:block md:w-[55%] md:flex-none' : 'w-full'
+            currentSelectedTask ? 'hidden md:block md:w-[55%] md:flex-none' : 'w-full md:w-[60%] md:flex-none'
           }`}
         >
           {filteredTasks.length === 0 ? (
@@ -158,23 +153,32 @@ export default function Tasks() {
               const groupTasks = filteredTasks.filter(t => t.status === group.id);
               if (groupTasks.length === 0) return null;
               return (
-                <div key={group.id} className="mb-4">
-                  <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] px-1 py-2 mt-4 first:mt-0">
+                <div key={group.id} className="mb-6">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] px-1 py-2 mb-2">
                     {group.label} · {groupTasks.length}
                   </div>
-                  <div className="space-y-0.5">
-                    {groupTasks.map((task) => (
+                  <div className="glass-card overflow-hidden border border-[var(--border-default)]">
+                    {groupTasks.map((task, idx) => (
                       <div
                         key={task.id}
                         onClick={() => setSelectedTask(
                           selectedTask?.id === task.id ? null : task
                         )}
-                        className={`flex items-center gap-3 px-4 py-3 border-b border-[var(--border-default)] cursor-pointer transition-colors hover:bg-[var(--bg-sunken)] border-l-2 ${
+                        className={`relative flex items-center gap-3 px-4 py-3 border-b border-b-[var(--border-default)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg-sunken)] first:rounded-t-[19px] last:rounded-b-[19px] ${
                           selectedTask?.id === task.id
-                            ? 'bg-[var(--bg-active)] border-l-amber-400'
-                            : 'border-l-transparent'
+                            ? 'bg-[var(--bg-active)]'
+                            : ''
                         }`}
+                        style={
+                          selectedTask?.id === task.id
+                            ? {}
+                            : { backgroundColor: idx % 2 === 1 ? 'var(--bg-sunken)' : 'transparent' }
+                        }
                       >
+                        {/* Active Selection Indicator Pill */}
+                        {selectedTask?.id === task.id && (
+                          <div className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 bg-[var(--accent)] rounded-full" />
+                        )}
                         {/* Status Checkbox */}
                         <button
                           onClick={(e) => {
@@ -258,9 +262,9 @@ export default function Tasks() {
         </div>
 
         {/* TASK DETAIL PANEL */}
-        {currentSelectedTask && (
-          <div className="w-full md:w-[400px] flex-shrink-0">
-            <div className="glass-card p-6 sticky top-6">
+        <div className="hidden md:block w-full md:w-[400px] flex-shrink-0">
+          {currentSelectedTask ? (
+            <div className="glass-card p-6 sticky top-6 animate-fade-in">
               {/* Header Row */}
               <div className="flex items-center justify-between gap-4 mb-4">
                 <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
@@ -431,25 +435,26 @@ export default function Tasks() {
               {/* Time logged estimate progress */}
               {currentSelectedTask.timeLogged > 0 && (
                 <div className="border-t border-[var(--border-default)] pt-4 mt-4">
-                  <div className="flex justify-between text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+                  <div className="flex justify-between text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-2">
                     <span>Progress</span>
-                    <span className="font-mono">
-                      {currentSelectedTask.timeLogged}h / 8h est.
-                    </span>
+                    <span className="font-mono">{currentSelectedTask.timeLogged}h / 8h est.</span>
                   </div>
-                  <div className="w-full bg-[var(--bg-sunken)] rounded-full h-1.5 mt-2 overflow-hidden">
-                    <div
-                      className="bg-amber-400 h-full rounded-full transition-all duration-300"
-                      style={{
-                        width: `${Math.min(100, (currentSelectedTask.timeLogged / 8) * 100)}%`
-                      }}
-                    />
+                  <div className="progress-track">
+                    <div className="progress-fill" style={{ width: `${Math.min(100, (currentSelectedTask.timeLogged / 8) * 100)}%` }} />
                   </div>
                 </div>
               )}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="glass-card p-8 sticky top-6 flex flex-col items-center justify-center text-center h-[320px] border border-[var(--border-default)] animate-fade-in">
+              <CheckCircle2 size={36} className="text-[var(--text-muted)] opacity-25 mb-4" />
+              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Select a Task</h3>
+              <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-[220px] leading-relaxed">
+                Choose a task from the list to view its activity logs, manage priority levels, or start the active tracking timer.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -43,8 +43,7 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'shortcuts', label: 'Shortcuts' },
-    { id: 'integrations', label: 'Integrations' },
-    { id: 'billing', label: 'Billing' }
+    { id: 'integrations', label: 'Integrations' }
   ];
 
   // Workspace State — persisted
@@ -70,7 +69,6 @@ export default function Settings() {
       localStorage.setItem('ws_industry', industry);
       localStorage.setItem('ws_timezone', timezone);
       localStorage.setItem('ws_dateFormat', dateFormat);
-      localStorage.setItem('ws_billingRate', billingRate);
     } catch {}
     triggerToast("Settings saved", "Workspace settings updated.", "success");
   };
@@ -178,14 +176,6 @@ export default function Settings() {
                 <Select value={dateFormat} onChange={e => setDateFormat(e.target.value)}>
                   {['MM/DD/YYYY', 'DD/MM/YYYY', 'YYYY-MM-DD'].map(o => <option key={o} value={o}>{o}</option>)}
                 </Select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Default Billing Rate</label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>$</span>
-                  <Input type="number" value={billingRate} onChange={e => setBillingRate(e.target.value)} className="w-24" />
-                  <span className="text-sm" style={{ color: 'var(--text-muted)' }}>/hr</span>
-                </div>
               </div>
             </div>
             
@@ -512,84 +502,7 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Billing Section */}
-        {activeSection === 'billing' && (
-          <div className="glass-card p-6 animate-fade-in space-y-8">
-            <div>
-              <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Billing & Plan</h3>
-              
-              <div className="p-5 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 glass-elevated">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <h4 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Pro Plan</h4>
-                    <Badge variant="success">Active</Badge>
-                  </div>
-                  <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>$29/month · billed monthly</p>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>8 members · 7 projects · Unlimited invoices</p>
-                </div>
-                <Button variant="secondary">Manage Plan</Button>
-              </div>
-            </div>
 
-            <div>
-              <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Current Usage</h4>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                    <span>Team Members</span>
-                    <span>8/10 (80%)</span>
-                  </div>
-                  <ProgressBar value={80} max={100} />
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                    <span>Projects</span>
-                    <span>7/unlimited</span>
-                  </div>
-                  <div className="h-1.5 w-full rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
-                    <div className="h-full rounded-full bg-emerald-500 w-1/4" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--text-muted)' }}>
-                    <span>Storage</span>
-                    <span>2.4GB/5GB (48%)</span>
-                  </div>
-                  <ProgressBar value={48} max={100} />
-                </div>
-              </div>
-            </div>
-
-            {/* Danger Zone */}
-            <div className="p-5 rounded-xl mt-8" style={{ border: '1px solid var(--danger-border)', background: 'var(--danger-subtle)' }}>
-              <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--danger-text)' }}>Danger Zone</h4>
-              <div className="flex flex-col gap-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Export all data</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Download a complete export of your workspace</p>
-                  </div>
-                  <Button variant="ghost">Export Data</Button>
-                </div>
-                <div className="h-px w-full my-2" style={{ background: 'var(--danger-border)', opacity: 0.2 }} />
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Delete workspace</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Permanently delete all data</p>
-                  </div>
-                  <button 
-                    onClick={() => triggerToast("Action required", "Please contact support to delete your workspace.", "warning")}
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    style={{ background: '#fee2e2', color: '#ef4444' }}
-                  >
-                    Delete Workspace
-                  </button>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        )}
       </div>
     </div>
   </div>
