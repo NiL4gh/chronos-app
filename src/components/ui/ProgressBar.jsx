@@ -71,9 +71,10 @@ export function CircularProgress({ value = 0, max = 100, size = 80, strokeWidth 
         fill="none"
         stroke={color}
         strokeWidth={strokeWidth}
-        strokeDasharray={`${dash} ${circ}`}
+        strokeDasharray={circ}
+        strokeDashoffset={circ - dash}
         strokeLinecap="round"
-        style={{ transition: 'stroke-dasharray 0.6s ease' }}
+        className="transition-all duration-1000 ease-out"
       />
       {/* Center label — counter-rotate so text is upright */}
       <text

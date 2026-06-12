@@ -29,7 +29,18 @@ const SHORTCUTS = [
   { key: '⌘K',  label: 'Command' },
 ];
 
-export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRoleSwitch, triggerToast, onOpenHelp, theme, setTheme }) {
+export default function Sidebar({ 
+  activeRole, 
+  onRoleSwitch, 
+  triggerToast, 
+  onOpenHelp, 
+  theme, 
+  setTheme,
+  expanded = false,
+  onToggleExpand
+}) {
+  const collapsed = !expanded;
+  const onToggleCollapse = onToggleExpand;
   const isAdmin = activeRole === 'admin';
   const visibleNav = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
   const [hoverToggle, setHoverToggle] = useState(false);
@@ -44,16 +55,19 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
 
   return (
     <>
-    <aside
+    <div
       className={[
-        'hidden md:flex relative flex-col h-full shrink-0 transition-all duration-300 ease-in-out',
+        'hidden md:flex relative flex-col h-full shrink-0 transition-all duration-300 ease-in-out z-[60]',
         collapsed ? 'w-16' : 'w-60',
       ].join(' ')}
-      style={{ 
-        background: 'var(--sidebar-bg)',
-        borderRight: '1px solid var(--border-default)',
-      }}
     >
+      <aside
+        className="w-full h-full flex flex-col relative"
+        style={{ 
+          background: 'var(--sidebar-bg)',
+          borderRight: '1px solid var(--border-default)',
+        }}
+      >
       {/* Logo */}
       <div className="flex items-center px-4 py-4 shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
@@ -61,7 +75,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
             <Timer size={15} className="text-amber-500" />
           </div>
           {!collapsed && (
-            <span className="text-base font-bold text-[var(--text-primary)] tracking-tight truncate">
+            <span className="text-xl font-black text-[var(--text-primary)] tracking-tight truncate">
               Chronos
             </span>
           )}
@@ -82,8 +96,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
                 className={({ isActive }) => [
                   collapsed ? 'justify-center' : '',
                   isActive
-                    ? 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-sunken)] transition-colors'
-                    : 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
+                    ? 'flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-semibold text-[var(--accent-text)] bg-[var(--accent-subtle)] border border-[var(--accent-border)] transition-colors shadow-sm'
+                    : 'flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] border border-transparent transition-colors'
                 ].join(' ')}
                 title={collapsed ? label : undefined}
               >
@@ -126,7 +140,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
                 onClick={onOpenHelp}
                 className={[
                   collapsed ? 'justify-center' : '',
-                  'w-[calc(100%-16px)] flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
+                  'w-[calc(100%-24px)] flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] border border-transparent transition-colors'
                 ].join(' ')}
                 title={collapsed ? label : undefined}
               >
@@ -142,8 +156,8 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
               className={({ isActive }) => [
                 collapsed ? 'justify-center' : '',
                 isActive
-                  ? 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-semibold text-[var(--text-primary)] bg-[var(--bg-sunken)] transition-colors'
-                  : 'flex items-center gap-3 rounded-xl mx-2 px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-colors'
+                  ? 'flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-semibold text-[var(--accent-text)] bg-[var(--accent-subtle)] border border-[var(--accent-border)] transition-colors shadow-sm'
+                  : 'flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] border border-transparent transition-colors'
               ].join(' ')}
               title={collapsed ? label : undefined}
             >
@@ -222,7 +236,7 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
           <button
             onClick={() => setProfileOpen(prev => !prev)}
             className={[
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150',
+              'w-[calc(100%-24px)] flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-pointer transition-colors duration-150 mx-3',
               collapsed ? 'justify-center' : '',
             ].join(' ')}
             style={{
@@ -380,23 +394,25 @@ export default function Sidebar({ collapsed, onToggleCollapse, activeRole, onRol
           )}
         </div>
       </div>
+      </aside>
 
       {/* Collapse toggle */}
       <button
         onClick={onToggleCollapse}
         onMouseEnter={() => setHoverToggle(true)}
         onMouseLeave={() => setHoverToggle(false)}
-        className="absolute -right-3 top-20 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150 z-10"
+        className="absolute -right-3 top-6 w-6 h-6 rounded-full flex items-center justify-center transition-all duration-150 z-[60]"
         style={{
-          background: hoverToggle ? 'var(--border-default)' : 'var(--bg-sunken)',
-          border: '1px solid var(--border-default)',
-          color: 'var(--text-tertiary)',
+          background: hoverToggle ? 'var(--bg-sunken)' : 'var(--bg-surface)',
+          border: '1px solid var(--border-strong)',
+          boxShadow: 'var(--shadow-sm)',
+          color: 'var(--text-secondary)',
         }}
         aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
       >
         {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
-    </aside>
+    </div>
 
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[var(--border-default)] flex items-center justify-around px-2 py-2 h-16">
       <NavLink to="/dashboard" className={({ isActive }) =>

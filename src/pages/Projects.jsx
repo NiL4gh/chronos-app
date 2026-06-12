@@ -46,15 +46,15 @@ function formatDue(dateStr) {
 
 function StatCard({ icon: Icon, label, value, sub }) {
   return (
-    <div className="glass-card p-5 flex items-center gap-4">
-      <div className="icon-container bg-amber-500/10 text-amber-600">
-        <Icon size={20} strokeWidth={2.5} />
+    <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5">
+          <Icon size={14} className="text-[var(--text-muted)]" />
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">{label}</p>
+        </div>
+        <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{value}</p>
       </div>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-1">{label}</p>
-        <p className="text-2xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
-        {sub && <p className="text-xs text-[var(--text-muted)] mt-1">{sub}</p>}
-      </div>
+      {sub && <p className="text-xs text-[var(--text-muted)]">{sub}</p>}
     </div>
   );
 }
@@ -183,13 +183,9 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
 
   return (
     <div
-      className={`glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer ${selected ? 'border-[var(--accent-border)] bg-[var(--accent-subtle)]' : ''}`}
-      style={{
-        border: selected
-          ? '1px solid var(--accent-border)'
-          : '1px solid var(--border-default)',
-        boxShadow: selected ? 'var(--shadow-md)' : undefined,
-      }}
+      className={`glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer lift-on-hover ${
+        selected ? 'border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/10' : ''
+      }`}
       onClick={(e) => { e.preventDefault(); if (!editingGoal) onSelect(project); }}
     >
       {/* Header */}
@@ -634,8 +630,8 @@ export default function Projects() {
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Projects</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Projects</h1>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">
           {activeProjectCount} active · {totalProjectCount} total
         </p>
       </div>
@@ -650,20 +646,18 @@ export default function Projects() {
 
       {/* ── Main split layout ── */}
       <div
-        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl flex-1"
+        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl flex-1 glass-card backdrop-blur-md"
         style={{
-          border: '1px solid var(--border-default)',
-          background: 'var(--bg-surface)',
           minHeight: '500px',
         }}
       >
         {/* Left — project grid */}
         <div
-          className={`flex flex-col transition-all duration-300 ease-in-out bg-base w-full ${selectedProject ? 'md:w-[55%]' : 'md:w-full'}`}
+          className={`flex flex-col transition-all duration-300 ease-in-out w-full ${selectedProject ? 'md:w-[55%]' : 'md:w-full'}`}
           style={{
             borderRight: selectedProject ? '1px solid var(--border-default)' : 'none',
             minWidth: 0,
-            background: 'var(--bg-base)',
+            background: 'transparent',
           }}
         >
           {/* Toolbar */}

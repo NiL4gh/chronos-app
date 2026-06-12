@@ -159,14 +159,14 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle, signature, onSaveSign
   return (
     <div className="flex flex-col h-full">
       {/* Breadcrumb Header */}
-      <div className="px-6 py-2.5 flex items-center gap-2 border-b border-[var(--border-default)] shrink-0 bg-[var(--bg-surface)]">
+      <div className="px-6 py-2.5 flex items-center gap-2 shrink-0 mb-4">
         <span className="text-xs font-medium text-[var(--text-muted)]">Invoices</span>
         <span className="text-[var(--text-disabled)] text-xs">/</span>
         <span className="text-xs font-medium text-[var(--text-secondary)]">{invoice.invoiceNumber}</span>
       </div>
 
       {/* Detail toolbar */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)] sticky top-0 z-10 shrink-0">
+      <div className="flex items-center justify-between px-6 py-4 glass-card shrink-0 mb-4 border border-[var(--border-default)]">
         <div className="flex items-center gap-3">
           <div className="w-px h-6 bg-amber-500/50 rounded-full" />
           <div>
@@ -188,8 +188,8 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle, signature, onSaveSign
       </div>
 
       {/* Scrollable detail body */}
-      <div className="flex-1 overflow-y-auto bg-[var(--bg-base)]">
-        <div className="mx-6 my-4 p-8 bg-[var(--bg-surface)] border border-[var(--border-default)] rounded-xl space-y-6">
+      <div className="flex-1 overflow-y-auto glass-card border border-[var(--border-default)]">
+        <div className="p-8 space-y-6">
 
           {/* Header row */}
           <div className="flex flex-col sm:flex-row justify-between items-start p-4 rounded-lg bg-[var(--bg-sunken)] border border-[var(--border-default)] gap-4 sm:gap-0">
@@ -205,7 +205,7 @@ function InvoiceDetail({ invoice, sigEnabled, onSigToggle, signature, onSaveSign
           </div>
 
           {/* From / Bill To */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-5 rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 p-5 glass-card border border-[var(--border-default)]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-2">
                 From
@@ -455,17 +455,17 @@ export default function Invoices() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Invoices</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Invoices</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">
           Manage and send client invoices.
         </p>
       </div>
       <div
-        className="animate-fade-in flex flex-col md:flex-row flex-1 overflow-hidden"
+        className="animate-fade-in flex flex-col md:flex-row flex-1 overflow-hidden gap-6"
         style={{ background: 'transparent' }}
       >
       {/* ── Left Panel ── */}
-      <div className="w-full md:w-72 shrink-0 flex flex-col border-r border-[var(--border-default)] bg-[var(--bg-surface)] overflow-y-auto">
+      <div className="w-full md:w-72 shrink-0 flex flex-col glass-card overflow-y-auto border border-[var(--border-default)]">
 
         {/* List header */}
         <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--border-default)] shrink-0">
@@ -532,7 +532,7 @@ export default function Invoices() {
       </div>
 
       {/* ── Right Panel ── */}
-      <div className="w-full md:flex-1 min-w-0 overflow-hidden bg-[var(--bg-base)]">
+      <div className="w-full md:flex-1 min-w-0 overflow-hidden flex flex-col">
         {selectedInvoice ? (
           <InvoiceDetail
             invoice={selectedInvoice}

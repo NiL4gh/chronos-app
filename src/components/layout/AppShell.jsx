@@ -15,14 +15,29 @@ import { AlertTriangle, Clock } from 'lucide-react';
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
 
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(date.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
 export default function AppShell() {
   const navigate = useNavigate();
 
   // Role
   const [activeRole, setActiveRole] = useState('admin');
 
-  // Sidebar collapse
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  // Sidebar expand state (persisted to localStorage)
+  const [sidebarExpanded, setSidebarExpanded] = useState(() => {
+    try {
+      return localStorage.getItem('sidebar_expanded') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Manual time drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -35,6 +50,10 @@ export default function AppShell() {
 
   // Shared invoices state
   const [invoiceList, setInvoiceList] = useState(invoices);
+
+  // Shared global date state
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => getMonday(new Date()));
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Help drawer state
   const [helpOpen, setHelpOpen] = useState(false);
@@ -304,7 +323,10 @@ export default function AppShell() {
     logs, setLogs,
     invoiceList, setInvoiceList,
     setDrawerOpen,
+    drawerEntry, setDrawerEntry,
     onOpenHelp: () => setHelpOpen(true),
+    currentWeekStart, setCurrentWeekStart,
+    selectedDate, setSelectedDate,
   };
 
   const isEmployee = activeRole === 'employee';
@@ -316,14 +338,19 @@ export default function AppShell() {
     >
       {/* Sidebar */}
       <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setSidebarCollapsed(v => !v)}
         activeRole={activeRole}
         onRoleSwitch={() => setActiveRole(r => r === 'admin' ? 'employee' : 'admin')}
         triggerToast={triggerToast}
         onOpenHelp={() => setHelpOpen(true)}
         theme={theme}
         setTheme={setTheme}
+        expanded={sidebarExpanded}
+        onToggleExpand={() => setSidebarExpanded(v => {
+          try {
+            localStorage.setItem('sidebar_expanded', String(!v));
+          } catch {}
+          return !v;
+        })}
       />
 
       {/* Main area */}

@@ -4,10 +4,12 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
       <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+        className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-sm ring-4"
         style={{
-          background: 'var(--bg-sunken)',
+          background: 'var(--bg-surface)',
           border: '1px solid var(--border-default)',
+          borderColor: 'var(--border-strong)',
+          ringColor: 'var(--bg-sunken)',
         }}
       >
         {Icon && <Icon size={22} style={{ color: 'var(--text-muted)' }} />}

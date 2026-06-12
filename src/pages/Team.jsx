@@ -27,11 +27,13 @@ const DOT_COLOR = {
 // ─── Stat summary card ────────────────────────────────────
 function StatCard({ icon: Icon, label, value }) {
   return (
-    <div className="glass-card p-5 flex items-center gap-4">
-      <Icon size={16} className="text-[var(--text-muted)]" />
-      <div>
-        <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{label}</p>
-        <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans tabular-nums">{value}</p>
+    <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-1.5">
+          <Icon size={14} className="text-[var(--text-muted)]" />
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">{label}</p>
+        </div>
+        <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{value}</p>
       </div>
     </div>
   );
@@ -46,16 +48,14 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 
   return (
     <div
-      className={`glass-card p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer border-l-4 ${
-        selected 
-          ? 'border-l-amber-500 bg-[var(--bg-active)] shadow-md' 
-          : 'border-l-transparent hover:border-l-neutral-300'
+      className={`glass-card p-5 flex flex-col gap-4 transition-all duration-200 cursor-pointer lift-on-hover border-l-[3px] ${
+        selected
+          ? 'bg-[var(--accent-subtle)] shadow-md'
+          : 'hover:border-l-neutral-300'
       }`}
       onClick={(e) => { e.preventDefault(); onClickName(); }}
       style={{
-        borderTop: '1px solid var(--border-default)',
-        borderRight: '1px solid var(--border-default)',
-        borderBottom: '1px solid var(--border-default)',
+        borderLeftColor: selected ? 'var(--accent)' : 'transparent',
       }}
     >
       {/* Top — avatar + name + status */}
@@ -503,8 +503,8 @@ export default function Team() {
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full" style={{ background: 'transparent' }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Team</h1>
-        <p className="text-sm text-[var(--text-muted)] mt-1">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Team</h1>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">
           {activeCount} active · {teamMembers.length} total members
         </p>
       </div>

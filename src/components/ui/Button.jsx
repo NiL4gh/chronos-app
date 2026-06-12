@@ -11,7 +11,7 @@ const Button = forwardRef(function Button(
   ref
 ) {
   const [hover, setHover] = useState(false);
-  const baseClasses = 'inline-flex items-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center gap-2 rounded-md font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
   
   const getStyles = () => {
     switch (variant) {
@@ -20,6 +20,7 @@ const Button = forwardRef(function Button(
           background: hover ? 'var(--accent-hover)' : 'var(--accent)',
           color: 'white',
           border: 'none',
+          boxShadow: '0 2px 4px rgba(245, 158, 11, 0.25)',
         };
       case 'secondary':
         return {

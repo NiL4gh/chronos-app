@@ -1,14 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { tasks as allTasks, projects, teamMembers } from '../data/mockData';
-import { Play, Check, X, Clock, ChevronRight, Circle, AlertCircle, CheckCircle2, Loader } from 'lucide-react';
+import { Play, Check, X, Clock, ChevronRight, Circle, AlertCircle, CheckCircle2, Loader, Plus } from 'lucide-react';
+import Avatar from '../components/ui/Avatar.jsx';
 
 const truncate = (str, n) => {
   return str.length > n ? str.slice(0, n - 1) + '…' : str;
 };
 
 export default function Tasks() {
-  const { activeRole, startTimer } = useOutletContext();
+  const { activeRole, startTimer, triggerToast } = useOutletContext();
 
   // State
   const [selectedTask, setSelectedTask] = useState(null);
@@ -71,9 +72,59 @@ export default function Tasks() {
   ];
 
   return (
-    <div className="px-5 py-5 max-w-none">
+    <div className="px-5 py-5 max-w-none space-y-6">
+      
+      {/* ── Page Header ── */}
+      <div className="shrink-0 select-none">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Tasks Workspace</h1>
+        <p className="text-xs text-[var(--text-muted)] mt-0.5">Manage task priority levels, assignees, and focus sessions.</p>
+      </div>
+
+      {/* ── Summary Stats Header Row ──────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0 select-none">
+        <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <Loader size={14} className="animate-spin text-[var(--text-muted)]" />
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Active Tasks</p>
+            </div>
+            <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{myTasks.filter(t => t.status !== 'done').length}</p>
+          </div>
+        </div>
+
+        <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <AlertCircle size={14} className="text-red-500" />
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">High Priority Focus</p>
+            </div>
+            <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{myTasks.filter(t => t.priority === 'high' && t.status !== 'done').length}</p>
+          </div>
+        </div>
+
+        <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <Clock size={14} className="text-[var(--text-muted)]" />
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Focus Hours Logged</p>
+            </div>
+            <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{myTasks.reduce((sum, t) => sum + t.timeLogged, 0).toFixed(1)}h</p>
+          </div>
+        </div>
+
+        <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1.5">
+              <CheckCircle2 size={14} className="text-emerald-500" />
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">Completed Today</p>
+            </div>
+            <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{myTasks.filter(t => t.status === 'done').length}</p>
+          </div>
+        </div>
+      </div>
+
       {/* FILTER BAR */}
-      <div className="flex items-center gap-2 mb-5 flex-wrap">
+      <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs text-[var(--text-muted)] font-medium mr-1">
           {isEmployee ? 'Mine · ' : ''}{todoCount} to do · {inProgressCount} in progress
         </span>
@@ -164,16 +215,12 @@ export default function Tasks() {
                         onClick={() => setSelectedTask(
                           selectedTask?.id === task.id ? null : task
                         )}
-                        className={`relative flex items-center gap-3 px-4 py-3 border-b border-b-[var(--border-default)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg-sunken)] first:rounded-t-[19px] last:rounded-b-[19px] ${
+                        className={`relative group flex items-center gap-3 px-4 py-3 border-b border-b-[var(--border-default)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg-sunken)]  ${
                           selectedTask?.id === task.id
                             ? 'bg-[var(--bg-active)]'
                             : ''
                         }`}
-                        style={
-                          selectedTask?.id === task.id
-                            ? {}
-                            : { backgroundColor: idx % 2 === 1 ? 'var(--bg-sunken)' : 'transparent' }
-                        }
+                        style={{}}
                       >
                         {/* Active Selection Indicator Pill */}
                         {selectedTask?.id === task.id && (
@@ -233,25 +280,44 @@ export default function Tasks() {
                           </div>
                         </div>
 
+                        {/* Dashed connector line */}
+                        <div className="hidden sm:block flex-1 border-b border-dashed border-[var(--border-default)] mx-3 h-3 opacity-40" />
+
+                        {/* Assignee Avatar */}
+                        <div className="flex-shrink-0 shrink-0">
+                          <Avatar name={task.assignedToName} size="xs" />
+                        </div>
+
                         {/* Priority Dot */}
-                        <div className="flex-shrink-0">
+                        <div className="flex-shrink-0 shrink-0">
                           {task.priority === 'high' && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0 block" />
+                            <span className="w-2 h-2 rounded-full bg-red-500 block" />
                           )}
                           {task.priority === 'medium' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 block" />
+                            <span className="w-2 h-2 rounded-full bg-amber-400 block" />
                           )}
                           {task.priority === 'low' && (
-                            <span className="w-2 h-2 rounded-full bg-[var(--border-strong)] flex-shrink-0 block" />
+                            <span className="w-2 h-2 rounded-full bg-[var(--border-strong)] block" />
                           )}
                         </div>
 
-                        {/* Time Logged */}
-                        {task.timeLogged > 0 && (
-                          <span className="text-xs font-mono text-[var(--text-muted)] flex-shrink-0">
-                            {task.timeLogged}h
-                          </span>
-                        )}
+                        {/* Time Logged / Est. ratio badge */}
+                        <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded flex-shrink-0 shrink-0">
+                          {task.timeLogged}h / 8h est.
+                        </span>
+
+                        {/* Hover Quick Action Timer Play Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startTimer(task.title, task.projectId);
+                            triggerToast?.('Timer Started', `Started tracking: ${task.title}`, 'success');
+                          }}
+                          className="p-1 rounded-md text-amber-500 hover:bg-amber-50 hover:text-amber-600 transition-colors flex-shrink-0 shrink-0 opacity-0 group-hover:opacity-100"
+                          title="Start Tracking"
+                        >
+                          <Play size={12} fill="currentColor" />
+                        </button>
                       </div>
                     ))}
                   </div>

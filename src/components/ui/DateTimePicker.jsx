@@ -31,6 +31,96 @@ function formatDate(year, month, day) {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
 
+// ─── Presets Date Math ──────────────────────────────────
+const getToday = () => {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  return d;
+};
+
+const getMondayOf = (d) => {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(date.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+};
+
+const DATE_PRESETS = [
+  {
+    label: 'Today',
+    getRange: () => {
+      const today = getToday();
+      return [today, today];
+    }
+  },
+  {
+    label: 'Yesterday',
+    getRange: () => {
+      const yesterday = getToday();
+      yesterday.setDate(yesterday.getDate() - 1);
+      return [yesterday, yesterday];
+    }
+  },
+  {
+    label: 'This Week',
+    getRange: () => {
+      const monday = getMondayOf(getToday());
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      return [monday, sunday];
+    }
+  },
+  {
+    label: 'Last Week',
+    getRange: () => {
+      const thisMonday = getMondayOf(getToday());
+      const lastMonday = new Date(thisMonday);
+      lastMonday.setDate(thisMonday.getDate() - 7);
+      const lastSunday = new Date(lastMonday);
+      lastSunday.setDate(lastMonday.getDate() + 6);
+      return [lastMonday, lastSunday];
+    }
+  },
+  {
+    label: 'This Month',
+    getRange: () => {
+      const today = getToday();
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      return [first, last];
+    }
+  },
+  {
+    label: 'Last Month',
+    getRange: () => {
+      const today = getToday();
+      const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      const last = new Date(today.getFullYear(), today.getMonth(), 0);
+      return [first, last];
+    }
+  },
+  {
+    label: 'Last 14 Days',
+    getRange: () => {
+      const today = getToday();
+      const ago = new Date(today);
+      ago.setDate(today.getDate() - 13);
+      return [ago, today];
+    }
+  },
+  {
+    label: 'Last 30 Days',
+    getRange: () => {
+      const today = getToday();
+      const ago = new Date(today);
+      ago.setDate(today.getDate() - 29);
+      return [ago, today];
+    }
+  }
+];
+
 // ─── TimeWheel ──────────────────────────────────────────
 function TimeWheel({ value, min, max, onChange, label }) {
   const ref = useRef(null);
@@ -70,9 +160,10 @@ function TimeWheel({ value, min, max, onChange, label }) {
           style={{
             top: '32px',
             height: '32px',
-            background: 'var(--accent-subtle)',
             borderTop: '1px solid var(--accent-border)',
             borderBottom: '1px solid var(--accent-border)',
+            pointerEvents: 'none',
+            zIndex: 1,
           }}
         />
         <div
@@ -98,6 +189,8 @@ function TimeWheel({ value, min, max, onChange, label }) {
                 fontSize: '14px',
                 fontWeight: v === value ? '700' : '400',
                 color: v === value ? 'var(--accent)' : 'var(--text-muted)',
+                position: 'relative',
+                zIndex: 2,
               }}
             >
               {pad(v)}
@@ -149,6 +242,7 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
           return (
             <button
               key={day}
+              type="button"
               onClick={() => onSelect(year, month, day)}
               className="h-8 w-full rounded-lg text-sm font-medium transition-all duration-100 flex items-center justify-center hover:bg-[var(--bg-sunken)]"
               style={{
@@ -189,6 +283,8 @@ export default function DateTimePicker({
   placeholder = 'Select date',
   label,
   mode = 'date', // 'date' | 'datetime' | 'time'
+  showPresets = false,
+  onRangeChange,
 }) {
   const [activePanel, setActivePanel] = useState(null); // null | 'date' | 'time'
   const [slideDir, setSlideDir] = useState(null);
@@ -347,7 +443,7 @@ export default function DateTimePicker({
         )}
       </div>
 
-      {/* Absolute time panel for mode=time (avoids row squishing and layout overlap) */}
+      {/* Absolute time panel for mode=time */}
       {mode === 'time' && activePanel === 'time' && (
         <div
           className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-50 absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
@@ -372,6 +468,7 @@ export default function DateTimePicker({
             />
           </div>
           <button
+            type="button"
             onClick={() => {
               onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
               setActivePanel(null);
@@ -393,50 +490,88 @@ export default function DateTimePicker({
           {/* Calendar Panel */}
           {activePanel === 'date' && (
             <div
-              className={`animate-slide-up glass-elevated rounded-xl p-4 ${dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
-              style={{ width: '280px' }}
+              className={`animate-slide-up glass-elevated rounded-xl p-4 flex ${dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
+              style={{ width: showPresets ? '440px' : '280px' }}
             >
-              <div className="flex items-center justify-between mb-3">
-                <button
-                  onClick={goToPrevMonth}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <ChevronLeft size={14} />
-                </button>
-                <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
-                  {MONTHS[viewMonth]} {viewYear}
-                </span>
-                <button
-                  onClick={goToNextMonth}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <ChevronRight size={14} />
-                </button>
-              </div>
+              {/* Presets Sidebar List (showPresets=true) */}
+              {showPresets && (
+                <>
+                  <div className="w-40 flex flex-col gap-1 pr-3 overflow-y-auto shrink-0 max-h-[260px] select-none">
+                    {DATE_PRESETS.map((preset) => {
+                      const [start, end] = preset.getRange();
+                      const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+                      const isActive = value === startStr;
+                      return (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            onRangeChange?.(start, end);
+                            onChange?.(startStr);
+                            setActivePanel(null);
+                          }}
+                          className={`text-left text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--bg-sunken)] ${
+                            isActive
+                              ? 'font-semibold text-[var(--accent-text)] bg-[var(--accent-subtle)]'
+                              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="w-px self-stretch border-r border-[var(--border-default)] mr-3 shrink-0" />
+                </>
+              )}
 
-              <CalendarGrid
-                year={viewYear}
-                month={viewMonth}
-                selectedDate={parsed}
-                onSelect={handleDaySelect}
-                slideDir={slideDir}
-              />
+              {/* Right Side Calendar Grid */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between mb-3 select-none">
+                  <button
+                    type="button"
+                    onClick={goToPrevMonth}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <ChevronLeft size={14} />
+                  </button>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {MONTHS[viewMonth]} {viewYear}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={goToNextMonth}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 hover:bg-[var(--bg-sunken)]"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
 
-              <div className="mt-3 flex justify-end">
-                <button
-                  onClick={() => {
-                    const t = new Date();
-                    handleDaySelect(t.getFullYear(), t.getMonth(), t.getDate());
-                    setViewYear(t.getFullYear());
-                    setViewMonth(t.getMonth());
-                  }}
-                  className="text-xs px-3 py-1.5 rounded-lg transition-all duration-150 hover:bg-[var(--bg-sunken)] font-medium"
-                  style={{ color: 'var(--accent)' }}
-                >
-                  Today
-                </button>
+                <CalendarGrid
+                  year={viewYear}
+                  month={viewMonth}
+                  selectedDate={parsed}
+                  onSelect={handleDaySelect}
+                  slideDir={slideDir}
+                />
+
+                <div className="mt-3 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const t = new Date();
+                      handleDaySelect(t.getFullYear(), t.getMonth(), t.getDate());
+                      setViewYear(t.getFullYear());
+                      setViewMonth(t.getMonth());
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg transition-all duration-150 hover:bg-[var(--bg-sunken)] font-medium"
+                    style={{ color: 'var(--accent)' }}
+                  >
+                    Today
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -466,6 +601,7 @@ export default function DateTimePicker({
                 />
               </div>
               <button
+                type="button"
                 onClick={() => {
                   onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
                   setActivePanel(null);

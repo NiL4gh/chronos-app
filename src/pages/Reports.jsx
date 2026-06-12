@@ -354,7 +354,7 @@ export default function Reports() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Reports</h1>
+          <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Reports</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
             Analyse team performance and export time data.
           </p>
@@ -365,7 +365,20 @@ export default function Reports() {
           <div className="flex flex-col md:flex-row gap-4 items-end">
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">From</label>
-              <DateTimePicker value={filterStart} onChange={setFilterStart} placeholder="From date" />
+              <DateTimePicker 
+                value={filterStart} 
+                onChange={setFilterStart} 
+                placeholder="From date" 
+                showPresets={true}
+                onRangeChange={(start, end) => {
+                  const formatDate = (d) => {
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                  };
+                  setFilterStart(formatDate(start));
+                  setFilterEnd(formatDate(end));
+                }}
+              />
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">To</label>
@@ -413,14 +426,16 @@ export default function Reports() {
           ].map(metric => (
             <div 
               key={metric.id} 
-              className="glass-interactive p-5 cursor-pointer relative"
+              className="glass-card py-4 px-5 flex flex-col justify-center min-h-[96px] glass-interactive lift-on-hover cursor-pointer relative transition-all"
               onClick={() => setExpandedMetric(expandedMetric === metric.id ? null : metric.id)}
             >
-              <div className="flex items-center gap-2 mb-4">
-                <metric.icon size={16} className="text-[var(--text-muted)]" />
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center gap-1.5">
+                  <metric.icon size={14} className="text-[var(--text-muted)]" />
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">{metric.label}</p>
+                </div>
+                <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{metric.val}</p>
               </div>
-              <p className="text-xs font-medium uppercase tracking-widest text-[var(--text-muted)] mb-2">{metric.label}</p>
-              <p className="text-3xl font-bold text-[var(--text-primary)] tracking-tight font-sans">{metric.val}</p>
             </div>
           ))}
         </div>

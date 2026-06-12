@@ -98,7 +98,7 @@ export default function Settings() {
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 h-full animate-fade-in" style={{ background: 'transparent' }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Settings</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Settings</h1>
         <p className="text-sm text-[var(--text-muted)] mt-1">
           Manage your workspace, profile, and preferences.
         </p>

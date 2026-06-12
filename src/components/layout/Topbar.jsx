@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar, X } from 'lucide-react';
 import { projects } from '../../data/mockData.js';
+import Button from '../ui/Button';
 
 const PAGE_META = {
   '/dashboard': { title: 'Dashboard',   subtitle: 'Team overview & activity' },
@@ -219,7 +220,7 @@ export default function Topbar({
               <select
                 value={projectInput}
                 onChange={e => setProjectInput(e.target.value)}
-                className="text-sm px-2 py-1.5 rounded-xl border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)] flex-shrink-0 max-w-[140px]"
+                className="text-sm px-2 py-1.5 rounded-xl border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)] flex-shrink-0 max-w-[220px]"
               >
                 <option value="">No project</option>
                 {projects.map(p => (
@@ -245,83 +246,39 @@ export default function Topbar({
       <div className="flex-shrink-0 flex items-center gap-2">
         {!timerRunning ? (
           <>
-            <button
+            <Button
               onClick={() => {
-                if (timerRunning) return;
                 if (!isExpanded) {
                   setIsExpanded(true);
                 } else {
                   handleStartWithTask();
                 }
               }}
-              className="timer-cta-pulse press-on-click flex items-center justify-center gap-1.5 transition-all duration-150"
-              style={{
-                background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                border: 'none',
-                borderRadius: '8px',
-                height: '36px',
-                padding: '0 16px',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '13px',
-                letterSpacing: '0.01em',
-                boxShadow: '0 2px 8px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.15)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #fbbf24, #f59e0b)';
-                e.currentTarget.style.boxShadow = '0 4px 12px rgba(245,158,11,0.45)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                e.currentTarget.style.boxShadow = '0 2px 8px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.15)';
-              }}
+              variant="primary"
+              size="sm"
+              className="!py-2 !px-4 !font-semibold !tracking-wide !rounded-md"
             >
               <Play size={13} fill="currentColor" />
               Start Timer
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onOpenDrawer}
               title="Manual entry (N)"
-              className="hidden md:flex items-center justify-center transition-colors duration-150"
-              style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--border-default)',
-                color: 'var(--text-muted)'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--bg-sunken)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'var(--bg-surface)';
-                e.currentTarget.style.color = 'var(--text-muted)';
-              }}
+              variant="secondary"
+              size="sm"
+              className="!w-8 !h-8 !p-0 !rounded-full !justify-center"
             >
               <Plus size={14} />
-            </button>
+            </Button>
           </>
         ) : (
           <>
-            <div
-              className="flex items-center gap-2 px-4"
-              style={{
-                background: 'rgba(16,185,129,0.08)',
-                border: '1px solid rgba(16,185,129,0.25)',
-                borderRadius: '8px',
-                height: '36px'
-              }}
-            >
-              <div className="relative flex items-center justify-center w-3 h-3 ml-1 flex-shrink-0">
-                <span className="absolute inline-flex w-full h-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
-                <span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]"></span>
-              </div>
-              <span 
-                className="font-sans font-bold text-sm tabular-nums text-emerald-800 dark:text-emerald-400"
-                style={{ letterSpacing: '0.02em' }}
-              >
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md" style={{
+              background: 'var(--success-bg)',
+              border: '1px solid var(--success-border)',
+            }}>
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse animate-status-pulse" />
+              <span className="font-mono font-bold text-sm tabular-nums" style={{ color: 'var(--success-text)' }}>
                 {formatTimer(timerSeconds)}
               </span>
             </div>
