@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   Plus, Search, CheckCircle2, PauseCircle, Circle,
   Users, DollarSign, Calendar, ChevronDown,
-  X, TrendingUp, Edit3, Check, Trash2,
+  X, TrendingUp, Edit3, Trash2,
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -43,7 +43,7 @@ function formatDue(dateStr) {
 }
 
 // ─── Project Card ─────────────────────────────────────────
-function ProjectCard({ project, selected, onSelect, triggerToast }) {
+function ProjectCard({ project, selected, onSelect }) {
   const statusMeta = STATUS_META[project.status] || STATUS_META.active;
   const members    = teamMembers.filter(m => project.members.includes(m.id));
   const days       = daysUntil(project.dueDate);
@@ -594,7 +594,6 @@ export default function Projects() {
                     project={project}
                     selected={selectedProject?.id === project.id}
                     onSelect={setSelectedProject}
-                    triggerToast={triggerToast}
                   />
                 ))}
               </div>
