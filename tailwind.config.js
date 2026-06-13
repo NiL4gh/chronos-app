@@ -10,7 +10,7 @@ export default {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         // "mono" intentionally also resolves to Inter, with tabular figures, so
         // existing `font-mono` usages render aligned numbers in the UI typeface.
-        mono: [['Inter', '-apple-system', 'sans-serif'], { fontFeatureSettings: '"tnum"' }],
+        mono: ['Inter', '-apple-system', 'sans-serif', { fontFeatureSettings: '"tnum"' }],
       },
       colors: {
         canvas:   'var(--bg-canvas)',
