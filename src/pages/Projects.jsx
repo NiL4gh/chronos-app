@@ -25,8 +25,6 @@ const STATUS_META = {
   completed: { variant: 'neutral', label: 'Completed', icon: CheckCircle2 },
 };
 
-const CADENCE_OPTIONS = ['daily', 'weekly', 'monthly', 'project'];
-
 function goalLabel(type, hours) {
   const map = { daily: 'day', weekly: 'week', monthly: 'month', project: 'total' };
   return `${hours}h / ${map[type] || 'period'}`;
@@ -44,101 +42,14 @@ function formatDue(dateStr) {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function StatCard({ icon: Icon, label, value, sub }) {
-  return (
-    <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-1.5">
-          <Icon size={14} className="text-[var(--text-muted)]" />
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)]">{label}</p>
-        </div>
-        <p className="text-3xl font-black font-mono text-[var(--text-primary)] mt-1">{value}</p>
-      </div>
-      {sub && <p className="text-xs text-[var(--text-muted)]">{sub}</p>}
-    </div>
-  );
-}
-
-// ─── Inline Goal Editor ───────────────────────────────────
-function GoalEditor({ project, onSave, onCancel }) {
-  const [goalHours, setGoalHours] = useState(project.goalHours);
-  const [goalType, setGoalType]   = useState(project.goalType);
-
-  return (
-    <div
-      className="rounded-xl p-5 animate-slide-up mt-2"
-      style={{
-        background: 'var(--bg-sunken)',
-        border: '1px solid var(--border-default)',
-      }}
-    >
-      <p className="text-xs font-semibold uppercase tracking-wider mb-4"
-        style={{ color: 'var(--text-secondary)' }}>
-        Edit Goal
-      </p>
-      <div className="flex items-center gap-4">
-        <div className="flex-1">
-          <label className="text-xs uppercase tracking-wider font-semibold block mb-2"
-            style={{ color: 'var(--text-muted)' }}>
-            Target Hours
-          </label>
-          <Input
-            type="number"
-            min="1"
-            value={goalHours}
-            onChange={e => setGoalHours(Number(e.target.value))}
-            className="w-full"
-          />
-        </div>
-        <div className="flex-1">
-          <label className="text-xs uppercase tracking-wider font-semibold block mb-2"
-            style={{ color: 'var(--text-muted)' }}>
-            Cadence
-          </label>
-          <Select
-            value={goalType}
-            onChange={e => setGoalType(e.target.value)}
-            className="w-full"
-          >
-            {CADENCE_OPTIONS.map(c => (
-              <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
-            ))}
-          </Select>
-        </div>
-        <div className="flex gap-2 mt-7">
-          <Button
-            variant="primary"
-            onClick={() => onSave({ goalHours, goalType })}
-            className="w-10 h-10 !p-0 flex items-center justify-center"
-          >
-            <Check size={16} />
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={onCancel}
-            className="w-10 h-10 !p-0 flex items-center justify-center"
-          >
-            <X size={16} />
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Project Card ─────────────────────────────────────────
-function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) {
+function ProjectCard({ project, selected, onSelect, triggerToast }) {
   const statusMeta = STATUS_META[project.status] || STATUS_META.active;
   const members    = teamMembers.filter(m => project.members.includes(m.id));
   const days       = daysUntil(project.dueDate);
   const dueSoon    = days !== null && days >= 0 && days <= 7;
   const overdue    = days !== null && days < 0;
   const budgetPct  = project.budget > 0 ? Math.round((project.spent / project.budget) * 100) : 0;
-
-  const handleGoalSave = (newGoal) => {
-    onGoalSave(project.id, newGoal);
-    triggerToast?.('Goal updated', `${project.name} goal set to ${newGoal.goalHours}h/${newGoal.goalType}.`, 'success');
-  };
 
   const getHealthFlag = (project) => {
     const goalPct = project.goalHours > 0 ? project.loggedHours / project.goalHours : 0;
@@ -561,12 +472,6 @@ export default function Projects() {
     triggerToast?.('Project created', `"${proj.name}" has been added.`, 'success');
   };
 
-  const handleGoalSave = (projectId, { goalHours, goalType }) => {
-    setProjectData(prev =>
-      prev.map(p => p.id === projectId ? { ...p, goalHours, goalType } : p)
-    );
-  };
-
   const filtered = useMemo(() => {
     return projectData.filter(p => {
       const matchStatus = statusFilter === 'All' || p.status === statusFilter.toLowerCase();
@@ -689,7 +594,6 @@ export default function Projects() {
                     project={project}
                     selected={selectedProject?.id === project.id}
                     onSelect={setSelectedProject}
-                    onGoalSave={handleGoalSave}
                     triggerToast={triggerToast}
                   />
                 ))}
