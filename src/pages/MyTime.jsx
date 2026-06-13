@@ -304,7 +304,7 @@ export default function MyTime() {
         <div className="glass-elevated rounded-2xl border border-emerald-500/20 overflow-hidden shadow-lg p-5 flex flex-col items-center">
           {/* Row 1: Massive Hero Monospace Ticker */}
           <div className="text-center select-none mb-5">
-            <span className="text-4xl font-bold font-mono tracking-tight text-[var(--text-primary)] leading-none timer-glow-emerald">
+            <span className="text-5xl font-bold font-mono tracking-tight text-[var(--text-primary)] leading-none timer-glow-emerald">
               {String(Math.floor(timerSeconds / 3600)).padStart(2, '0')}:
               {String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0')}:
               {String(timerSeconds % 60).padStart(2, '0')}
@@ -335,9 +335,9 @@ export default function MyTime() {
                   width: '42px',
                   height: '42px',
                   borderRadius: '50%',
-                  background: '#ef4444',
-                  color: 'white',
-                  boxShadow: '0 4px 12px rgba(239,68,68,0.3)'
+                  background: 'var(--danger-text)',
+                  color: 'var(--accent-on)',
+                  boxShadow: '0 4px 12px color-mix(in srgb, var(--danger-text) 30%, transparent)',
                 }}
                 title="Stop Focus session"
               >
@@ -367,7 +367,7 @@ export default function MyTime() {
       <div className="glass-elevated rounded-2xl border border-[var(--border-default)] overflow-hidden shadow-md p-5 flex flex-col items-center">
         {/* Row 1: Ready Monospace Display */}
         <div className="text-center select-none mb-5">
-          <span className="text-4xl font-bold font-mono tracking-tight text-[var(--text-muted)] leading-none">
+          <span className="text-5xl font-bold font-mono tracking-tight text-[var(--text-muted)] leading-none">
             00:00:00
           </span>
         </div>
@@ -403,11 +403,12 @@ export default function MyTime() {
                 setFocusTask('');
                 triggerToast('Timer started', label, 'success');
               }}
-              className="shrink-0 flex items-center justify-center p-3 rounded-full bg-amber-400 hover:bg-amber-300 text-neutral-950 transition-all duration-150 timer-cta-pulse press-on-click"
+              className="shrink-0 flex items-center justify-center p-3 rounded-full bg-amber-400 hover:bg-amber-300 transition-all duration-150 timer-cta-pulse press-on-click"
               style={{
                 width: '42px',
                 height: '42px',
-                boxShadow: '0 2px 8px rgba(245,158,11,0.35)'
+                color: 'var(--text-primary)',
+                boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)',
               }}
               title="Start live focus timer"
             >
@@ -431,7 +432,7 @@ export default function MyTime() {
                   triggerToast('Timer started', label, 'success');
                 }
               }}
-              className="w-full max-w-[220px] h-9 bg-[var(--bg-sunken)] hover:bg-[var(--bg-surface)] border border-[var(--border-default)] focus:border-amber-400 focus:bg-[var(--bg-surface)] rounded-xl px-3 text-xs font-semibold focus:outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all shadow-sm"
+              className="w-full max-w-[220px] h-9 bg-[var(--bg-sunken)] hover:bg-[var(--bg-surface)] border border-[var(--border-default)] focus:border-[var(--accent)] focus:bg-[var(--bg-surface)] rounded-xl px-3 text-xs font-semibold focus:outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all shadow-sm"
             />
           </div>
         </div>
