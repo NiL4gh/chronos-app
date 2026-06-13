@@ -1,3 +1,9 @@
+function daysFromNow(n) {
+  const d = new Date();
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0, 10);
+}
+
 // ─── TEAM MEMBERS ────────────────────────────────────────────────────────────
 export const teamMembers = [
   {
@@ -140,7 +146,7 @@ export const projects = [
     loggedHours: 58.5,
     budget: 12000,
     spent: 8775,
-    dueDate: '2025-05-31',
+    dueDate: daysFromNow(30),
     members: ['u1', 'u5'],
     description: 'Full redesign of the marketing site with new brand guidelines.',
     tags: ['design', 'frontend'],
@@ -156,7 +162,7 @@ export const projects = [
     loggedHours: 28.0,
     budget: 8000,
     spent: 5600,
-    dueDate: '2025-06-14',
+    dueDate: daysFromNow(14),
     members: ['u2'],
     description: 'Rebuild API gateway with rate limiting, auth, and observability.',
     tags: ['backend', 'infra'],
@@ -172,7 +178,7 @@ export const projects = [
     loggedHours: 142.0,
     budget: 20000,
     spent: 14200,
-    dueDate: '2025-07-30',
+    dueDate: daysFromNow(120),
     members: ['u3'],
     description: 'Component library and token system for all product surfaces.',
     tags: ['design', 'system'],
@@ -188,7 +194,7 @@ export const projects = [
     loggedHours: 110.0,
     budget: 30000,
     spent: 27500,
-    dueDate: '2025-05-20',
+    dueDate: daysFromNow(45),
     members: ['u4'],
     description: 'Migrate legacy VMs to Kubernetes on GCP.',
     tags: ['devops', 'cloud'],
@@ -204,7 +210,7 @@ export const projects = [
     loggedHours: 12.0,
     budget: 15000,
     spent: 6000,
-    dueDate: '2025-06-30',
+    dueDate: daysFromNow(60),
     members: ['u6'],
     description: 'Self-service portal for Meridian Finance customers.',
     tags: ['frontend', 'backend'],
@@ -220,7 +226,7 @@ export const projects = [
     loggedHours: 51,
     budget: 8000,
     spent: 7200,
-    dueDate: '2026-05-28',
+    dueDate: daysFromNow(14),
     members: ['u7'],
     tags: ['design'],
     description: 'Complete brand identity overhaul',
@@ -236,7 +242,7 @@ export const projects = [
     loggedHours: 44,
     budget: 15000,
     spent: 5800,
-    dueDate: '2026-07-01',
+    dueDate: daysFromNow(90),
     members: ['u8', 'u3'],
     tags: ['backend'],
     description: 'REST API integration with DataStream platform',
@@ -269,7 +275,7 @@ const generateMockLogs = () => {
     { id: 'p6', name: 'Brand Redesign' },
     { id: 'p7', name: 'API Integration' },
   ];
-  
+
   // Create 3 entries per day for the last 5 weekdays
   let daysAdded = 0;
   for (let i = 0; i < 14 && logs.length < 24; i++) {
@@ -277,7 +283,7 @@ const generateMockLogs = () => {
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-    
+
     let entriesForDay = 1;
     if (!isWeekend && daysAdded < 5) {
       entriesForDay = 3;
@@ -305,7 +311,7 @@ const generateMockLogs = () => {
       });
     }
   }
-  
+
   // Fill the rest if not 24
   while (logs.length < 24) {
     const d = new Date(today);
@@ -359,15 +365,15 @@ export const timeLogs = processedLogs;
 export const invoices = [
   {
     id: 'inv-001',
-    invoiceNumber: 'INV-2025-041',
+    invoiceNumber: 'INV-2026-041',
     client: {
       name: 'CloudScale Inc.',
       email: 'billing@cloudscale.io',
       address: '340 Pine Street, Suite 800\nSan Francisco, CA 94104',
     },
     project: 'Infrastructure Migration',
-    issueDate: '2025-05-01',
-    dueDate: '2025-05-31',
+    issueDate: daysFromNow(-14),
+    dueDate: daysFromNow(10),
     status: 'pending',
     requiresSignature: false,
     lineItems: [
@@ -383,15 +389,15 @@ export const invoices = [
   },
   {
     id: 'inv-002',
-    invoiceNumber: 'INV-2025-040',
+    invoiceNumber: 'INV-2026-040',
     client: {
       name: 'Meridian Finance',
       email: 'ap@meridianfinance.com',
       address: '1 Financial Plaza, 12th Floor\nNew York, NY 10005',
     },
     project: 'Client Portal',
-    issueDate: '2025-04-30',
-    dueDate: '2025-05-30',
+    issueDate: daysFromNow(-45),
+    dueDate: daysFromNow(-3),
     status: 'overdue',
     requiresSignature: true,
     lineItems: [
@@ -406,15 +412,15 @@ export const invoices = [
   },
   {
     id: 'inv-003',
-    invoiceNumber: 'INV-2025-039',
+    invoiceNumber: 'INV-2026-039',
     client: {
       name: 'Acme Corp',
       email: 'finance@acme.io',
       address: '500 Tech Boulevard\nAustin, TX 78701',
     },
     project: 'Redesign Landing Page',
-    issueDate: '2025-04-15',
-    dueDate: '2025-05-15',
+    issueDate: daysFromNow(-30),
+    dueDate: daysFromNow(-5),
     status: 'paid',
     requiresSignature: false,
     lineItems: [
@@ -425,7 +431,7 @@ export const invoices = [
     subtotal: 9600,
     tax: 864,
     total: 10464,
-    notes: 'Paid via ACH on May 10, 2025. Thank you.',
+    notes: 'Paid via ACH transfer. Thank you.',
   },
 ];
 
@@ -457,14 +463,14 @@ export const reportRows = [
 
 // ─── TODOS ────────────────────────────────────────────────────────────────────
 export const todos = [
-  { id: 'todo-1', userId: 'u1', title: 'Review API documentation updates', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-30', createdDate: '2026-05-25' },
-  { id: 'todo-2', userId: 'u1', title: 'Update project estimates for Q3', status: 'done', assignedBy: null, assignedByName: null, dueDate: '2026-05-27', createdDate: '2026-05-20' },
-  { id: 'todo-3', userId: 'u2', title: 'Write unit tests for auth module', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-31', createdDate: '2026-05-24' },
-  { id: 'todo-4', userId: 'u1', title: 'Prepare sprint retrospective notes', status: 'pending-acceptance', assignedBy: 'u3', assignedByName: 'Aiko Tanaka', dueDate: '2026-05-29', createdDate: '2026-05-27' },
-  { id: 'todo-5', userId: 'u2', title: 'Fix rate limiting bug in staging', status: 'pending-acceptance', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-05-28', createdDate: '2026-05-27' },
-  { id: 'todo-6', userId: 'u3', title: 'Review design mockups for dashboard', status: 'active', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-06-02', createdDate: '2026-05-26' },
-  { id: 'todo-7', userId: 'u4', title: 'Provision staging environment', status: 'active', assignedBy: null, assignedByName: null, dueDate: '2026-05-30', createdDate: '2026-05-23' },
-  { id: 'todo-8', userId: 'u2', title: 'Document Kubernetes setup steps', status: 'done', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: '2026-05-25', createdDate: '2026-05-22' },
+  { id: 'todo-1', userId: 'u1', title: 'Review API documentation updates', status: 'active', assignedBy: null, assignedByName: null, dueDate: daysFromNow(7), createdDate: daysFromNow(-7) },
+  { id: 'todo-2', userId: 'u1', title: 'Update project estimates for Q3', status: 'done', assignedBy: null, assignedByName: null, dueDate: daysFromNow(-10), createdDate: daysFromNow(-14) },
+  { id: 'todo-3', userId: 'u2', title: 'Write unit tests for auth module', status: 'active', assignedBy: null, assignedByName: null, dueDate: daysFromNow(14), createdDate: daysFromNow(-7) },
+  { id: 'todo-4', userId: 'u1', title: 'Prepare sprint retrospective notes', status: 'pending-acceptance', assignedBy: 'u3', assignedByName: 'Aiko Tanaka', dueDate: daysFromNow(3), createdDate: daysFromNow(-5) },
+  { id: 'todo-5', userId: 'u2', title: 'Fix rate limiting bug in staging', status: 'pending-acceptance', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: daysFromNow(7), createdDate: daysFromNow(-5) },
+  { id: 'todo-6', userId: 'u3', title: 'Review design mockups for dashboard', status: 'active', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: daysFromNow(14), createdDate: daysFromNow(-7) },
+  { id: 'todo-7', userId: 'u4', title: 'Provision staging environment', status: 'active', assignedBy: null, assignedByName: null, dueDate: daysFromNow(3), createdDate: daysFromNow(-14) },
+  { id: 'todo-8', userId: 'u2', title: 'Document Kubernetes setup steps', status: 'done', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: daysFromNow(-5), createdDate: daysFromNow(-14) },
 ];
 
 export const tasks = [
@@ -478,7 +484,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'in-progress',
     priority: 'high',
-    dueDate: '2026-05-30',
+    dueDate: daysFromNow(14),
     timeLogged: 4.25,
     description: 'Add token bucket rate limiting to all API endpoints.'
   },
@@ -492,7 +498,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'todo',
     priority: 'high',
-    dueDate: '2026-06-02',
+    dueDate: daysFromNow(21),
     timeLogged: 0,
     description: 'Cover login, refresh token, and logout flows.'
   },
@@ -506,7 +512,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'in-progress',
     priority: 'medium',
-    dueDate: '2026-05-31',
+    dueDate: daysFromNow(14),
     timeLogged: 5.5,
     description: 'Responsive hero with animation and CTA.'
   },
@@ -520,7 +526,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'done',
     priority: 'high',
-    dueDate: '2026-05-25',
+    dueDate: daysFromNow(-20),
     timeLogged: 6.75,
     description: 'Provision and configure prod cluster on GCP.'
   },
@@ -534,7 +540,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'in-progress',
     priority: 'medium',
-    dueDate: '2026-06-05',
+    dueDate: daysFromNow(28),
     timeLogged: 5.5,
     description: 'Document all components with usage examples.'
   },
@@ -548,7 +554,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'todo',
     priority: 'low',
-    dueDate: '2026-06-01',
+    dueDate: daysFromNow(28),
     timeLogged: 0,
     description: 'Review and provide feedback on new dashboard designs.'
   },
@@ -562,7 +568,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'todo',
     priority: 'medium',
-    dueDate: '2026-06-03',
+    dueDate: daysFromNow(21),
     timeLogged: 0,
     description: 'Ensure nav works correctly on all screen sizes.'
   },
@@ -576,7 +582,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'done',
     priority: 'high',
-    dueDate: '2026-05-20',
+    dueDate: daysFromNow(-25),
     timeLogged: 12,
     description: 'Set up GitHub Actions for automated deployment.'
   },
@@ -590,7 +596,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'todo',
     priority: 'high',
-    dueDate: '2026-06-10',
+    dueDate: daysFromNow(42),
     timeLogged: 0,
     description: 'Payment flow for client subscription management.'
   },
@@ -604,7 +610,7 @@ export const tasks = [
     createdBy: 'u1',
     status: 'in-progress',
     priority: 'medium',
-    dueDate: '2026-05-29',
+    dueDate: daysFromNow(14),
     timeLogged: 1,
     description: 'Full regression test suite before v2 release.'
   },
@@ -618,7 +624,7 @@ export const tasks = [
     createdBy: 'u2',
     status: 'todo',
     priority: 'low',
-    dueDate: '2026-06-07',
+    dueDate: daysFromNow(35),
     timeLogged: 0,
     description: 'Update OpenAPI spec with new endpoints.'
   },
@@ -632,7 +638,7 @@ export const tasks = [
     createdBy: 'u7',
     status: 'done',
     priority: 'high',
-    dueDate: '2026-05-22',
+    dueDate: daysFromNow(-20),
     timeLogged: 3.5,
     description: 'Define and document all brand color tokens.'
   }
