@@ -67,9 +67,12 @@ function ProjectCard({ project, selected, onSelect }) {
 
   return (
     <div
-      className={`glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer lift-on-hover ${
-        selected ? 'border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/10' : ''
-      }`}
+      className="glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer lift-on-hover"
+      style={selected ? {
+        borderColor: 'var(--accent)',
+        boxShadow: '0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent)',
+        background: 'var(--accent-subtle)',
+      } : {}}
       onClick={(e) => { e.preventDefault(); onSelect(project); }}
     >
       {/* Header */}
