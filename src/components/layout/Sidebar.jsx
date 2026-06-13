@@ -9,12 +9,12 @@ import {
 import Avatar from '../ui/Avatar.jsx';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D', section: 'General' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D', section: 'General',   hidden: true },
   { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M', section: 'General' },
-  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false, section: 'Workspace' },
-  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T', section: 'Workspace' },
+  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false, section: 'Workspace', hidden: true },
+  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T', section: 'Workspace', hidden: true },
   { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P', section: 'Workspace' },
-  { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: true,  shortcut: 'G R', section: 'Workspace' },
+  { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: false, shortcut: 'G R', section: 'Workspace' },
 ];
 
 const BOTTOM_NAV = [
@@ -42,7 +42,7 @@ export default function Sidebar({
   const collapsed = !expanded;
   const onToggleCollapse = onToggleExpand;
   const isAdmin = activeRole === 'admin';
-  const visibleNav = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
+  const visibleNav = NAV_ITEMS.filter(item => !item.hidden && (!item.adminOnly || isAdmin));
   const [hoverToggle, setHoverToggle] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();

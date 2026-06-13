@@ -10,7 +10,7 @@ import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import Toggle from '../ui/Toggle.jsx';
 import { projects, timeLogs, invoices } from '../../data/mockData.js';
-import { AlertTriangle, Clock } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 
 // ─── Role ───────────────────────────────────────────────
@@ -357,21 +357,6 @@ export default function AppShell() {
 
       {/* Main area */}
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden pb-16 md:pb-0">
-
-        {/* Employee warning banner */}
-        {isEmployee && (
-          <div
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium shrink-0"
-            style={{
-              background: 'var(--warning-bg)',
-              borderBottom: '1px solid var(--warning-border)',
-              color: 'var(--warning-text)',
-            }}
-          >
-            <AlertTriangle size={12} />
-            Viewing as Employee — some sections are hidden
-          </div>
-        )}
 
         {/* Topbar */}
         <div className="relative z-50">

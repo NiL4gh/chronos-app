@@ -15,7 +15,7 @@ export default function App() {
     <Routes>
       <Route path="/desktop-helper" element={<DesktopHelper />} />
       <Route path="/" element={<AppShell />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
+        <Route index element={<Navigate to="/my-time" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="tasks" element={<Tasks />} />
         <Route path="team" element={<Team />} />
