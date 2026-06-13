@@ -6,12 +6,13 @@ import Input, { Select } from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
-import { 
-  MessageSquare, Calendar, Layers, GitBranch, Mail, Video, Sun, Moon, CheckCircle2 
+import { ACCENTS, THEME_OPTIONS } from '../lib/theme';
+import {
+  MessageSquare, Calendar, Layers, GitBranch, Mail, Video, Sun, Moon, CheckCircle2
 } from 'lucide-react';
 
 export default function Settings() {
-  const { theme, setTheme, keyBindings, setKeyBindings, triggerToast } = useOutletContext();
+  const { keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent } = useOutletContext();
   const [activeSection, setActiveSection] = useState('workspace');
   const [editingKey, setEditingKey] = useState(null);
 
@@ -291,80 +292,58 @@ export default function Settings() {
           </div>
         )}
 
-        {/* Appearance Section */}
+        {/* Appearance */}
         {activeSection === 'appearance' && (
-          <div className="glass-card p-6 space-y-6 animate-fade-in">
-            <h3 className="text-lg font-bold mb-6" style={{ color: 'var(--text-primary)' }}>Appearance</h3>
-            
+          <div className="glass-card p-6 space-y-8 animate-fade-in">
             <div>
-              <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Theme</h4>
-              <div className="grid grid-cols-2 gap-4 max-w-sm">
-                <div
-                  onClick={() => {
-                    setTheme('light');
-                    triggerToast('Theme changed', 'Light mode applied.', 'success');
-                  }}
-                  className={`glass-interactive p-4 rounded-xl text-center flex flex-col items-center cursor-pointer relative overflow-hidden ${
-                    theme === 'light' ? 'border border-amber-500 bg-amber-500/5' : ''
-                  }`}
-                >
-                  {theme === 'light' && (
-                    <div className="absolute top-2 right-2 text-amber-500">
-                      <CheckCircle2 size={16} />
-                    </div>
-                  )}
-                  <Sun size={24} className={`mb-2 ${theme === 'light' ? 'text-amber-500' : ''}`} style={theme !== 'light' ? { color: 'var(--text-secondary)' } : {}} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Light</span>
-                </div>
-
-                <div
-                  onClick={() => {
-                    setTheme('dark');
-                    triggerToast('Theme changed', 'Dark mode applied.', 'success');
-                  }}
-                  className={`glass-interactive p-4 rounded-xl text-center flex flex-col items-center cursor-pointer relative overflow-hidden ${
-                    theme === 'dark' ? 'border border-amber-500 bg-amber-500/5' : ''
-                  }`}
-                >
-                  {theme === 'dark' && (
-                    <div className="absolute top-2 right-2 text-amber-500">
-                      <CheckCircle2 size={16} />
-                    </div>
-                  )}
-                  <Moon size={24} className={`mb-2 ${theme === 'dark' ? 'text-amber-500' : ''}`} style={theme !== 'dark' ? { color: 'var(--text-secondary)' } : {}} />
-                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Dark</span>
-                </div>
-              </div>
+              <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Appearance</h3>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Choose your theme and accent color.</p>
             </div>
 
+            {/* Theme */}
             <div>
-              <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Density</h4>
-              <div className="flex items-center gap-2 p-1 rounded-lg w-fit" style={{ background: 'var(--bg-sunken)' }}>
-                {['Comfortable', 'Compact', 'Cozy'].map(d => {
-                  const val = d.toLowerCase();
-                  const isActive = density === val;
+              <label className="text-sm font-medium block mb-2" style={{ color: 'var(--text-primary)' }}>Theme</label>
+              <div className="inline-flex rounded-lg p-1 gap-1" style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
+                {THEME_OPTIONS.map(opt => {
+                  const active = theme === opt.id;
                   return (
                     <button
-                      key={d}
-                      onClick={() => setDensity(val)}
-                      className={`px-4 py-1.5 text-sm rounded-md transition-colors ${isActive ? 'bg-amber-500 text-white shadow-sm' : ''}`}
-                      style={!isActive ? { color: 'var(--text-secondary)' } : {}}
+                      key={opt.id}
+                      onClick={() => setTheme(opt.id)}
+                      className="px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
+                      style={active
+                        ? { background: 'var(--bg-surface)', color: 'var(--text-primary)', boxShadow: 'var(--shadow-sm)' }
+                        : { color: 'var(--text-secondary)' }}
                     >
-                      {d}
+                      {opt.label}
                     </button>
                   );
                 })}
               </div>
             </div>
 
+            {/* Accent */}
             <div>
-              <h4 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>Sidebar</h4>
-              <Toggle 
-                label="Collapsed by default" 
-                description="Start the app with a minimized sidebar layout" 
-                checked={collapsedSidebar} 
-                onChange={setCollapsedSidebar} 
-              />
+              <label className="text-sm font-medium block mb-2" style={{ color: 'var(--text-primary)' }}>Accent color</label>
+              <div className="flex items-center gap-3">
+                {ACCENTS.map(a => {
+                  const active = accent === a.id;
+                  return (
+                    <button
+                      key={a.id}
+                      onClick={() => setAccent(a.id)}
+                      title={a.label}
+                      aria-label={a.label}
+                      className="w-8 h-8 rounded-full transition-transform"
+                      style={{
+                        background: a.color,
+                        transform: active ? 'scale(1.12)' : 'scale(1)',
+                        boxShadow: active ? `0 0 0 2px var(--bg-surface), 0 0 0 4px ${a.color}` : 'none',
+                      }}
+                    />
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
