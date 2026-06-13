@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, CalendarDays, List,
   LayoutGrid, Table2, Play, Square, Plus, Clock, Settings2, CalendarCheck,
-  Cpu, PenLine, Flame, Activity, Sparkles, Eye, Zap
+  PenLine, Flame, Activity
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
@@ -74,68 +74,8 @@ export default function MyTime() {
 
   const currentRole = activeRole || role || 'admin';
 
-  // Smart Capture & Telemetry Mock States
-  const [smartSuggestions, setSmartSuggestions] = useState([
-    {
-      id: 's1',
-      appName: 'VS Code & Figma',
-      duration: 1.8,
-      description: 'Refactoring dashboard layout & drawing SVG icons',
-      projectId: 'p2',
-      projectName: 'Chronos Branding',
-      timeSlot: '08:15 AM - 10:03 AM'
-    },
-    {
-      id: 's2',
-      appName: 'GitHub & Slack',
-      duration: 0.6,
-      description: 'PR reviews & alignment chat on deployment strategy',
-      projectId: 'p3',
-      projectName: 'Chronos Core Engine',
-      timeSlot: '11:30 AM - 12:06 PM'
-    }
-  ]);
-
-  const [zoomedScreenshot, setZoomedScreenshot] = useState(null);
   const [focusTask, setFocusTask] = useState('');
   const [focusProject, setFocusProject] = useState(projects[0]?.id || '');
-  const [expandedTelemetryLogs, setExpandedTelemetryLogs] = useState({});
-
-  const toggleTelemetry = (logId) => {
-    setExpandedTelemetryLogs(prev => ({
-      ...prev,
-      [logId]: !prev[logId]
-    }));
-  };
-
-  // Deterministic mock telemetry generators based on log ID
-  const getMockAppsForLog = (logId) => {
-    const sum = String(logId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    if (sum % 3 === 0) {
-      return [
-        { name: 'VS Code', share: 72, color: 'bg-emerald-500' },
-        { name: 'Figma', share: 18, color: 'bg-sky-500' },
-        { name: 'Slack', share: 10, color: 'bg-amber-500' }
-      ];
-    } else if (sum % 3 === 1) {
-      return [
-        { name: 'Chrome', share: 60, color: 'bg-sky-500' },
-        { name: 'Notion', share: 30, color: 'bg-amber-500' },
-        { name: 'Terminal', share: 10, color: 'bg-neutral-600' }
-      ];
-    } else {
-      return [
-        { name: 'Figma', share: 80, color: 'bg-sky-500' },
-        { name: 'Zoom', share: 15, color: 'bg-sky-500' },
-        { name: 'Slack', share: 5, color: 'bg-amber-500' }
-      ];
-    }
-  };
-
-  const getMockActivityScoreForLog = (logId) => {
-    const sum = String(logId).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return 65 + (sum % 31); // 65% to 96%
-  };
 
   // State
   const [activeView, setActiveView] = useState('list');
@@ -383,10 +323,6 @@ export default function MyTime() {
                 <span className="text-xs font-bold text-[var(--text-primary)] truncate">
                   {projects.find(p => p.id === timerProjectId)?.name || 'No project'}
                 </span>
-                <span className="inline-flex items-center gap-1 text-[9px] text-emerald-600 font-semibold tracking-wide mt-0.5">
-                  <Cpu size={10} className="shrink-0" />
-                  Auto Sync Active
-                </span>
               </div>
             </div>
 
@@ -455,10 +391,6 @@ export default function MyTime() {
                 ))}
               </select>
             </div>
-            <span className="inline-flex items-center gap-1 text-[9px] text-[var(--text-muted)] font-semibold uppercase tracking-wider select-none">
-              <Cpu size={10} className="text-emerald-500 shrink-0" />
-              Focus Engine Ready
-            </span>
           </div>
 
           {/* Center Stage: Start Action button */}
@@ -599,9 +531,6 @@ export default function MyTime() {
 
                   return sortedLogs.map((log, idx) => {
                     const projectColor = getProjectColor(log.projectId);
-                    const isExpanded = !!expandedTelemetryLogs[log.id];
-                    const mockApps = getMockAppsForLog(log.id);
-                    const activityScore = getMockActivityScoreForLog(log.id);
 
                     // Check if there is an unlogged gap between this entry and the next
                     const currentEnd = parseTimeToMinutes(log.endTime);
@@ -614,8 +543,7 @@ export default function MyTime() {
                         {/* Interactive Timeline Card */}
                         <div className="glass-card rounded-xl overflow-hidden shadow-sm transition-all duration-200 border-l-[3px]" style={{ borderLeftColor: projectColor }}>
                           <div
-                            onClick={() => toggleTelemetry(log.id)}
-                            className="flex items-center gap-4 px-4 py-3 hover:bg-[var(--bg-sunken)]/20 cursor-pointer select-none"
+                            className="flex items-center gap-4 px-4 py-3 select-none"
                           >
                             {/* Task + project */}
                             <div className="flex-1 min-w-0">
@@ -652,19 +580,6 @@ export default function MyTime() {
                                 <Play size={12} fill="currentColor" />
                               </button>
 
-                              {/* Screen Telemetry Verification (Auto logs only) */}
-                              {log.source === 'auto' && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setZoomedScreenshot({ log });
-                                  }}
-                                  className="p-1 rounded bg-[var(--bg-sunken)] hover:bg-[var(--border-default)] text-[var(--text-muted)] hover:text-emerald-600 transition-colors flex items-center justify-center shrink-0 w-7 h-7 cursor-pointer"
-                                  title="Verify Telemetry Capture"
-                                >
-                                  <Eye size={12} />
-                                </button>
-                              )}
                             </div>
 
                             {/* Source badge */}
@@ -676,33 +591,6 @@ export default function MyTime() {
                             </span>
                           </div>
 
-                          {/* Collapsible Telemetry sub-panel */}
-                          {isExpanded && (
-                            <div className="px-4 py-3.5 bg-[var(--bg-sunken)]/45 border-t border-[var(--border-default)]/40 space-y-3 select-none">
-                              <div className="flex items-center justify-between text-xs font-semibold">
-                                <span className="text-[var(--text-secondary)]">Work Intensity Level</span>
-                                <span className="font-mono text-emerald-600 flex items-center gap-1 text-[11px] font-bold">
-                                  ⚡ {activityScore}% Focus
-                                </span>
-                              </div>
-                              <div className="space-y-2">
-                                {mockApps.map(app => (
-                                  <div key={app.name} className="space-y-1">
-                                    <div className="flex justify-between text-[10px] font-bold text-[var(--text-muted)]">
-                                      <span>{app.name}</span>
-                                      <span>{app.share}%</span>
-                                    </div>
-                                    <div className="progress-track h-1 bg-[var(--border-default)]/50 rounded-full overflow-hidden">
-                                      <div
-                                        className={`h-full rounded-full ${app.color || 'bg-sky-500'}`}
-                                        style={{ width: `${app.share}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                         </div>
 
                         {/* Unlogged Gaps allocator block */}
@@ -737,85 +625,6 @@ export default function MyTime() {
             </div>
           );
         })}
-      </div>
-    );
-  };
-
-  const renderSmartSuggestions = () => {
-    if (smartSuggestions.length === 0) return null;
-    return (
-      <div className="glass-card p-4 border border-amber-200/50 bg-amber-50/5 space-y-3.5">
-        <div className="flex items-center justify-between select-none">
-          <div className="flex items-center gap-1.5">
-            <span className="text-amber-500 animate-pulse text-sm">💡</span>
-            <h4 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Smart Telemetries</h4>
-          </div>
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 status-dot-pulse animate-status-pulse" />
-        </div>
-
-        <p className="text-[11px] text-[var(--text-secondary)] leading-normal select-none">
-          Desktop background captures found unlogged allocations:
-        </p>
-
-        <div className="space-y-3">
-          {smartSuggestions.map(s => {
-            const projectColor = getProjectColor(s.projectId);
-            return (
-              <div
-                key={s.id}
-                className="bg-[var(--bg-surface)] border border-[var(--border-default)] p-3 rounded-xl flex flex-col gap-2 transition-all hover:border-[var(--border-strong)]"
-              >
-                <div className="flex items-center justify-between select-none">
-                  <div className="flex items-center gap-1">
-                    <Cpu size={12} className="text-emerald-500 shrink-0" />
-                    <span className="text-xs font-bold text-[var(--text-primary)]">{s.appName}</span>
-                  </div>
-                  <span className="text-xs font-mono font-bold text-amber-600 shrink-0">{s.duration.toFixed(1)}h</span>
-                </div>
-                
-                <div className="text-[11px] text-[var(--text-secondary)] italic leading-snug">
-                  "{s.description}"
-                </div>
-
-                <div className="flex items-center justify-between mt-1 pt-1.5 border-t border-[var(--border-default)]/30 select-none">
-                  <div className="flex items-center gap-1 max-w-[120px] truncate shrink-0">
-                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: projectColor }} />
-                    <span className="text-[10px] text-[var(--text-muted)] truncate">{s.projectName}</span>
-                  </div>
-                  
-                  <button
-                    onClick={() => {
-                      const startMs = Date.now() - s.duration * 3600 * 1000;
-                      const startStr = new Date(startMs).toTimeString().slice(0, 5);
-                      const endStr = new Date().toTimeString().slice(0, 5);
-                      
-                      const newLog = {
-                        id: `log-${Date.now()}`,
-                        userId: 'u1',
-                        projectName: s.projectName,
-                        projectId: s.projectId,
-                        task: s.description,
-                        date: new Date().toISOString().slice(0, 10),
-                        startTime: startStr,
-                        endTime: endStr,
-                        duration: s.duration,
-                        source: 'auto',
-                        billable: true
-                      };
-
-                      setLogs(prev => [newLog, ...prev]);
-                      setSmartSuggestions(prev => prev.filter(x => x.id !== s.id));
-                      triggerToast('Time Allocation Logged', `Logged ${s.duration}h telemetry suggest to ${s.projectName}.`, 'success');
-                    }}
-                    className="text-[10px] font-bold text-amber-600 hover:text-amber-700 transition-colors shrink-0"
-                  >
-                    Approve & Log →
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
       </div>
     );
   };
@@ -891,52 +700,6 @@ export default function MyTime() {
     );
   };
 
-  const renderFocusScoreWidget = () => {
-    const avgIntensity = useMemo(() => {
-      const autoLogs = filteredLogs.filter(l => l.source === 'auto');
-      if (autoLogs.length === 0) return 85;
-      const totalScore = autoLogs.reduce((sum, l) => sum + getMockActivityScoreForLog(l.id), 0);
-      return Math.round(totalScore / autoLogs.length);
-    }, [filteredLogs]);
-
-    return (
-      <div className="glass-card p-4 border border-[var(--border-default)] flex items-center justify-between select-none">
-        <div className="space-y-1">
-          <div className="text-[8px] font-bold text-[var(--text-muted)] uppercase tracking-wider">WEEKLY FOCUS SCORE</div>
-          <div className="text-2xl font-black font-mono text-[var(--text-primary)] leading-none">{avgIntensity}/100</div>
-          <p className="text-[10px] text-[var(--text-muted)] leading-normal mt-0.5">
-            Cryptographic key-telemetry metrics tracking.
-          </p>
-        </div>
-
-        <div className="relative flex items-center justify-center w-14 h-14 shrink-0">
-          <svg className="w-full h-full transform -rotate-90">
-            <circle
-              cx="28"
-              cy="28"
-              r="23"
-              className="stroke-[var(--border-default)]"
-              strokeWidth="4"
-              fill="transparent"
-            />
-            <circle
-              cx="28"
-              cy="28"
-              r="23"
-              className="stroke-amber-400 progress-fill"
-              strokeWidth="4.5"
-              fill="transparent"
-              strokeDasharray={144.5}
-              strokeDashoffset={144.5 - (144.5 * avgIntensity) / 100}
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="absolute text-[10px] font-black font-mono text-amber-700">⚡</span>
-        </div>
-      </div>
-    );
-  };
-
   // Sub-renderer for List View
   const renderListView = () => {
     return (
@@ -1000,9 +763,7 @@ export default function MyTime() {
 
               {/* Scrollable sidebar content */}
               <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-                {renderSmartSuggestions()}
                 {renderGoalCadenceDashboard()}
-                {renderFocusScoreWidget()}
               </div>
             </div>
           )}
@@ -1147,36 +908,25 @@ export default function MyTime() {
                     const topOffset = (startH - 7) * ROW_HEIGHT;
                     const blockHeight = duration * ROW_HEIGHT;
                     const projectColor = getProjectColor(log.projectId);
-                    
-                    const focusScore = getMockActivityScoreForLog(log.id);
-                    const isHighFocus = log.source === 'auto' && focusScore > 85;
 
                     return (
                       <div
                         key={log.id}
-                        className={`absolute left-1 right-1 rounded-md px-2 py-1 select-none overflow-hidden cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md ${
-                          isHighFocus ? 'ring-1 ring-emerald-500/20' : ''
-                        }`}
+                        className="absolute left-1 right-1 rounded-md px-2 py-1 select-none overflow-hidden cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md"
                         style={{
                           top: `${Math.max(0, topOffset)}px`,
                           height: `${Math.max(20, blockHeight - 2)}px`,
-                          backgroundColor: isHighFocus ? `${projectColor}2c` : `${projectColor}20`,
+                          backgroundColor: `${projectColor}20`,
                           borderLeft: `3px solid ${projectColor}`,
                           zIndex: 10,
-                          boxShadow: isHighFocus ? `0 0 8px ${projectColor}35` : 'none',
                         }}
                         onClick={(e) => {
                           e.stopPropagation(); // Isolate block selection from empty grid triggers
                           triggerToast('Time Entry Details', `${log.task || 'Time Entry'} (${(Number(log.duration) || 0).toFixed(1)}h)`, 'info');
                         }}
                       >
-                        <div className="font-semibold text-[10px] leading-tight truncate flex items-center justify-between gap-1" style={{ color: projectColor }}>
+                        <div className="font-semibold text-[10px] leading-tight truncate" style={{ color: projectColor }}>
                           <span className="truncate">{log.task || '(No task description)'}</span>
-                          {log.source === 'auto' && (
-                            <span className="text-[8px] font-black bg-emerald-50 px-1 py-0.2 rounded text-emerald-700 shrink-0 select-none">
-                              ⚡{getMockActivityScoreForLog(log.id)}%
-                            </span>
-                          )}
                         </div>
                         <div className="text-[9px] opacity-85 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
                           {log.startTime} – {log.endTime} ({(Number(log.duration) || 0).toFixed(1)}h)
@@ -1235,18 +985,8 @@ export default function MyTime() {
                 className="grid grid-cols-[1fr_128px_64px_64px_64px_64px_64px_64px_64px_64px] gap-2 items-center px-6 py-3 hover:bg-[var(--bg-sunken)]/40 transition-colors text-sm"
               >
                 {/* Task name */}
-                <div className="text-[var(--text-primary)] font-medium truncate flex items-center gap-1.5" title={row.task}>
+                <div className="text-[var(--text-primary)] font-medium truncate" title={row.task}>
                   <span className="truncate">{row.task}</span>
-                  {(() => {
-                    const avgFocus = row.logIds && row.logIds.length > 0
-                      ? Math.round(row.logIds.reduce((sum, id) => sum + getMockActivityScoreForLog(id), 0) / row.logIds.length)
-                      : null;
-                    return avgFocus ? (
-                      <span className="text-[8px] font-black font-mono bg-amber-50 px-1 py-0.5 rounded text-amber-700 shrink-0 border border-amber-200/45 select-none">
-                        ⚡{avgFocus}%
-                      </span>
-                    ) : null;
-                  })()}
                 </div>
                 {/* Project badge */}
                 <div className="w-32 truncate flex items-center gap-1.5 shrink-0">
@@ -1483,54 +1223,6 @@ export default function MyTime() {
         </div>
       )}
 
-      {/* Telemetry zoom modal (unchanged) */}
-      {zoomedScreenshot && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/75 backdrop-blur-md p-4 animate-fade-in"
-          onClick={() => setZoomedScreenshot(null)}
-        >
-          <div
-            className="glass-elevated max-w-xl w-full border border-white/20 overflow-hidden shadow-2xl relative animate-fade-in"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="px-4 py-3 bg-neutral-900 border-b border-neutral-800 flex items-center justify-between text-white select-none">
-              <div className="flex items-center gap-2">
-                <span className="text-base">🛡️</span>
-                <span className="text-xs font-bold uppercase tracking-wider text-neutral-300">
-                  Chronos Telemetry Verification
-                </span>
-              </div>
-              <button onClick={() => setZoomedScreenshot(null)} className="text-neutral-400 hover:text-white transition-colors p-1">✕</button>
-            </div>
-            <div className="bg-neutral-950 aspect-video relative flex flex-col items-center justify-center p-6 border-b border-neutral-800 overflow-hidden">
-              <div className="absolute inset-0 bg-neutral-900/40 backdrop-blur-2xl" />
-              <div className="relative z-10 w-full max-w-md bg-neutral-900/80 border border-white/10 rounded-2xl p-6 shadow-2xl text-center space-y-4">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/20">
-                  <Cpu size={22} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Telemetry Validated</h4>
-                  <p className="text-[11px] text-neutral-400 leading-normal mt-1 max-w-xs mx-auto">
-                    {zoomedScreenshot.log.duration.toFixed(1)}h of verified desktop activity
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 bg-neutral-900 text-xs text-neutral-400 flex items-center justify-between gap-3">
-              <div>
-                <div><strong className="text-neutral-300">Task:</strong> "{zoomedScreenshot.log.task}"</div>
-                <div><strong className="text-neutral-300">Project:</strong> {zoomedScreenshot.log.projectName}</div>
-              </div>
-              <Button variant="secondary" size="sm"
-                className="border-neutral-700 bg-neutral-800 text-neutral-300 hover:bg-neutral-700 hover:text-white"
-                onClick={() => setZoomedScreenshot(null)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
