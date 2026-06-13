@@ -8,22 +8,17 @@ const SIZES = {
   xl: 'w-14 h-14 text-lg',
 };
 
-// Warm-tinted avatar palette — amber/terracotta/sage tones (optimized for high-contrast light mode)
-const WARM_COLORS = [
-  'bg-amber-500/10 text-amber-800 border-amber-200/60',
-  'bg-orange-500/10 text-orange-800 border-orange-200/60',
-  'bg-rose-500/10 text-rose-800 border-rose-200/60',
-  'bg-emerald-500/10 text-emerald-800 border-emerald-200/60',
-  'bg-sky-500/10 text-sky-800 border-sky-200/60',
-  'bg-violet-500/10 text-violet-800 border-violet-200/60',
-  'bg-teal-500/10 text-teal-800 border-teal-200/60',
-  'bg-pink-500/10 text-pink-800 border-pink-200/60',
+const SEMANTIC_PALETTES = [
+  { background: 'var(--warning-bg)', color: 'var(--warning-text)', borderColor: 'var(--warning-border)' },
+  { background: 'var(--success-bg)', color: 'var(--success-text)', borderColor: 'var(--success-border)' },
+  { background: 'var(--info-bg)',    color: 'var(--info-text)',    borderColor: 'var(--info-border)'    },
+  { background: 'var(--danger-bg)',  color: 'var(--danger-text)',  borderColor: 'var(--danger-border)'  },
 ];
 
 function hashName(name = '') {
   let h = 0;
   for (let i = 0; i < name.length; i++) {
-    h = (h * 31 + name.charCodeAt(i)) % WARM_COLORS.length;
+    h = (h * 31 + name.charCodeAt(i)) % SEMANTIC_PALETTES.length;
   }
   return h;
 }
@@ -35,12 +30,13 @@ function getInitials(name = '') {
 }
 
 export default function Avatar({ name = '', size = 'md', className = '' }) {
-  const colorClass = WARM_COLORS[hashName(name)];
+  const palette = SEMANTIC_PALETTES[hashName(name)];
   const sizeClass = SIZES[size] || SIZES.md;
 
   return (
     <div
-      className={`${sizeClass} ${colorClass} rounded-full border flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
+      className={`${sizeClass} rounded-full border flex items-center justify-center font-semibold shrink-0 select-none ${className}`}
+      style={palette}
       aria-label={name}
     >
       {getInitials(name)}

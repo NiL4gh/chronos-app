@@ -2,21 +2,18 @@ import React from 'react';
 
 // ActivityBar — color by activity value 0–100
 export function ActivityBar({ value = 0, className = '' }) {
-  const color =
-    value > 75 ? 'bg-emerald-500' :
-    value >= 40 ? 'bg-amber-400' :
-    'bg-red-400';
-
   return (
     <div
       title={`${value}% Activity (Requires Desktop App)`}
       className={`progress-track ${className}`}
     >
       <div
-        className={`progress-fill ${value > 75 ? 'progress-fill-emerald' : ''}`}
-        style={{ 
+        className="progress-fill"
+        style={{
           width: `${Math.min(100, Math.max(0, value))}%`,
-          ...(value <= 40 ? { background: '#ef4444' } : {}) 
+          background: value > 75 ? 'var(--success-text)'
+                    : value > 40 ? 'var(--warning-text)'
+                    : 'var(--danger-text)',
         }}
       />
     </div>
@@ -26,18 +23,16 @@ export function ActivityBar({ value = 0, className = '' }) {
 // ProgressBar — color by % of goal achieved
 export function ProgressBar({ value = 0, max = 100, className = '' }) {
   const pct = max > 0 ? (value / max) * 100 : 0;
-  const color =
-    pct >= 85 ? 'bg-emerald-500' :
-    pct >= 50 ? 'bg-amber-400' :
-    'bg-red-400';
 
   return (
     <div className={`progress-track ${className}`}>
       <div
-        className={`progress-fill ${pct >= 85 ? 'progress-fill-emerald' : ''}`}
-        style={{ 
+        className="progress-fill"
+        style={{
           width: `${Math.min(100, pct)}%`,
-          ...(pct < 50 ? { background: '#ef4444' } : {})
+          background: pct >= 85 ? 'var(--success-text)'
+                    : pct >= 50 ? 'var(--warning-text)'
+                    : 'var(--danger-text)',
         }}
       />
     </div>
@@ -52,9 +47,9 @@ export function CircularProgress({ value = 0, max = 100, size = 80, strokeWidth 
   const dash = (pct / 100) * circ;
 
   const color =
-    pct >= 85 ? '#10b981' :  // emerald-500
-    pct >= 50 ? '#fbbf24' :  // amber-400
-    '#f87171';               // red-400
+    pct >= 85 ? 'var(--success-text)' :
+    pct >= 50 ? 'var(--warning-text)' :
+    'var(--danger-text)';
 
   return (
     <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>

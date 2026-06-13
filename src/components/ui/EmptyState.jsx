@@ -9,7 +9,7 @@ export default function EmptyState({ icon: Icon, title, description, action }) {
           background: 'var(--bg-surface)',
           border: '1px solid var(--border-default)',
           borderColor: 'var(--border-strong)',
-          ringColor: 'var(--bg-sunken)',
+          '--tw-ring-color': 'var(--bg-sunken)',
         }}
       >
         {Icon && <Icon size={22} style={{ color: 'var(--text-muted)' }} />}

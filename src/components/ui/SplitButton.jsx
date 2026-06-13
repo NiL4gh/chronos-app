@@ -49,7 +49,7 @@ export default function SplitButton({ onExport }) {
         onMouseLeave={() => setHoverLeft(false)}
         style={{
           background: hoverLeft ? 'var(--accent-hover)' : 'var(--accent)',
-          color: 'white',
+          color: 'var(--accent-on)',
         }}
       >
         <Download size={14} />
@@ -65,8 +65,8 @@ export default function SplitButton({ onExport }) {
         aria-label="More export options"
         style={{
           background: hoverRight ? 'var(--accent-hover)' : 'var(--accent)',
-          color: 'white',
-          borderLeft: '1px solid rgba(255,255,255,0.25)'
+          color: 'var(--accent-on)',
+          borderLeft: '1px solid color-mix(in srgb, var(--accent-on) 25%, transparent)'
         }}
       >
         <ChevronDown size={14} />

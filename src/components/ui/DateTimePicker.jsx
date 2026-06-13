@@ -252,7 +252,7 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
                   ? 'var(--accent-subtle)'
                   : 'transparent',
                 color: isSelected
-                  ? '#ffffff'
+                  ? 'var(--accent-on)'
                   : isToday
                   ? 'var(--accent-text)'
                   : 'var(--text-secondary)',
@@ -609,7 +609,7 @@ export default function DateTimePicker({
                 className="w-full text-xs font-semibold py-1.5 rounded-lg transition-all duration-150"
                 style={{
                   background: 'var(--accent)',
-                  color: '#fff',
+                  color: 'var(--accent-on)',
                 }}
               >
                 Set Time

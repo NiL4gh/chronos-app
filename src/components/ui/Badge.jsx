@@ -1,38 +1,41 @@
 import React from 'react';
 
+const BASE_CONTAINER = "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold";
+const BASE_DOT = "w-1.5 h-1.5 rounded-full flex-shrink-0";
+
 const CONFIG = {
   success: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200/60",
-    dot: "w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0 shadow-[0_0_4px_rgba(16,185,129,0.4)]"
+    style:    { background: 'var(--success-bg)', color: 'var(--success-text)', border: '1px solid var(--success-border)' },
+    dotStyle: { background: 'var(--success-text)', boxShadow: '0 0 4px var(--success-border)' }
   },
   warning: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60",
-    dot: "w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 shadow-[0_0_4px_rgba(245,158,11,0.4)]"
+    style:    { background: 'var(--warning-bg)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' },
+    dotStyle: { background: 'var(--warning-text)', boxShadow: '0 0 4px var(--warning-border)' }
   },
   amber: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-amber-700 bg-amber-50 border border-amber-200/60",
-    dot: "w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0 shadow-[0_0_4px_rgba(245,158,11,0.4)]"
+    style:    { background: 'var(--warning-bg)', color: 'var(--warning-text)', border: '1px solid var(--warning-border)' },
+    dotStyle: { background: 'var(--warning-text)', boxShadow: '0 0 4px var(--warning-border)' }
   },
   danger: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-red-700 bg-red-50 border border-red-200/60",
-    dot: "w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0 shadow-[0_0_4px_rgba(239,68,68,0.4)]"
+    style:    { background: 'var(--danger-bg)', color: 'var(--danger-text)', border: '1px solid var(--danger-border)' },
+    dotStyle: { background: 'var(--danger-text)', boxShadow: '0 0 4px var(--danger-border)' }
   },
   info: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-sky-700 bg-sky-50 border border-sky-200/60",
-    dot: "w-1.5 h-1.5 rounded-full bg-sky-500 flex-shrink-0 shadow-[0_0_4px_rgba(14,165,233,0.4)]"
+    style:    { background: 'var(--info-bg)', color: 'var(--info-text)', border: '1px solid var(--info-border)' },
+    dotStyle: { background: 'var(--info-text)', boxShadow: '0 0 4px var(--info-border)' }
   },
   neutral: {
-    container: "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-[var(--text-secondary)] bg-[var(--bg-sunken)] border border-[var(--border-default)]",
-    dot: "w-1.5 h-1.5 rounded-full bg-[var(--text-muted)] flex-shrink-0"
-  }
+    style:    { background: 'var(--bg-sunken)', color: 'var(--text-secondary)', border: '1px solid var(--border-default)' },
+    dotStyle: { background: 'var(--text-muted)' }
+  },
 };
 
 export default function Badge({ variant = 'neutral', children, className = '' }) {
-  const config = CONFIG[variant] || CONFIG.neutral;
+  const cfg = CONFIG[variant] || CONFIG.neutral;
 
   return (
-    <span className={`${config.container} ${className}`}>
-      <span className={config.dot} />
+    <span className={`${BASE_CONTAINER} ${className}`} style={cfg.style}>
+      <span className={BASE_DOT} style={cfg.dotStyle} />
       {children}
     </span>
   );

@@ -28,7 +28,7 @@ export default function Toggle({
           s.track,
           'relative rounded-full shrink-0 mt-0.5',
           'transition-all duration-200',
-          'focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-1',
+          'focus-visible:ring-2 focus-visible:ring-[var(--accent)] focus-visible:ring-offset-1',
         ].join(' ')}
         style={{
           background: checked ? 'var(--accent)' : 'var(--border-strong)',
@@ -40,7 +40,7 @@ export default function Toggle({
             'absolute top-1/2 -translate-y-1/2 left-1 rounded-full transition-transform duration-200',
             checked ? s.translate : '',
           ].join(' ')}
-          style={{ background: 'white', boxShadow: 'var(--shadow-sm)' }}
+          style={{ background: 'var(--accent-on)', boxShadow: 'var(--shadow-sm)' }}
         />
       </button>
 

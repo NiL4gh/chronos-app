@@ -4,24 +4,24 @@ import { CheckCircle2, AlertTriangle, X, Info } from 'lucide-react';
 const VARIANTS = {
   success: {
     icon: CheckCircle2,
-    iconClass: 'text-emerald-500',
-    borderLeft: '3px solid #10b981', // emerald-500
+    iconStyle: { color: 'var(--success-text)' },
+    borderLeft: '3px solid var(--success-border)',
   },
   warning: {
     icon: AlertTriangle,
-    iconClass: 'text-amber-400',
-    borderLeft: '3px solid #fbbf24', // amber-400
+    iconStyle: { color: 'var(--warning-text)' },
+    borderLeft: '3px solid var(--warning-border)',
   },
   info: {
     icon: Info,
-    iconClass: 'text-blue-500',
-    borderLeft: '3px solid #3b82f6', // blue-500
+    iconStyle: { color: 'var(--info-text)' },
+    borderLeft: '3px solid var(--info-border)',
   },
 };
 
 export default function Toast({ visible, title, message, variant = 'success', onDismiss }) {
   const [hoverClose, setHoverClose] = useState(false);
-  
+
   useEffect(() => {
     if (!visible) return;
     const t = setTimeout(() => onDismiss?.(), 4000);
@@ -45,7 +45,7 @@ export default function Toast({ visible, title, message, variant = 'success', on
         }}
       >
         <div className="mt-0.5 shrink-0">
-          <Icon size={16} className={v.iconClass} />
+          <Icon size={16} style={v.iconStyle} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{title}</p>

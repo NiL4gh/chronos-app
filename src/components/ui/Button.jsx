@@ -18,9 +18,9 @@ const Button = forwardRef(function Button(
       case 'primary':
         return {
           background: hover ? 'var(--accent-hover)' : 'var(--accent)',
-          color: 'white',
+          color: 'var(--accent-on)',
           border: 'none',
-          boxShadow: '0 2px 4px rgba(245, 158, 11, 0.25)',
+          boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 30%, transparent)',
         };
       case 'secondary':
         return {

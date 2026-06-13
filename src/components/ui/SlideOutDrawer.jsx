@@ -26,7 +26,7 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
           'fixed inset-0 z-40 transition-opacity duration-300',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         ].join(' ')}
-        style={{ background: 'rgba(28,25,23,0.4)' }}
+        style={{ background: 'rgba(0, 0, 0, 0.45)' }}
         onClick={onClose}
       />
 
@@ -71,7 +71,7 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
 
         {/* Footer */}
         {footer && (
-          <div className="flex-shrink-0 border-t border-[var(--border-default)] bg-white px-6 py-4 flex items-center justify-end gap-3">
+          <div className="flex-shrink-0 border-t border-[var(--border-default)] px-6 py-4 flex items-center justify-end gap-3" style={{ background: 'var(--bg-surface)' }}>
             {footer}
           </div>
         )}
