@@ -2,12 +2,12 @@ import { useState, useMemo, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   Plus, Search, CheckCircle2, PauseCircle, Circle,
-  Target, Users, DollarSign, Calendar, ChevronDown,
-  X, TrendingUp, Clock, Edit3, Check, Trash2,
+  Users, DollarSign, Calendar, ChevronDown,
+  X, TrendingUp, Edit3, Check, Trash2,
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
-import { ProgressBar, CircularProgress } from '../components/ui/ProgressBar.jsx';
+import { ProgressBar } from '../components/ui/ProgressBar.jsx';
 import EmptyState from '../components/ui/EmptyState.jsx';
 import Input, { Select } from '../components/ui/Input.jsx';
 import Button from '../components/ui/Button.jsx';
@@ -56,30 +56,6 @@ function StatCard({ icon: Icon, label, value, sub }) {
       </div>
       {sub && <p className="text-xs text-[var(--text-muted)]">{sub}</p>}
     </div>
-  );
-}
-
-// ─── Goal Ring (clickable) ────────────────────────────────
-function GoalRing({ project, onClickRing }) {
-  const pct = project.goalHours > 0
-    ? Math.round((project.loggedHours / project.goalHours) * 100)
-    : 0;
-  const label = `${pct}%`;
-
-  return (
-    <button
-      onClick={onClickRing}
-      className="relative flex flex-col items-center gap-1 group"
-      title="Click to edit goal"
-    >
-      <CircularProgress value={project.loggedHours} max={project.goalHours} size={72} strokeWidth={5} label={label} />
-      <span
-        className="text-[10px] font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150 mt-1"
-        style={{ color: 'var(--accent)' }}
-      >
-        Edit goal
-      </span>
-    </button>
   );
 }
 
@@ -152,8 +128,6 @@ function GoalEditor({ project, onSave, onCancel }) {
 
 // ─── Project Card ─────────────────────────────────────────
 function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) {
-  const [editingGoal, setEditingGoal] = useState(false);
-
   const statusMeta = STATUS_META[project.status] || STATUS_META.active;
   const members    = teamMembers.filter(m => project.members.includes(m.id));
   const days       = daysUntil(project.dueDate);
@@ -163,7 +137,6 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
 
   const handleGoalSave = (newGoal) => {
     onGoalSave(project.id, newGoal);
-    setEditingGoal(false);
     triggerToast?.('Goal updated', `${project.name} goal set to ${newGoal.goalHours}h/${newGoal.goalType}.`, 'success');
   };
 
@@ -186,7 +159,7 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
       className={`glass-card glass-interactive flex flex-col gap-5 p-6 transition-all duration-200 cursor-pointer lift-on-hover ${
         selected ? 'border-amber-500 ring-2 ring-amber-400/20 bg-amber-50/10' : ''
       }`}
-      onClick={(e) => { e.preventDefault(); if (!editingGoal) onSelect(project); }}
+      onClick={(e) => { e.preventDefault(); onSelect(project); }}
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3">
@@ -212,11 +185,8 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
         </div>
       </div>
 
-      {/* Goal ring + goal progress text */}
+      {/* Hours progress */}
       <div className="flex items-center gap-6">
-        <div onClick={e => { e.preventDefault(); e.stopPropagation(); setEditingGoal(v => !v); }}>
-          <GoalRing project={project} onClickRing={() => {}} />
-        </div>
         <div className="flex-1 min-w-0">
           <div>
             <div className="flex items-center justify-between mb-1.5">
@@ -232,17 +202,6 @@ function ProjectCard({ project, selected, onSelect, onGoalSave, triggerToast }) 
           </div>
         </div>
       </div>
-
-      {/* Inline goal editor */}
-      {editingGoal && (
-        <div onClick={e => e.stopPropagation()}>
-          <GoalEditor
-            project={project}
-            onSave={handleGoalSave}
-            onCancel={() => setEditingGoal(false)}
-          />
-        </div>
-      )}
 
       {/* Footer — members + due date */}
       <div
@@ -621,8 +580,6 @@ export default function Projects() {
   const active    = projectData.filter(p => p.status === 'active').length;
   const totalBudget = projectData.reduce((s, p) => s + p.budget, 0);
   const totalSpent  = projectData.reduce((s, p) => s + p.spent, 0);
-  const totalLogged = projectData.reduce((s, p) => s + p.loggedHours, 0);
-  const totalGoal   = projectData.reduce((s, p) => s + p.goalHours, 0);
 
   const activeProjectCount = active;
   const totalProjectCount = projectData.length;
@@ -634,14 +591,6 @@ export default function Projects() {
         <p className="text-xs text-[var(--text-muted)] mt-0.5">
           {activeProjectCount} active · {totalProjectCount} total
         </p>
-      </div>
-
-      {/* ── Stat row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <StatCard icon={FolderKanban} label="Total Projects" value={projectData.length} />
-        <StatCard icon={CheckCircle2} label="Active"         value={active} />
-        <StatCard icon={Clock}        label="Hours Logged"   value={`${totalLogged}h`} />
-        <StatCard icon={Target}       label="Total Goal"     value={`${totalGoal}h`} />
       </div>
 
       {/* ── Main split layout ── */}
