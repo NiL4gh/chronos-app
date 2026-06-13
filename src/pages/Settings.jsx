@@ -7,9 +7,6 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import { ACCENTS, THEME_OPTIONS } from '../lib/theme';
-import {
-  MessageSquare, Calendar, Layers, GitBranch, Mail, Video, Sun, Moon, CheckCircle2
-} from 'lucide-react';
 
 export default function Settings() {
   const { keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent } = useOutletContext();
@@ -44,7 +41,6 @@ export default function Settings() {
     { id: 'notifications', label: 'Notifications' },
     { id: 'appearance', label: 'Appearance' },
     { id: 'shortcuts', label: 'Shortcuts' },
-    { id: 'integrations', label: 'Integrations' }
   ];
 
   // Workspace State — persisted
@@ -450,36 +446,6 @@ export default function Settings() {
             </div>
           );
         })()}
-
-        {/* Integrations Section */}
-        {activeSection === 'integrations' && (
-          <div className="glass-card p-6 animate-fade-in">
-            <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--text-primary)' }}>Integrations</h3>
-            <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Connect your tools to Chronos</p>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {[
-                { name: 'Slack', desc: 'Get notified in your Slack workspace', icon: MessageSquare },
-                { name: 'Google Calendar', desc: 'Sync meetings as time entries', icon: Calendar },
-                { name: 'Jira', desc: 'Link time entries to Jira tickets', icon: Layers }, // instructions said Trello (Layers) then list says Jira. I'll use Layers for Jira as instructed
-                { name: 'GitHub', desc: 'Auto-log time from commits and PRs', icon: GitBranch },
-                { name: 'Gmail', desc: 'Turn emails into time entries', icon: Mail },
-                { name: 'Zoom', desc: 'Auto-log meeting durations', icon: Video },
-              ].map(integration => (
-                <div key={integration.name} className="glass-interactive p-4 rounded-xl flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                    <integration.icon size={16} className="text-[var(--text-muted)]" />
-                    <div>
-                      <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{integration.name}</h4>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{integration.desc}</p>
-                    </div>
-                  </div>
-                  <Badge variant="neutral">Coming Soon</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
 
       </div>
