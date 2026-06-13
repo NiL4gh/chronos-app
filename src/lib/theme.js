@@ -1,4 +1,4 @@
-// Theme + accent helpers. The pre-paint script in index.html applies the
+﻿// Theme + accent helpers. The pre-paint script in index.html applies the
 // stored values before React mounts; these keep React in sync and persist changes.
 
 export const THEME_KEY = 'theme';
