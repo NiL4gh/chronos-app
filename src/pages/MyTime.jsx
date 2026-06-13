@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, CalendarDays, List,
   LayoutGrid, Table2, Play, Square, Plus, Clock, Settings2, CalendarCheck,
-  PenLine, Flame, Activity
+  Activity
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
