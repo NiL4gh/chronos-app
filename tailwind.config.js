@@ -8,27 +8,37 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'ui-monospace', 'monospace'],
+        // "mono" intentionally also resolves to Inter, with tabular figures, so
+        // existing `font-mono` usages render aligned numbers in the UI typeface.
+        mono: ['Inter', '-apple-system', 'sans-serif', { fontFeatureSettings: '"tnum"' }],
       },
       colors: {
-        // Warm Cyber-Bento semantic aliases
-        // These allow Tailwind JIT to pick up CSS variable usage
-        'warm-base':     'var(--bg-base)',
-        'warm-surface':  'var(--bg-surface)',
-        'warm-elevated': 'var(--bg-elevated)',
-        'accent':        'var(--accent)',
+        canvas:   'var(--bg-canvas)',
+        surface:  'var(--bg-surface)',
+        elevated: 'var(--bg-elevated)',
+        sunken:   'var(--bg-sunken)',
+        hover:    'var(--bg-hover)',
+        accent:        'var(--accent)',
+        'accent-hover':'var(--accent-hover)',
+        'accent-on':   'var(--accent-on)',
+        'accent-subtle':'var(--accent-subtle)',
+        success: 'var(--success-text)',
+        danger:  'var(--danger-text)',
+        info:    'var(--info-text)',
       },
       borderColor: {
-        'subtle':      'var(--border-subtle)',
-        'default':     'var(--border-default)',
-        'interactive': 'var(--border-interactive)',
-        'focus':       'var(--border-focus)',
+        'default':  'var(--border-default)',
+        'strong':   'var(--border-strong)',
+        'focus':    'var(--border-focus)',
+        'accent':   'var(--accent)',
       },
       textColor: {
         'primary':   'var(--text-primary)',
         'secondary': 'var(--text-secondary)',
+        'tertiary':  'var(--text-tertiary)',
         'muted':     'var(--text-muted)',
         'disabled':  'var(--text-disabled)',
+        'accent':    'var(--accent-text)',
       },
       boxShadow: {
         'glow-amber':  '0 0 24px rgba(245, 158, 11, 0.25)',
