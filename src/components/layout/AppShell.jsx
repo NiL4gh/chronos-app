@@ -331,8 +331,6 @@ export default function AppShell() {
     selectedDate, setSelectedDate,
   };
 
-  const isEmployee = activeRole === 'employee';
-
   return (
     <div
       className="flex min-h-screen h-screen overflow-hidden relative"
