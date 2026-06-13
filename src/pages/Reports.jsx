@@ -402,13 +402,17 @@ export default function Reports() {
             
             <div className="flex items-center gap-2 ml-auto flex-shrink-0">
               <button 
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white border border-[var(--border-default)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm font-medium transition-all duration-150 flex-shrink-0"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-[var(--border-default)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm font-medium transition-all duration-150 flex-shrink-0"
+                style={{ background: 'var(--bg-surface)' }}
                 onClick={handleExportCSV}
               >
                 <Download size={14} /> CSV
               </button>
               <button 
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--text-active)] hover:bg-neutral-800 text-white text-sm font-medium transition-all duration-150 flex-shrink-0"
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all duration-150 flex-shrink-0"
+                style={{ background: 'var(--text-primary)', color: 'var(--bg-surface)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
                 onClick={handleExportPDF}
               >
                 <FileText size={14} /> Export PDF
@@ -468,7 +472,10 @@ export default function Reports() {
                   onClick={() => setSelectedChartDate(selectedChartDate === d.date ? null : d.date)}
                 >
                   {/* Tooltip */}
-                  <div className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform origin-bottom bg-[var(--text-primary)] dark:bg-white text-white dark:text-black text-xs px-2 py-1 rounded shadow-xl whitespace-nowrap z-20 pointer-events-none">
+                  <div
+                    className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform origin-bottom text-xs px-2 py-1 rounded shadow-xl whitespace-nowrap z-20 pointer-events-none"
+                    style={{ background: 'var(--text-primary)', color: 'var(--bg-surface)' }}
+                  >
                     {d.date} — {d.hours.toFixed(1)}h logged by {d.membersCount} members
                   </div>
                   
