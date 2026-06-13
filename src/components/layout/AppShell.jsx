@@ -11,6 +11,7 @@ import Button from '../ui/Button.jsx';
 import Toggle from '../ui/Toggle.jsx';
 import { projects, timeLogs, invoices } from '../../data/mockData.js';
 import { AlertTriangle, Clock } from 'lucide-react';
+import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -58,8 +59,9 @@ export default function AppShell() {
   // Help drawer state
   const [helpOpen, setHelpOpen] = useState(false);
 
-  // Theme state
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  // Theme + accent state (pre-paint script already applied the stored values)
+  const [theme, setTheme] = useState(getStoredTheme);
+  const [accent, setAccent] = useState(getStoredAccent);
 
   // Keybindings state
   const [keyBindings, setKeyBindings] = useState(() => {
@@ -82,14 +84,14 @@ export default function AppShell() {
 
   const lastKeyRef = useRef('');
 
-  // Sync theme
+  // Sync theme + accent to the document and localStorage
+  useEffect(() => { applyTheme(theme); }, [theme]);
+  useEffect(() => { applyAccent(accent); }, [accent]);
+
+  // When following the OS, re-apply on system preference change
   useEffect(() => {
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    localStorage.setItem('theme', theme);
+    if (theme !== 'system') return undefined;
+    return watchSystemTheme(() => applyTheme('system'));
   }, [theme]);
 
   // Persist key bindings
@@ -318,7 +320,7 @@ export default function AppShell() {
     startTimer, stopTimer: guardedStopTimer, resetTimer,
     triggerToast,
     activeRole,
-    theme, setTheme,
+    theme, setTheme, accent, setAccent,
     keyBindings, setKeyBindings,
     logs, setLogs,
     invoiceList, setInvoiceList,
