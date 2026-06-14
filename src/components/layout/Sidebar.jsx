@@ -286,66 +286,7 @@ export default function Sidebar({
                 <p className="text-xs text-[var(--text-muted)]">niloy@company.com</p>
               </div>
 
-              {/* 2. Role switch section header */}
-              <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] text-left">
-                SWITCH ROLE
-              </div>
-
-              {/* 3. Two role option buttons */}
-              {['admin', 'employee'].map((thisRole) => {
-                const isCurrent = activeRole === thisRole;
-                return (
-                  <button
-                    key={thisRole}
-                    onClick={() => {
-                      if (!isCurrent) {
-                        onRoleSwitch();
-                      }
-                      setProfileOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors text-left"
-                    style={
-                      isCurrent
-                        ? { background: 'var(--accent-subtle)', color: 'var(--accent-text)' }
-                        : { color: 'var(--text-secondary)' }
-                    }
-                    onMouseEnter={(e) => {
-                      if (!isCurrent) {
-                        e.currentTarget.style.background = 'var(--bg-sunken)';
-                        e.currentTarget.style.color = 'var(--text-primary)';
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!isCurrent) {
-                        e.currentTarget.style.background = 'transparent';
-                        e.currentTarget.style.color = 'var(--text-secondary)';
-                      }
-                    }}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      {isCurrent ? (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                      ) : (
-                        <span className="w-2 h-2 rounded-full border border-[var(--border-strong)] shrink-0" />
-                      )}
-                      <div>
-                        <div className={isCurrent ? 'font-semibold' : ''}>
-                          {thisRole === 'admin' ? 'Admin View' : 'Employee View'}
-                        </div>
-                        <div className="text-[10px] text-[var(--text-muted)] mt-0.5">
-                          {thisRole === 'admin' ? 'Full access' : 'Personal view'}
-                        </div>
-                      </div>
-                    </div>
-                    {isCurrent && <span className="text-xs">✓</span>}
-                  </button>
-                );
-              })}
-
-              {/* 4. Divider */}
-              <div className="border-t border-[var(--border-default)] my-1" />
-
-              {/* 5. Settings link */}
+              {/* 4. Settings link */}
               <button
                 onClick={() => {
                   navigate('/settings');
@@ -414,7 +355,7 @@ export default function Sidebar({
       </button>
     </div>
 
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[var(--border-default)] flex items-center justify-around px-2 py-2 h-16">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border-default)] flex items-center justify-around px-2 py-2 h-16" style={{ background: 'var(--bg-surface)' }}>
       <NavLink to="/dashboard" className={({ isActive }) =>
         `flex flex-col items-center gap-0.5 px-3 py-1 rounded-xl transition-colors ${isActive
           ? 'text-[var(--text-active)] bg-[var(--bg-active)]'

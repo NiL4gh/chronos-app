@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, CalendarDays, List,
   LayoutGrid, Table2, Play, Square, Plus, Clock, Settings2, CalendarCheck,
-  Activity
+  Activity, Check, X
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
@@ -87,6 +87,7 @@ export default function MyTime() {
   const [completedTasksChecked, setCompletedTasksChecked] = useState(false);
   const [weekVisChecked, setWeekVisChecked] = useState(true);
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState(null);
   const calendarPanelRef = useRef(null);
 
   // Click outside to dismiss calendar sync panel
@@ -113,26 +114,33 @@ export default function MyTime() {
     return getWeekNumber(currentWeekStart);
   }, [currentWeekStart]);
 
-  // Filter logs to entries within current week Mon-Sun
+  // Compute the visible date range based on navigationScale
+  const [rangeStart, rangeEnd] = useMemo(() => {
+    if (navigationScale === 'month') {
+      const first = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1);
+      first.setHours(0, 0, 0, 0);
+      const last = new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth() + 1, 0);
+      last.setHours(23, 59, 59, 999);
+      return [first, last];
+    }
+    const start = new Date(currentWeekStart);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(currentWeekStart);
+    end.setDate(end.getDate() + 6);
+    end.setHours(23, 59, 59, 999);
+    return [start, end];
+  }, [currentWeekStart, navigationScale]);
+
+  // Filter logs to entries within the current range
   const filteredLogs = useMemo(() => {
     return (logs || []).filter(log => {
       const logDate = new Date(log.date + 'T00:00:00');
-      const start = new Date(currentWeekStart);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(currentWeekStart);
-      end.setDate(end.getDate() + 6);
-      end.setHours(23, 59, 59, 999);
-
-      const inWeek = logDate >= start && logDate <= end;
-      if (!inWeek) return false;
-
-      // Gate by employee role
-      if (currentRole === 'employee') {
-        return log.userId === currentUserId;
-      }
+      const inRange = logDate >= rangeStart && logDate <= rangeEnd;
+      if (!inRange) return false;
+      if (currentRole === 'employee') return log.userId === currentUserId;
       return true;
     });
-  }, [logs, currentWeekStart, currentRole]);
+  }, [logs, rangeStart, rangeEnd, currentRole]);
 
   // Dynamic filter for selected day
   const logsToRender = useMemo(() => {
@@ -187,40 +195,55 @@ export default function MyTime() {
   // Navigation actions
   const goToPrev = () => {
     if (navigationScale === 'month') {
-      setCurrentWeekStart(d => {
-        const newDate = new Date(d);
-        newDate.setMonth(newDate.getMonth() - 1);
-        return getMonday(newDate);
-      });
-      triggerToast('Date Adjusted', 'Moved back by 1 month', 'info');
+      setCurrentWeekStart(d => new Date(d.getFullYear(), d.getMonth() - 1, 1));
     } else {
       setCurrentWeekStart(d => addDays(d, -7));
-      triggerToast('Date Adjusted', 'Moved back by 1 week', 'info');
     }
   };
 
   const goToNext = () => {
     if (navigationScale === 'month') {
-      setCurrentWeekStart(d => {
-        const newDate = new Date(d);
-        newDate.setMonth(newDate.getMonth() + 1);
-        return getMonday(newDate);
-      });
-      triggerToast('Date Adjusted', 'Moved forward by 1 month', 'info');
+      setCurrentWeekStart(d => new Date(d.getFullYear(), d.getMonth() + 1, 1));
     } else {
       setCurrentWeekStart(d => addDays(d, 7));
-      triggerToast('Date Adjusted', 'Moved forward by 1 week', 'info');
     }
   };
 
-  const goToToday = () => setCurrentWeekStart(getMonday(new Date()));
+  const goToToday = () => {
+    const now = new Date();
+    setCurrentWeekStart(navigationScale === 'month'
+      ? new Date(now.getFullYear(), now.getMonth(), 1)
+      : getMonday(now)
+    );
+  };
 
-  const isCurrentWeek = useMemo(() => {
-    const currentMonday = getMonday(new Date());
-    return currentWeekStart.getTime() === currentMonday.getTime();
-  }, [currentWeekStart]);
+  const isCurrentPeriod = useMemo(() => {
+    const now = new Date();
+    if (navigationScale === 'month') {
+      return currentWeekStart.getFullYear() === now.getFullYear() &&
+        currentWeekStart.getMonth() === now.getMonth();
+    }
+    return currentWeekStart.getTime() === getMonday(now).getTime();
+  }, [currentWeekStart, navigationScale]);
 
-  const formatWeekLabel = () => {
+  const [dateJumpOpen, setDateJumpOpen] = useState(false);
+  const dateJumpRef = useRef(null);
+
+  useEffect(() => {
+    if (!dateJumpOpen) return;
+    const handler = (e) => {
+      if (dateJumpRef.current && !dateJumpRef.current.contains(e.target)) {
+        setDateJumpOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [dateJumpOpen]);
+
+  const formatRangeLabel = () => {
+    if (navigationScale === 'month') {
+      return currentWeekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+    }
     const start = weekDays[0];
     const end = weekDays[6];
     if (!start || !end) return '';
@@ -384,7 +407,7 @@ export default function MyTime() {
               <select
                 value={focusProject}
                 onChange={e => setFocusProject(e.target.value)}
-                className="text-xs font-bold text-[var(--text-secondary)] bg-transparent focus:outline-none cursor-pointer max-w-[110px] truncate"
+                className="text-xs font-bold text-[var(--text-secondary)] bg-transparent focus:outline-none cursor-pointer max-w-[180px] truncate"
               >
                 {projects.map(p => (
                   <option key={p.id} value={p.id}>{p.name}</option>
@@ -631,6 +654,8 @@ export default function MyTime() {
   };
 
   const renderGoalCadenceDashboard = () => {
+    const dailyTarget = parseFloat(localStorage.getItem('ws_dailyTarget') || '8');
+    const weeklyTarget = parseFloat(localStorage.getItem('ws_weeklyTarget') || '40');
     return (
       <div className="glass-card p-4 border border-[var(--border-default)] space-y-4 select-none">
         <div className="flex items-center gap-1.5">
@@ -644,15 +669,15 @@ export default function MyTime() {
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="text-[var(--text-secondary)]">Daily Focus Target</span>
               <span className="font-mono text-[var(--text-primary)]">
-                {totalTodayHours.toFixed(1)}h <span className="text-[var(--text-muted)]">/ 8.0h</span>
+                {totalTodayHours.toFixed(1)}h <span className="text-[var(--text-muted)]">/ {dailyTarget.toFixed(1)}h</span>
               </span>
             </div>
             <div className="progress-track h-2 bg-[var(--bg-sunken)] rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full progress-fill transition-all duration-500 ${
-                  totalTodayHours >= 8 ? 'bg-emerald-500' : 'bg-amber-400'
+                  totalTodayHours >= dailyTarget ? 'bg-emerald-500' : 'bg-amber-400'
                 }`}
-                style={{ width: `${Math.min(100, (totalTodayHours / 8) * 100)}%` }}
+                style={{ width: `${Math.min(100, (totalTodayHours / dailyTarget) * 100)}%` }}
               />
             </div>
           </div>
@@ -662,13 +687,13 @@ export default function MyTime() {
             <div className="flex items-center justify-between text-xs font-semibold">
               <span className="text-[var(--text-secondary)]">Weekly Progress Goal</span>
               <span className="font-mono text-[var(--text-primary)]">
-                {totalWeekHours.toFixed(1)}h <span className="text-[var(--text-muted)]">/ 40.0h</span>
+                {totalWeekHours.toFixed(1)}h <span className="text-[var(--text-muted)]">/ {weeklyTarget.toFixed(1)}h</span>
               </span>
             </div>
             <div className="progress-track h-2 bg-[var(--bg-sunken)] rounded-full overflow-hidden">
               <div
                 className="h-full rounded-full progress-fill transition-all duration-500 bg-amber-500"
-                style={{ width: `${Math.min(100, (totalWeekHours / 40) * 100)}%` }}
+                style={{ width: `${Math.min(100, (totalWeekHours / weeklyTarget) * 100)}%` }}
               />
             </div>
           </div>
@@ -875,7 +900,7 @@ export default function MyTime() {
                       date: dateStr,
                       startTime: startTimeStr,
                       endTime: endTimeStr,
-                      billable: false,
+                      billable: true,
                     });
                     setDrawerOpen(true);
                   }}
@@ -883,8 +908,8 @@ export default function MyTime() {
                     isSelected ? 'bg-amber-500/[0.04] dark:bg-amber-500/[0.02]' : ''
                   }`}
                 >
-                  {/* Render time blocks for this day */}
-                  {dayLogs.map(log => {
+                  {/* Render time blocks for this day — with overlap column layout */}
+                  {(() => {
                     const parseHour = (timeStr) => {
                       if (!timeStr) return 7;
                       const str = String(timeStr);
@@ -893,53 +918,104 @@ export default function MyTime() {
                       const h = Number(parts[0]) || 0;
                       const m = Number(parts[1]) || 0;
                       let finalH = h;
-                      if (/pm/i.test(str) && h < 12) {
-                        finalH += 12;
-                      } else if (/am/i.test(str) && h === 12) {
-                        finalH = 0;
-                      }
+                      if (/pm/i.test(str) && h < 12) finalH += 12;
+                      else if (/am/i.test(str) && h === 12) finalH = 0;
                       return finalH + m / 60;
                     };
-                    const startH = parseHour(log.startTime);
-                    const endH = parseHour(log.endTime);
-                    const duration = Number(log.duration) || (endH - startH);
 
-                    if (startH >= 24 || startH + duration <= 7) return null;
+                    // Compute start/end/duration for each visible log
+                    const laid = dayLogs.map(log => {
+                      const startH = parseHour(log.startTime);
+                      const endH = parseHour(log.endTime);
+                      const duration = Number(log.duration) || Math.max(0.25, endH - startH);
+                      return { log, startH, endH: startH + duration, duration };
+                    }).filter(e => e.startH < 24 && e.endH > 7);
 
-                    const topOffset = (startH - 7) * ROW_HEIGHT;
-                    const blockHeight = duration * ROW_HEIGHT;
-                    const projectColor = getProjectColor(log.projectId);
+                    // Cluster overlapping entries and assign column indices
+                    const withCols = [];
+                    let clusterEnd = 0;
+                    let clusterCols = 0;
+                    let clusterStart = 0;
 
-                    return (
-                      <div
-                        key={log.id}
-                        className="absolute left-1 right-1 rounded-md px-2 py-1 select-none overflow-hidden cursor-pointer transition-all hover:scale-[1.01] hover:shadow-md"
-                        style={{
-                          top: `${Math.max(0, topOffset)}px`,
-                          height: `${Math.max(20, blockHeight - 2)}px`,
-                          backgroundColor: `${projectColor}20`,
-                          borderLeft: `3px solid ${projectColor}`,
-                          zIndex: 10,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation(); // Isolate block selection from empty grid triggers
-                          triggerToast('Time Entry Details', `${log.task || 'Time Entry'} (${(Number(log.duration) || 0).toFixed(1)}h)`, 'info');
-                        }}
-                      >
-                        <div className="font-semibold text-[10px] leading-tight truncate" style={{ color: projectColor }}>
-                          <span className="truncate">{log.task || '(No task description)'}</span>
-                        </div>
-                        <div className="text-[9px] opacity-85 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
-                          {log.startTime} – {log.endTime} ({(Number(log.duration) || 0).toFixed(1)}h)
-                        </div>
-                        {blockHeight > 45 && (
-                          <div className="text-[9px] font-medium opacity-70 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
-                            {log.projectName}
+                    // Sort by start time
+                    const sorted = [...laid].sort((a, b) => a.startH - b.startH);
+
+                    // Greedy column assignment
+                    const colAssigned = sorted.map(() => -1);
+                    const colEnds = [];
+
+                    sorted.forEach((entry, i) => {
+                      let col = colEnds.findIndex(end => end <= entry.startH);
+                      if (col === -1) { col = colEnds.length; colEnds.push(entry.endH); }
+                      else colEnds[col] = entry.endH;
+                      colAssigned[i] = col;
+                    });
+
+                    // For each entry, count how many columns are active during its span
+                    const totalCols = sorted.map((entry, i) => {
+                      return colEnds.filter((_, ci) => {
+                        const sameCluster = sorted.findIndex((e, ei) => colAssigned[ei] === ci);
+                        return ci <= colAssigned[i] || (sameCluster !== -1 && sorted[sameCluster].startH < entry.endH && sorted[sameCluster].endH > entry.startH);
+                      }).length;
+                    });
+
+                    // Simpler: just count max column index within overlapping group
+                    const groupMaxCol = sorted.map((entry, i) => {
+                      let max = colAssigned[i];
+                      sorted.forEach((other, j) => {
+                        if (other.startH < entry.endH && other.endH > entry.startH) {
+                          max = Math.max(max, colAssigned[j]);
+                        }
+                      });
+                      return max + 1; // total columns in overlap group
+                    });
+
+                    return sorted.map((entry, i) => {
+                      const { log, startH, endH, duration } = entry;
+                      const topOffset = (startH - 7) * ROW_HEIGHT;
+                      const blockHeight = duration * ROW_HEIGHT;
+                      const projectColor = getProjectColor(log.projectId);
+                      const col = colAssigned[i];
+                      const numCols = groupMaxCol[i];
+                      const colW = 100 / numCols;
+                      const gap = numCols > 1 ? 1 : 0; // px gap between columns
+
+                      return (
+                        <div
+                          key={log.id}
+                          className="absolute rounded-md px-1.5 py-1 select-none cursor-pointer transition-all hover:brightness-95 hover:shadow-md"
+                          style={{
+                            top: `${Math.max(0, topOffset)}px`,
+                            height: `${Math.max(24, blockHeight - 2)}px`,
+                            left: `calc(${col * colW}% + ${gap}px)`,
+                            width: `calc(${colW}% - ${gap * 2}px)`,
+                            backgroundColor: `${projectColor}20`,
+                            borderLeft: `3px solid ${projectColor}`,
+                            zIndex: 10,
+                            overflow: 'hidden',
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedEntry(log);
+                          }}
+                        >
+                          <div className="font-semibold text-[10px] leading-tight truncate" style={{ color: projectColor }}>
+                            {log.task || '(No task description)'}
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+                          {blockHeight >= 36 && (
+                            <div className="text-[9px] opacity-80 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
+                              {log.startTime} – {log.endTime}
+                            </div>
+                          )}
+                          {blockHeight > 54 && (
+                            <div className="text-[9px] font-medium opacity-70 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
+                              {log.projectName}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
 
                   {/* Today's red/amber time line indicator */}
                   {isToday && (
@@ -1065,21 +1141,148 @@ export default function MyTime() {
     );
   };
 
+  // Sub-renderer for Table View (flat per-entry list)
+  const renderTableView = () => {
+    const allLogs = [...filteredLogs].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const grouped = {};
+    allLogs.forEach(log => {
+      if (!grouped[log.date]) grouped[log.date] = [];
+      grouped[log.date].push(log);
+    });
+    const dates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+
+    if (allLogs.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center">
+          <EmptyState icon={Clock} title="No entries this week" description="Start the timer or log time manually to see entries here." />
+        </div>
+      );
+    }
+
+    return (
+      <div className="h-full w-full overflow-auto bg-[var(--bg-surface)]">
+        <table className="w-full text-sm border-collapse">
+          <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-sunken)', borderBottom: '1px solid var(--border-default)' }}>
+            <tr className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-muted)]">
+              <th className="px-4 py-3 text-left">Task</th>
+              <th className="px-4 py-3 text-left">Project</th>
+              <th className="px-4 py-3 text-center">Start</th>
+              <th className="px-4 py-3 text-center">End</th>
+              <th className="px-4 py-3 text-center">Duration</th>
+              <th className="px-4 py-3 text-center">Type</th>
+              <th className="px-4 py-3 text-center">Billable</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dates.map(date => (
+              <React.Fragment key={date}>
+                <tr>
+                  <td colSpan={7} className="px-4 py-1.5 text-[11px] font-semibold text-[var(--text-muted)]" style={{ background: 'color-mix(in srgb, var(--bg-sunken) 60%, transparent)', borderTop: '1px solid var(--border-default)', borderBottom: '1px solid var(--border-default)' }}>
+                    {new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                  </td>
+                </tr>
+                {grouped[date].map(log => {
+                  const proj = projects.find(p => p.id === log.projectId);
+                  return (
+                    <tr
+                      key={log.id}
+                      className="cursor-pointer transition-colors"
+                      style={{ borderBottom: '1px solid var(--border-default)' }}
+                      onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-sunken)'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                      onClick={() => setSelectedEntry(log)}
+                    >
+                      <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium max-w-[200px]">
+                        <span className="truncate block">{log.task || <span className="text-[var(--text-muted)]">(No description)</span>}</span>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ background: proj?.color || 'var(--border-strong)' }} />
+                          <span className="text-[var(--text-secondary)] truncate text-xs">{log.projectName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 text-center font-mono text-xs text-[var(--text-secondary)]">{log.startTime || '—'}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-xs text-[var(--text-secondary)]">{log.endTime || '—'}</td>
+                      <td className="px-4 py-2.5 text-center font-mono text-sm font-semibold text-[var(--text-primary)]">{(Number(log.duration) || 0).toFixed(1)}h</td>
+                      <td className="px-4 py-2.5 text-center"><TrackingSourceBadge source={log.source} /></td>
+                      <td className="px-4 py-2.5 text-center">
+                        {log.billable
+                          ? <Check size={14} className="text-emerald-500 mx-auto" />
+                          : <span className="text-[var(--text-muted)] text-xs">—</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0 animate-fade-in relative -mx-6 -my-5">
 
-      {/* ── Week Navigation Bar ───────────────────────────── */}
+      {/* ── Navigation Bar ───────────────────────────── */}
       <div className="h-12 border-b border-[var(--border-default)] px-5 flex items-center justify-between bg-[var(--bg-surface)] shrink-0 select-none">
 
-        {/* Left: week label + prev/next */}
+        {/* Left: range label + prev/next + date jump */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-[var(--text-primary)] tracking-tight">
-              {formatWeekLabel()}
-            </span>
-            <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded-md border border-[var(--border-default)]">
-              W{weekNumber}
-            </span>
+          <div ref={dateJumpRef} className="relative flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDateJumpOpen(v => !v)}
+              className="text-sm font-bold text-[var(--text-primary)] tracking-tight hover:text-[var(--accent-text)] transition-colors"
+              title="Jump to date"
+            >
+              {formatRangeLabel()}
+            </button>
+            {navigationScale === 'week' && (
+              <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded-md border border-[var(--border-default)]">
+                W{weekNumber}
+              </span>
+            )}
+            {dateJumpOpen && (
+              <div className="absolute top-full mt-2 left-0 z-50">
+                <DateTimePicker
+                  autoOpen
+                  value={currentWeekStart.toISOString().split('T')[0]}
+                  onChange={val => {
+                    const picked = new Date(val + 'T00:00:00');
+                    setCurrentWeekStart(navigationScale === 'month'
+                      ? new Date(picked.getFullYear(), picked.getMonth(), 1)
+                      : getMonday(picked)
+                    );
+                    setDateJumpOpen(false);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Week / Month scale toggle */}
+          <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5">
+            {['week', 'month'].map(scale => (
+              <button
+                key={scale}
+                onClick={() => {
+                  setNavigationScale(scale);
+                  if (scale === 'month') {
+                    setCurrentWeekStart(new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1));
+                  } else {
+                    setCurrentWeekStart(getMonday(currentWeekStart));
+                  }
+                }}
+                className={`px-2.5 h-6 text-[10px] font-semibold rounded-md transition-all capitalize ${
+                  navigationScale === scale
+                    ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                {scale}
+              </button>
+            ))}
           </div>
 
           {/* Prev / Today / Next */}
@@ -1090,7 +1293,7 @@ export default function MyTime() {
             >
               <ChevronLeft size={13} strokeWidth={2.5} />
             </button>
-            {!isCurrentWeek && (
+            {!isCurrentPeriod && (
               <button
                 onClick={goToToday}
                 className="px-2 h-7 text-[10px] font-semibold rounded-md text-amber-700 hover:bg-[var(--bg-surface)] transition-all press-on-click"
@@ -1162,8 +1365,43 @@ export default function MyTime() {
         {activeView === 'list' && renderListView()}
         {activeView === 'calendar' && renderCalendarView()}
         {activeView === 'timesheet' && renderTimesheetView()}
-        {activeView === 'table' && renderTimesheetView()}
+        {activeView === 'table' && renderTableView()}
       </div>
+
+      {/* Entry Detail Card */}
+      {selectedEntry && (
+        <div className="absolute right-5 top-16 z-50 w-72 rounded-2xl shadow-2xl p-4 animate-fade-in" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-bold text-[var(--text-primary)]">Time Entry</span>
+            <button onClick={() => setSelectedEntry(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
+              <X size={14} />
+            </button>
+          </div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getProjectColor(selectedEntry.projectId) }} />
+            <span className="text-sm font-semibold truncate" style={{ color: getProjectColor(selectedEntry.projectId) }}>{selectedEntry.projectName}</span>
+          </div>
+          <p className="text-sm text-[var(--text-primary)] mb-3 leading-snug">{selectedEntry.task || <span className="text-[var(--text-muted)]">(No task description)</span>}</p>
+          <div className="space-y-1.5 text-xs text-[var(--text-secondary)] mb-3">
+            <div className="flex justify-between">
+              <span>Time</span>
+              <span className="font-mono text-[var(--text-primary)]">{selectedEntry.startTime || '—'} – {selectedEntry.endTime || '—'}</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Duration</span>
+              <span className="font-mono font-semibold text-[var(--text-primary)]">{(Number(selectedEntry.duration) || 0).toFixed(1)}h</span>
+            </div>
+            <div className="flex justify-between">
+              <span>Date</span>
+              <span className="text-[var(--text-primary)]">{selectedEntry.date}</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <TrackingSourceBadge source={selectedEntry.source} />
+            {selectedEntry.billable && <Badge variant="success" size="sm">Billable</Badge>}
+          </div>
+        </div>
+      )}
 
       {/* Calendar sync panel (unchanged) */}
       {showCalendarPanel && (

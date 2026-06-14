@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar, X } from 'lucide-react';
-import { projects } from '../../data/mockData.js';
 import Button from '../ui/Button';
+import ProjectTaskPicker from '../ProjectTaskPicker.jsx';
 
 const PAGE_META = {
   '/dashboard': { title: 'Dashboard',   subtitle: 'Team overview & activity' },
@@ -28,92 +28,39 @@ export default function Topbar({
   timerSeconds,
   timerTaskLabel,
   timerProjectId,
+  timerTaskId,
   onStopTimer,
   onStartTimer,
+  onUpdateTimer,
+  projectList = [],
+  taskList = [],
+  addProject,
+  addTask,
   triggerToast = () => {},
 }) {
   const { pathname } = useLocation();
-  const meta = PAGE_META[pathname] || { title: 'Chronos', subtitle: '' };
-  
-  const [hoverSearch, setHoverSearch] = useState(false);
-  const [hoverBell, setHoverBell] = useState(false);
-  
-  const [notifOpen, setNotifOpen] = useState(false);
 
+  const [notifOpen, setNotifOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [taskInput, setTaskInput] = useState('');
   const [projectInput, setProjectInput] = useState('');
+  const [taskIdInput, setTaskIdInput] = useState('');
 
-  const getAppShellStartTimer = () => {
-    try {
-      const header = document.querySelector('header');
-      if (!header) return null;
-      const key = Object.keys(header).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactContainer$'));
-      if (!key) return null;
-      let fiber = header[key];
-      while (fiber) {
-        if (fiber.type && fiber.type.name === 'AppShell') {
-          let hook = fiber.memoizedState;
-          while (hook) {
-            if (hook.memoizedState && Array.isArray(hook.memoizedState)) {
-              const fn = hook.memoizedState[0];
-              if (typeof fn === 'function' && (fn.name === 'startTimer' || fn.toString().includes('setTimerTaskLabel'))) {
-                return fn;
-              }
-            }
-            hook = hook.next;
-          }
-        }
-        fiber = fiber.return;
+  // Running-timer inline edit
+  const [editingTimer, setEditingTimer] = useState(false);
+  const editRef = useRef(null);
+
+  // Close edit on outside click
+  useEffect(() => {
+    if (!editingTimer) return;
+    const handler = (e) => {
+      if (editRef.current && !editRef.current.contains(e.target)) {
+        setEditingTimer(false);
       }
-    } catch (e) {
-      console.error(e);
-    }
-    return null;
-  };
-
-  const getAppShellTimerProjectId = () => {
-    try {
-      const header = document.querySelector('header');
-      if (!header) return null;
-      const key = Object.keys(header).find(k => k.startsWith('__reactFiber$') || k.startsWith('__reactContainer$'));
-      if (!key) return null;
-      let fiber = header[key];
-      while (fiber) {
-        if (fiber.type && fiber.type.name === 'AppShell') {
-          let hook = fiber.memoizedState;
-          let states = [];
-          while (hook) {
-            states.push(hook.memoizedState);
-            hook = hook.next;
-          }
-          for (let i = 0; i < states.length - 3; i++) {
-            if (typeof states[i] === 'boolean' && typeof states[i+1] === 'number' && typeof states[i+2] === 'string') {
-              return states[i+3];
-            }
-          }
-        }
-        fiber = fiber.return;
-      }
-    } catch (e) {
-      console.error(e);
-    }
-    return null;
-  };
-
-  const handleStartWithTask = () => {
-    if (!taskInput.trim()) {
-      setIsExpanded(true);
-      return;
-    }
-    const realStartTimer = getAppShellStartTimer() || onStartTimer;
-    realStartTimer(taskInput.trim(), projectInput || null);
-    setIsExpanded(false);
-    setTaskInput('');
-    setProjectInput('');
-  };
-
-  const activeProjectId = getAppShellTimerProjectId() || timerProjectId;
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [editingTimer]);
 
   const mockNotifications = [
     {
@@ -128,7 +75,6 @@ export default function Topbar({
   ];
 
   const [notifications, setNotifications] = useState(mockNotifications);
-
   const unreadCount = notifications.filter(n => !n.read).length;
 
   useEffect(() => {
@@ -136,33 +82,42 @@ export default function Topbar({
     document.addEventListener('keydown', handler);
     return () => document.removeEventListener('keydown', handler);
   }, []);
-  
+
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
 
   useEffect(() => {
     const updateDateTime = () => {
       const d = new Date();
-      const dateOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-      setDateStr(d.toLocaleDateString('en-US', dateOptions));
-      
-      const timeOptions = { hour: 'numeric', minute: '2-digit' };
-      setTimeStr(d.toLocaleTimeString(undefined, timeOptions));
+      setDateStr(d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }));
+      setTimeStr(d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }));
     };
-
     updateDateTime();
-    const intervalId = setInterval(updateDateTime, 1000);
-    return () => clearInterval(intervalId);
+    const id = setInterval(updateDateTime, 1000);
+    return () => clearInterval(id);
   }, []);
+
+  const handleStartTimer = () => {
+    onStartTimer(taskInput.trim(), projectInput || '', taskIdInput || '');
+    setIsExpanded(false);
+    setTaskInput('');
+    setProjectInput('');
+    setTaskIdInput('');
+  };
+
+  const selectedProject = projectList.find(p => p.id === timerProjectId);
 
   return (
     <header
       className="px-6 flex items-center justify-between gap-4 h-14 md:h-16 shrink-0 topbar-glass"
-      style={timerRunning ? {
-        boxShadow: 'inset 0 -2px 0 0 rgba(245, 158, 11, 0.4)'
-      } : {}}
+      style={{
+        transition: 'box-shadow 0.4s ease',
+        ...(timerRunning ? {
+          boxShadow: 'inset 0 -2px 0 0 color-mix(in srgb, var(--accent) 60%, transparent), 0 4px 24px color-mix(in srgb, var(--accent) 12%, transparent)'
+        } : {})
+      }}
     >
-      {/* LEFT ZONE — Page identity */}
+      {/* LEFT ZONE — date/time */}
       <div className="flex-shrink-0 flex flex-col items-start min-w-0">
         <div className="hidden sm:flex items-center gap-1.5 text-xs">
           <Calendar size={12} className="text-[var(--text-secondary)]" />
@@ -171,34 +126,62 @@ export default function Topbar({
         </div>
       </div>
 
-      {/* CENTER ZONE — Active Task */}
-      <div className="hidden md:flex flex-1 max-w-sm mx-auto justify-center">
-        {timerRunning ? (() => {
-          const matchedProject = projects.find(p => p.id === activeProjectId);
-          const projectName = matchedProject ? matchedProject.name : null;
-          return (
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-[var(--border-default)] bg-white max-w-xs cursor-default">
-              <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse"></div>
+      {/* CENTER ZONE — timer pill / inline entry form */}
+      <div className="hidden md:flex flex-1 min-w-0 mx-6 justify-center">
+        {timerRunning ? (
+          editingTimer ? (
+            <div ref={editRef} className="flex items-center gap-2 w-full max-w-lg px-3 py-1.5 rounded-xl"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-focus)' }}>
+              <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
+              <input
+                autoFocus
+                type="text"
+                value={timerTaskLabel}
+                onChange={e => onUpdateTimer({ task: e.target.value })}
+                placeholder="What are you working on?"
+                className="flex-1 text-sm px-0 focus:outline-none bg-transparent min-w-0"
+                style={{ color: 'var(--text-primary)' }}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === 'Escape') setEditingTimer(false); }}
+              />
+              <ProjectTaskPicker
+                projectId={timerProjectId}
+                taskId={timerTaskId}
+                taskText={timerTaskLabel}
+                onChange={({ projectId, taskId, taskText }) => {
+                  onUpdateTimer({ projectId, taskId, task: taskText });
+                }}
+                projects={projectList}
+                tasks={taskList}
+                addProject={addProject}
+                addTask={addTask}
+              />
+              <button onClick={() => setEditingTimer(false)}
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded flex-shrink-0">
+                <X size={13} />
+              </button>
+            </div>
+          ) : (
+            <button
+              ref={editRef}
+              type="button"
+              onClick={() => setEditingTimer(true)}
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-[var(--border-default)] hover:border-[var(--border-strong)] transition-colors"
+              style={{ background: 'var(--bg-surface)' }}
+            >
+              <div className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0 animate-pulse" />
               <span className="text-sm font-medium text-[var(--text-primary)] truncate max-w-[160px]">
-                {timerTaskLabel || 'Working...'}
+                {timerTaskLabel || 'Working…'}
               </span>
               <span className="text-[var(--text-muted)] text-xs flex-shrink-0">·</span>
-              <span className="text-xs text-[var(--text-muted)] truncate max-w-[80px] flex-shrink-0">
-                {projectName || 'No project'}
+              <span className="text-xs text-[var(--text-muted)] truncate max-w-[100px] flex-shrink-0">
+                {selectedProject?.name || 'No project'}
               </span>
-            </div>
-          );
-        })() : (
-          !isExpanded ? (
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-dashed border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-150 cursor-pointer text-sm animate-fade-in"
-              onClick={() => setIsExpanded(true)}
-            >
-              <Play size={13} />
-              <span>What are you working on?</span>
             </button>
-          ) : (
-            <div className="flex items-center gap-2 max-w-md w-full animate-fade-in">
+          )
+        ) : (
+          isExpanded ? (
+            <div className="flex items-center gap-2 w-full max-w-lg px-3 py-1.5 rounded-xl"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-focus)' }}>
               <input
                 autoFocus
                 type="text"
@@ -209,35 +192,43 @@ export default function Topbar({
                     setIsExpanded(false);
                     setTaskInput('');
                     setProjectInput('');
+                    setTaskIdInput('');
                   }
-                  if (e.key === 'Enter' && taskInput.trim()) {
-                    handleStartWithTask();
-                  }
+                  if (e.key === 'Enter') handleStartTimer();
                 }}
                 placeholder="What are you working on?"
-                className="flex-1 text-sm px-3 py-1.5 rounded-xl border border-[var(--border-focus)] bg-white focus:outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] min-w-0"
+                className="flex-1 text-sm px-0 focus:outline-none bg-transparent min-w-0"
+                style={{ color: 'var(--text-primary)' }}
               />
-              <select
-                value={projectInput}
-                onChange={e => setProjectInput(e.target.value)}
-                className="text-sm px-2 py-1.5 rounded-xl border border-[var(--border-default)] bg-white text-[var(--text-secondary)] focus:outline-none focus:border-[var(--border-focus)] flex-shrink-0 max-w-[220px]"
-              >
-                <option value="">No project</option>
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-              <button
-                onClick={() => {
-                  setIsExpanded(false);
-                  setTaskInput('');
-                  setProjectInput('');
+              <ProjectTaskPicker
+                projectId={projectInput}
+                taskId={taskIdInput}
+                taskText={taskInput}
+                onChange={({ projectId, taskId, taskText }) => {
+                  setProjectInput(projectId);
+                  setTaskIdInput(taskId);
+                  if (taskText !== undefined) setTaskInput(taskText);
                 }}
-                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded-lg hover:bg-[var(--bg-sunken)] flex-shrink-0"
+                projects={projectList}
+                tasks={taskList}
+                addProject={addProject}
+                addTask={addTask}
+              />
+              <button
+                onClick={() => { setIsExpanded(false); setTaskInput(''); setProjectInput(''); setTaskIdInput(''); }}
+                className="text-[var(--text-muted)] hover:text-[var(--text-secondary)] p-1 rounded flex-shrink-0"
               >
-                <X size={14} />
+                <X size={13} />
               </button>
             </div>
+          ) : (
+            <button
+              className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-dashed border-[var(--border-default)] hover:border-[var(--border-strong)] hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-all duration-150 text-sm"
+              onClick={() => setIsExpanded(true)}
+            >
+              <Play size={13} />
+              <span>What are you working on?</span>
+            </button>
           )
         )}
       </div>
@@ -249,9 +240,9 @@ export default function Topbar({
             <Button
               onClick={() => {
                 if (!isExpanded) {
-                  setIsExpanded(true);
+                  handleStartTimer();
                 } else {
-                  handleStartWithTask();
+                  handleStartTimer();
                 }
               }}
               variant="primary"
@@ -285,9 +276,7 @@ export default function Topbar({
             <button
               onClick={() => {
                 onStopTimer?.();
-                setIsExpanded(false);
-                setTaskInput('');
-                setProjectInput('');
+                setEditingTimer(false);
               }}
               className="flex items-center justify-center transition-all duration-200 press-on-click"
               style={{
@@ -327,15 +316,7 @@ export default function Topbar({
           <button
             onClick={() => setNotifOpen(prev => !prev)}
             className="relative flex items-center justify-center transition-colors duration-150 ml-1"
-            style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: 'transparent',
-              color: 'var(--text-muted)'
-            }}
-            onMouseEnter={() => setHoverBell(true)}
-            onMouseLeave={() => setHoverBell(false)}
+            style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'transparent', color: 'var(--text-muted)' }}
             aria-label="Notifications"
           >
             <Bell size={15} />
@@ -351,24 +332,15 @@ export default function Topbar({
 
           {notifOpen && (
             <>
-              {/* Backdrop */}
-              <div 
-                className="fixed inset-0 z-40" 
-                onClick={() => setNotifOpen(false)} 
-              />
-              
-              {/* Dropdown Panel */}
-              <div 
+              <div className="fixed inset-0 z-40" onClick={() => setNotifOpen(false)} />
+              <div
                 className="absolute right-0 top-full mt-2 w-80 z-50 glass-elevated rounded-2xl shadow-xl overflow-hidden animate-slide-up"
-                style={{
-                  border: '1px solid var(--border-default)',
-                }}
+                style={{ border: '1px solid var(--border-default)' }}
               >
-                {/* Panel Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-default)] bg-[var(--bg-surface)]">
                   <span className="text-sm font-semibold text-[var(--text-primary)]">Notifications</span>
                   {unreadCount > 0 && (
-                    <button 
+                    <button
                       onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}
                       className="text-xs text-[var(--accent-text)] hover:text-amber-600 font-medium"
                     >
@@ -377,24 +349,17 @@ export default function Topbar({
                   )}
                 </div>
 
-                {/* Notifications List */}
                 <div className="max-h-80 overflow-y-auto divide-y divide-[var(--border-default)]">
                   {notifications.length === 0 ? (
                     <div className="py-10 flex flex-col items-center justify-center gap-2">
                       <CheckCircle2 size={24} style={{ color: 'var(--text-disabled)' }} />
                       <p className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>All caught up!</p>
-                      <p className="text-xs" style={{ color: 'var(--text-disabled)' }}>No new notifications</p>
                     </div>
                   ) : notifications.map(notif => {
                     let iconBg = 'bg-sky-100 text-sky-600';
                     let IconComponent = Clock;
-                    if (notif.type === 'warning') {
-                      iconBg = 'bg-amber-100 text-amber-600';
-                      IconComponent = AlertCircle;
-                    } else if (notif.type === 'success') {
-                      iconBg = 'bg-emerald-100 text-emerald-600';
-                      IconComponent = CheckCircle2;
-                    }
+                    if (notif.type === 'warning') { iconBg = 'bg-amber-100 text-amber-600'; IconComponent = AlertCircle; }
+                    else if (notif.type === 'success') { iconBg = 'bg-emerald-100 text-emerald-600'; IconComponent = CheckCircle2; }
 
                     return (
                       <div
@@ -414,12 +379,8 @@ export default function Topbar({
                               <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1.5 flex-shrink-0" />
                             )}
                           </div>
-                          <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">
-                            {notif.body}
-                          </p>
-                          <p className="text-[10px] text-[var(--text-muted)] mt-1">
-                            {notif.time}
-                          </p>
+                          <p className="text-xs text-[var(--text-secondary)] mt-0.5 leading-relaxed">{notif.body}</p>
+                          <p className="text-[10px] text-[var(--text-muted)] mt-1">{notif.time}</p>
                         </div>
                         <button
                           onClick={(e) => {
@@ -436,7 +397,6 @@ export default function Topbar({
                   })}
                 </div>
 
-                {/* Panel Footer */}
                 <div className="px-4 py-2.5 border-t border-[var(--border-default)] bg-[var(--bg-surface)] text-center">
                   <button
                     onClick={() => {

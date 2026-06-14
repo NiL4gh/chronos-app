@@ -8,8 +8,7 @@ import CommandPalette from './CommandPalette.jsx';
 import Input, { Select } from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
-import Toggle from '../ui/Toggle.jsx';
-import { projects, timeLogs, invoices } from '../../data/mockData.js';
+import { projects, tasks, timeLogs, invoices } from '../../data/mockData.js';
 import { Clock } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 
@@ -43,14 +42,61 @@ export default function AppShell() {
   // Manual time drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerEntry, setDrawerEntry] = useState({
-    task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
+    task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
   });
+  const [pendingClose, setPendingClose] = useState(false);
+  const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
 
   // Shared logs state
   const [logs, setLogs] = useState(timeLogs);
 
   // Shared invoices state
   const [invoiceList, setInvoiceList] = useState(invoices);
+
+  // Shared projects / tasks state
+  const [projectList, setProjectList] = useState(projects);
+  const [taskList, setTaskList] = useState(tasks);
+
+  const addProject = useCallback((name) => {
+    const proj = {
+      id: `p-${Date.now()}`,
+      name: name.trim(),
+      client: 'Internal',
+      description: '',
+      status: 'active',
+      dueDate: null,
+      budget: 0,
+      spent: 0,
+      loggedHours: 0,
+      goalHours: 40,
+      goalType: 'project',
+      members: [],
+      tags: [],
+      color: `hsl(${Math.floor(Math.random() * 360)}, 60%, 55%)`,
+    };
+    setProjectList(prev => [proj, ...prev]);
+    return proj;
+  }, []);
+
+  const addTask = useCallback((title, projectId) => {
+    const proj = projectList.find(p => p.id === projectId);
+    const task = {
+      id: `task-${Date.now()}`,
+      title: title.trim(),
+      projectId,
+      projectName: proj?.name || '',
+      assignedTo: 'u1',
+      assignedToName: 'Priya Sharma',
+      createdBy: 'u1',
+      status: 'todo',
+      priority: 'medium',
+      dueDate: null,
+      timeLogged: 0,
+      description: '',
+    };
+    setTaskList(prev => [task, ...prev]);
+    return task;
+  }, [projectList]);
 
   // Shared global date state
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getMonday(new Date()));
@@ -134,6 +180,9 @@ export default function AppShell() {
   const [timerProjectId, setTimerProjectId] = useState(() => {
     try { return localStorage.getItem('timer_project') || ''; } catch { return ''; }
   });
+  const [timerTaskId, setTimerTaskId] = useState(() => {
+    try { return localStorage.getItem('timer_task_id') || ''; } catch { return ''; }
+  });
 
   useEffect(() => {
     if (!timerRunning) return;
@@ -148,20 +197,28 @@ export default function AppShell() {
       localStorage.setItem('timer_seconds', String(timerSeconds));
       localStorage.setItem('timer_task', timerTaskLabel);
       localStorage.setItem('timer_project', timerProjectId);
+      localStorage.setItem('timer_task_id', timerTaskId);
       localStorage.setItem('timer_saved_at', String(Date.now()));
     } catch {}
-  }, [timerRunning, timerSeconds, timerTaskLabel, timerProjectId]);
+  }, [timerRunning, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId]);
 
-  const startTimer = useCallback((task = '', projectId = '') => {
+  const startTimer = useCallback((task = '', projectId = '', taskId = '') => {
     setTimerTaskLabel(task);
     setTimerProjectId(projectId);
+    setTimerTaskId(taskId);
     setTimerRunning(true);
+  }, []);
+
+  const updateTimer = useCallback(({ task, projectId, taskId }) => {
+    if (task !== undefined) setTimerTaskLabel(task);
+    if (projectId !== undefined) setTimerProjectId(projectId);
+    if (taskId !== undefined) setTimerTaskId(taskId);
   }, []);
 
   const stopTimer = useCallback(() => {
     setTimerRunning(false);
     if (timerSeconds > 0) {
-      const proj = projects.find(p => p.id === timerProjectId) || projects[0];
+      const proj = projectList.find(p => p.id === timerProjectId) || projectList[0];
       const startMs = Date.now() - timerSeconds * 1000;
       const startStr = new Date(startMs).toTimeString().slice(0, 5);
       const endStr = new Date().toTimeString().slice(0, 5);
@@ -185,21 +242,22 @@ export default function AppShell() {
       triggerToast('Timer saved', `Logged ${durationHours}h to ${proj.name}.`, 'success');
     }
     setTimerSeconds(0);
+    setTimerTaskId('');
     try {
       localStorage.removeItem('timer_running');
       localStorage.removeItem('timer_seconds');
       localStorage.removeItem('timer_task');
       localStorage.removeItem('timer_project');
+      localStorage.removeItem('timer_task_id');
       localStorage.removeItem('timer_saved_at');
     } catch {}
-  }, [timerSeconds, timerTaskLabel, timerProjectId, triggerToast]);
+  }, [timerSeconds, timerTaskLabel, timerProjectId, projectList, triggerToast]);
 
-  // Guarded stop timer — asks confirmation if > 5 min
+  // Guarded stop timer — shows in-app confirm if > 5 min
   const guardedStopTimer = useCallback(() => {
     if (timerSeconds > 300) {
-      if (!window.confirm(`You have ${Math.floor(timerSeconds / 60)} minutes tracked. Stop and save this entry?`)) {
-        return;
-      }
+      setStopConfirmOpen(true);
+      return;
     }
     stopTimer();
   }, [timerSeconds, stopTimer]);
@@ -209,11 +267,13 @@ export default function AppShell() {
     setTimerSeconds(0);
     setTimerTaskLabel('');
     setTimerProjectId('');
+    setTimerTaskId('');
     try {
       localStorage.removeItem('timer_running');
       localStorage.removeItem('timer_seconds');
       localStorage.removeItem('timer_task');
       localStorage.removeItem('timer_project');
+      localStorage.removeItem('timer_task_id');
       localStorage.removeItem('timer_saved_at');
     } catch {}
   }, []);
@@ -316,8 +376,8 @@ export default function AppShell() {
 
   // ─── Outlet context ──────────────────────────────────
   const outletContext = {
-    timerRunning, timerSeconds, timerTaskLabel, timerProjectId,
-    startTimer, stopTimer: guardedStopTimer, resetTimer,
+    timerRunning, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId,
+    startTimer, stopTimer: guardedStopTimer, resetTimer, updateTimer,
     triggerToast,
     activeRole,
     theme, setTheme, accent, setAccent,
@@ -329,6 +389,8 @@ export default function AppShell() {
     onOpenHelp: () => setHelpOpen(true),
     currentWeekStart, setCurrentWeekStart,
     selectedDate, setSelectedDate,
+    projectList, setProjectList, addProject,
+    taskList, setTaskList, addTask,
   };
 
   return (
@@ -364,8 +426,16 @@ export default function AppShell() {
             timerRunning={timerRunning}
             timerSeconds={timerSeconds}
             timerTaskLabel={timerTaskLabel}
+            timerProjectId={timerProjectId}
+            timerTaskId={timerTaskId}
             onStopTimer={guardedStopTimer}
-            onStartTimer={() => startTimer()}
+            onStartTimer={startTimer}
+            onUpdateTimer={updateTimer}
+            projectList={projectList}
+            taskList={taskList}
+            addProject={addProject}
+            addTask={addTask}
+            triggerToast={triggerToast}
           />
         </div>
 
@@ -382,67 +452,87 @@ export default function AppShell() {
           const { task, projectId, startTime, endTime } = drawerEntry;
           const hasData = task || projectId || startTime || endTime;
           if (hasData) {
-            if (!window.confirm('You have unsaved changes. Discard this entry?')) return;
+            setPendingClose(true);
+            return;
           }
           setDrawerOpen(false);
+          setPendingClose(false);
           setDrawerEntry({
-            task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
+            task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
           });
         }}
         title="Log Time Entry"
-        footer={
-          <>
-            <Button variant="ghost" size="sm" onClick={() => setDrawerOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                const { task, projectId, date, startTime, endTime, billable } = drawerEntry;
-                if (!task || !projectId || !startTime || !endTime) {
-                  triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
-                  return;
-                }
-                const proj = projects.find(p => p.id === projectId) || projects[0];
-
-                // Calculate duration in hours
-                const [startH, startM] = startTime.split(':').map(Number);
-                const [endH, endM] = endTime.split(':').map(Number);
-                const startMin = startH * 60 + startM;
-                const endMin = endH * 60 + endM;
-                let diffMin = endMin - startMin;
-                if (diffMin < 0) diffMin += 1440; // overnight handling
-                const duration = Number((diffMin / 60).toFixed(2));
-
-                const newLog = {
-                  id: `log-${Date.now()}`,
-                  userId: 'u1',
-                  projectName: proj.name,
-                  projectId: proj.id,
-                  task,
-                  date,
-                  startTime,
-                  endTime,
-                  duration,
-                  source: 'manual',
-                  billable
-                };
-
-                setLogs(prev => [newLog, ...prev]);
+        headerAction={
+          !pendingClose ? (
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => {
+                setPendingClose(false);
                 setDrawerOpen(false);
-                setDrawerEntry({
-                  task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: false,
-                });
-                triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
-              }}
-            >
-              Save Entry
-            </Button>
-          </>
+                setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+              }}>
+                Cancel
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => {
+                  const { task, projectId, date, startTime, endTime } = drawerEntry;
+                  if (!task || !projectId || !startTime || !endTime) {
+                    triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
+                    return;
+                  }
+                  const proj = projectList.find(p => p.id === projectId) || projectList[0];
+                  const [startH, startM] = startTime.split(':').map(Number);
+                  const [endH, endM] = endTime.split(':').map(Number);
+                  const startMin = startH * 60 + startM;
+                  const endMin = endH * 60 + endM;
+                  let diffMin = endMin - startMin;
+                  if (diffMin < 0) diffMin += 1440;
+                  const duration = Number((diffMin / 60).toFixed(2));
+
+                  const newLog = {
+                    id: `log-${Date.now()}`,
+                    userId: 'u1',
+                    projectName: proj.name,
+                    projectId: proj.id,
+                    task,
+                    date,
+                    startTime,
+                    endTime,
+                    duration,
+                    source: 'manual',
+                    billable: true,
+                  };
+
+                  setLogs(prev => [newLog, ...prev]);
+                  setDrawerOpen(false);
+                  setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                  triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
+                }}
+              >
+                Save Entry
+              </Button>
+            </div>
+          ) : null
         }
       >
         <div className="space-y-5">
+          {/* Discard confirmation banner */}
+          {pendingClose && (
+            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+              style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
+              <span className="text-sm text-[var(--text-secondary)]">Discard unsaved entry?</span>
+              <div className="flex gap-2 shrink-0">
+                <Button variant="ghost" size="sm" onClick={() => setPendingClose(false)}>Keep editing</Button>
+                <Button variant="danger" size="sm" onClick={() => {
+                  setPendingClose(false);
+                  setDrawerOpen(false);
+                  setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                }}>Discard</Button>
+              </div>
+            </div>
+          )}
+
           {/* FIELD GROUP 1 — Task Description */}
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
@@ -466,7 +556,7 @@ export default function AppShell() {
               onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
             >
               <option value="">— Select a project —</option>
-              {projects.map(p => (
+              {projectList.map(p => (
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </Select>
@@ -477,7 +567,7 @@ export default function AppShell() {
             <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
               When did you work?
             </label>
-            
+
             <div className="space-y-3">
               {/* Date row */}
               <div className="flex items-center gap-2">
@@ -521,7 +611,7 @@ export default function AppShell() {
               {(() => {
                 const { startTime, endTime } = drawerEntry;
                 if (!startTime || !endTime) return null;
-                
+
                 const [startH, startM] = startTime.split(':').map(Number);
                 const [endH, endM] = endTime.split(':').map(Number);
                 const startMin = startH * 60 + startM;
@@ -534,7 +624,7 @@ export default function AppShell() {
                   const durationString = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
                   return (
                     <div style={{ paddingLeft: '4.5rem' }}>
-                      <div 
+                      <div
                         className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
                         style={{
                           background: 'var(--accent-subtle)',
@@ -558,19 +648,6 @@ export default function AppShell() {
                 }
               })()}
             </div>
-          </div>
-
-          {/* FIELD GROUP 4 — Billable toggle */}
-          <div className="flex items-center justify-between pt-1">
-            <div>
-              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Billable</p>
-              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Include this entry in billing calculations</p>
-            </div>
-            <Toggle
-              checked={drawerEntry.billable}
-              onChange={v => setDrawerEntry(prev => ({ ...prev, billable: v }))}
-              size="md"
-            />
           </div>
         </div>
       </SlideOutDrawer>
@@ -596,63 +673,78 @@ export default function AppShell() {
       >
         <div className="space-y-6 text-sm" style={{ color: 'var(--text-secondary)' }}>
           <div>
-            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">⏱️ Live Timer & Logs</h3>
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">⏱️ Live Timer</h3>
             <p className="mb-2">
-              Start tracking time instantly by clicking the **Start Timer** amber CTA in the Topbar or pressing the <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">T</kbd> key (or your custom shortcut).
+              Click <strong>Start Timer</strong> in the top bar — the timer starts immediately, no fields required. While it's running, click the pill in the center of the top bar to add a description, pick a project, or assign a task. Press{' '}
+              <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">T</kbd>{' '}
+              or <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">Space</kbd> to toggle the timer from anywhere (when not typing).
             </p>
-            <p>
-              When running, a live ticking indicator is displayed in the Topbar. Clicking stop automatically creates a verified, auditable <strong>Auto-tracked log</strong>.
+            <p>Stopping saves the entry automatically to My Time.</p>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">✏️ Manual Time Entry</h3>
+            <p className="mb-2">
+              Click the <strong>+</strong> button next to Start Timer (or press <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">N</kbd>) to log time retroactively. Fill in what you worked on, choose a project, set the date, and type or scroll the start and end times. Save and Cancel are in the drawer header so they're always visible.
             </p>
           </div>
 
           <div className="pt-4 border-t border-[var(--border-default)]">
-            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🛡️ Trust & Source Verification</h3>
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">📁 Projects & Tasks</h3>
             <p className="mb-2">
-              Chronos distinguishes between verified tracking and manual entry:
+              Projects and tasks can be created on the fly — you don't need to go to the Projects page first. Whenever you see a project or task picker (top bar timer, manual entry drawer), the last item in the list is <strong>Create new project</strong> or <strong>Create "[name]"</strong>. Anything created here appears on the Projects page immediately.
             </p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li>
-                <span className="font-semibold text-emerald-600">Auto (CPU icon):</span> Logged automatically by the live timer or desktop app. Fully auditable and trusted.
-              </li>
-              <li>
-                <span className="font-semibold text-amber-600">Manual (Pen icon):</span> Entered retroactively via the drawer or timesheet strip.
-              </li>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">📅 My Time</h3>
+            <p className="mb-2">
+              Switch between <strong>List</strong>, <strong>Calendar</strong>, <strong>Timesheet</strong>, and <strong>Table</strong> views using the icons at the top right. Use the <strong>Week / Month</strong> toggle to change how much time is shown at once. Click the date label to jump directly to any date — no need to arrow through weeks one at a time.
+            </p>
+            <p>In Calendar view, overlapping entries sit side by side rather than on top of each other. Clicking any entry opens its detail card.</p>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">🛡️ Auto vs Manual badges</h3>
+            <p>
+              Every time entry carries a source badge: <span className="font-semibold text-emerald-600">Auto</span> (started with the live timer) or <span className="font-semibold text-amber-600">Manual</span> (entered via the drawer). The badge is read-only and cannot be changed.
+            </p>
+          </div>
+
+          <div className="pt-4 border-t border-[var(--border-default)]">
+            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)]">⌨️ Keyboard shortcuts</h3>
+            <ul className="space-y-1">
+              <li><kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">T</kbd> / <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">Space</kbd> — start / stop timer</li>
+              <li><kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">N</kbd> — new manual entry</li>
+              <li><kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">⌘K</kbd> / <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">Ctrl K</kbd> — command palette</li>
+              <li><kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">G M</kbd> — go to My Time &nbsp; <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">G P</kbd> — Projects &nbsp; <kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">G R</kbd> — Reports</li>
+              <li><kbd className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">Esc</kbd> — close any open panel or drawer</li>
             </ul>
-          </div>
-
-          <div className="pt-4 border-t border-[var(--border-default)]">
-            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🎯 Project Goal Engine</h3>
-            <p className="mb-2">
-              Each project card features an embedded Goal tracking circle. The colors update dynamically based on progress:
-            </p>
-            <ul className="list-disc pl-4 space-y-1">
-              <li><strong className="text-emerald-500">Emerald:</strong> Above 85% of budget/goal.</li>
-              <li><strong className="text-amber-500">Amber:</strong> Under 85% of budget/goal.</li>
-              <li><strong className="text-red-500">Red:</strong> Over budget/goal.</li>
-            </ul>
-          </div>
-
-          <div className="pt-4 border-t border-[var(--border-default)]">
-            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">✍️ Invoicing & Digital Signatures</h3>
-            <p className="mb-2">
-              Create professional client bills directly from tracked timesheets.
-            </p>
-            <p>
-              Enable the <strong>Digital Signature</strong> toggle to reveal a signature drawing pad where clients can sign invoices electronically before payment.
-            </p>
-          </div>
-
-          <div className="pt-4 border-t border-[var(--border-default)]">
-            <h3 className="text-base font-bold mb-2 text-[var(--text-primary)] flex items-center gap-1.5">🖥️ Desktop App Integration</h3>
-            <p className="mb-2">
-              Chronos is available as a lightweight desktop application (Electron).
-            </p>
-            <p>
-              It integrates natively with your OS taskbar, supports custom keyboard shortcuts global to your machine, and provides a continuous autologging background service. Run <code className="font-mono text-xs px-1 py-0.5 rounded bg-[var(--bg-sunken)] border border-[var(--border-default)]">npm run electron:dev</code> to launch it locally.
-            </p>
+            <p className="mt-2 text-xs" style={{ color: 'var(--text-muted)' }}>Customize shortcuts in Settings → Keyboard Shortcuts.</p>
           </div>
         </div>
       </SlideOutDrawer>
+
+      {/* Stop Timer Confirmation */}
+      {stopConfirmOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
+          <div
+            className="rounded-2xl p-6 shadow-2xl w-80 space-y-4 animate-fade-in"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+          >
+            <p className="text-sm font-semibold text-[var(--text-primary)]">
+              Stop timer?
+            </p>
+            <p className="text-sm text-[var(--text-secondary)]">
+              You have {Math.floor(timerSeconds / 60)} minutes tracked. This entry will be saved to your log.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="ghost" size="sm" onClick={() => setStopConfirmOpen(false)}>Keep running</Button>
+              <Button variant="primary" size="sm" onClick={() => { setStopConfirmOpen(false); stopTimer(); }}>Stop & save</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       <Toast

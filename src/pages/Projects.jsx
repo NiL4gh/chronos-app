@@ -393,10 +393,12 @@ function ProjectDetailPanel({ project, onClose }) {
 
 // ─── Projects Page ────────────────────────────────────────
 export default function Projects() {
-  const { activeRole, triggerToast } = useOutletContext();
+  const { activeRole, triggerToast, projectList, setProjectList } = useOutletContext();
   const isAdmin = activeRole === 'admin';
 
-  const [projectData, setProjectData]         = useState(initialProjects);
+  // Use shared projectList from context; fall back to initial if context not yet wired
+  const projectData = projectList || initialProjects;
+  const setProjectData = setProjectList || (() => {});
   const [statusFilter, setStatusFilter]       = useState('All');
   const [query, setQuery]                     = useState('');
   const [selectedProject, setSelectedProject] = useState(null);

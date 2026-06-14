@@ -273,6 +273,17 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
   );
 }
 
+function parseTypedTime(str) {
+  if (!str) return null;
+  const s = str.replace(/[^0-9:]/g, '');
+  const parts = s.split(':');
+  const h = Number(parts[0]);
+  const m = Number(parts[1] ?? 0);
+  if (isNaN(h) || h < 0 || h > 23) return null;
+  if (isNaN(m) || m < 0 || m > 59) return null;
+  return { h, m };
+}
+
 // ─── DateTimePicker ──────────────────────────────────────
 export default function DateTimePicker({
   value = '',
@@ -285,8 +296,9 @@ export default function DateTimePicker({
   mode = 'date', // 'date' | 'datetime' | 'time'
   showPresets = false,
   onRangeChange,
+  autoOpen = false,
 }) {
-  const [activePanel, setActivePanel] = useState(null); // null | 'date' | 'time'
+  const [activePanel, setActivePanel] = useState(autoOpen ? (mode === 'time' ? 'time' : 'date') : null); // null | 'date' | 'time'
   const [slideDir, setSlideDir] = useState(null);
   const containerRef = useRef(null);
   const dateTriggerRef = useRef(null);
@@ -311,6 +323,7 @@ export default function DateTimePicker({
     const [, m] = timeValue.split(':').map(Number);
     return isNaN(m) ? 0 : m;
   });
+  const [typedTime, setTypedTime] = useState('');
 
   // Sync time outward — only when user actively changes hours/minutes
   const isMounted = useRef(false);
@@ -386,9 +399,9 @@ export default function DateTimePicker({
         </label>
       )}
 
-      {/* Trigger Pills */}
+      {/* Trigger Pills — hidden when autoOpen (calendar shown directly) */}
       <div className="flex items-center gap-2 flex-wrap">
-        {mode !== 'time' && (
+        {!autoOpen && mode !== 'time' && (
           <button
             ref={dateTriggerRef}
             type="button"
@@ -415,7 +428,7 @@ export default function DateTimePicker({
           </button>
         )}
 
-        {(showTime || mode === 'time') && (
+        {!autoOpen && (showTime || mode === 'time') && (
           <button
             ref={timeTriggerRef}
             type="button"
@@ -449,12 +462,42 @@ export default function DateTimePicker({
           className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-50 absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
           style={{ width: '200px' }}
         >
+          {/* Typed time input */}
+          <input
+            type="text"
+            value={typedTime}
+            onChange={e => {
+              setTypedTime(e.target.value);
+              const parsed = parseTypedTime(e.target.value);
+              if (parsed) { setHours(parsed.h); setMinutes(parsed.m); }
+            }}
+            onBlur={() => {
+              const parsed = parseTypedTime(typedTime);
+              if (parsed) { setHours(parsed.h); setMinutes(parsed.m); onTimeChange?.(`${pad(parsed.h)}:${pad(parsed.m)}`); }
+              setTypedTime('');
+            }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                const parsed = parseTypedTime(typedTime);
+                if (parsed) { setHours(parsed.h); setMinutes(parsed.m); onTimeChange?.(`${pad(parsed.h)}:${pad(parsed.m)}`); }
+                setTypedTime('');
+                setActivePanel(null);
+              }
+            }}
+            placeholder={`${pad(hours)}:${pad(minutes)}`}
+            className="w-full text-sm text-center font-mono px-2 py-1.5 rounded-lg focus:outline-none"
+            style={{
+              background: 'var(--bg-sunken)',
+              border: '1px solid var(--border-focus)',
+              color: 'var(--text-primary)',
+            }}
+          />
           <div className="flex items-center justify-center gap-3">
             <TimeWheel
               value={hours}
               min={0}
               max={23}
-              onChange={setHours}
+              onChange={h => { setHours(h); setTypedTime(''); }}
               label="Hour"
             />
             <span className="text-xl font-mono font-bold mt-4"
@@ -463,7 +506,7 @@ export default function DateTimePicker({
               value={minutes}
               min={0}
               max={59}
-              onChange={setMinutes}
+              onChange={m => { setMinutes(m); setTypedTime(''); }}
               label="Min"
             />
           </div>
@@ -471,6 +514,7 @@ export default function DateTimePicker({
             type="button"
             onClick={() => {
               onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
+              setTypedTime('');
               setActivePanel(null);
             }}
             className="w-full text-xs font-semibold py-1.5 rounded-lg transition-all duration-150"
@@ -490,7 +534,7 @@ export default function DateTimePicker({
           {/* Calendar Panel */}
           {activePanel === 'date' && (
             <div
-              className={`animate-slide-up glass-elevated rounded-xl p-4 flex ${dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
+              className={`animate-slide-up glass-elevated rounded-xl p-4 flex ${autoOpen ? '' : dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
               style={{ width: showPresets ? '440px' : '280px' }}
             >
               {/* Presets Sidebar List (showPresets=true) */}

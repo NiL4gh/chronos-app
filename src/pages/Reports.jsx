@@ -462,7 +462,7 @@ export default function Reports() {
           <div className="glass-card lg:col-span-2 p-6 flex flex-col relative">
             <h3 className="text-base font-medium text-[var(--text-primary)] mb-6">Daily Hours</h3>
             
-            <div className="flex-1 flex items-end gap-2 h-48 border-b border-[var(--border-default)] pb-2 relative">
+            <div className="flex items-end gap-2 h-48 border-b border-[var(--border-default)] pb-2 relative">
               {dailyData.length === 0 ? (
                 <div className="absolute inset-0 flex items-center justify-center text-sm text-[var(--text-secondary)]">No data for selected period</div>
               ) : dailyData.map((d, i) => (
@@ -480,13 +480,14 @@ export default function Reports() {
                   </div>
                   
                   {/* Bar */}
-                  <div 
-                    className={`w-full max-w-[40px] rounded-t-sm transition-all duration-300 animate-bar-grow ${
-                      selectedChartDate === d.date ? 'bg-amber-400' : 'bg-amber-400/80 group-hover:bg-amber-400'
-                    }`}
-                    style={{ 
-                      height: `${(d.hours / maxDaily) * 100}%`, 
-                      animationDelay: `${i * 40}ms`
+                  <div
+                    className="w-full max-w-[40px] rounded-t-sm transition-all duration-300 animate-bar-grow"
+                    style={{
+                      height: `${(d.hours / maxDaily) * 100}%`,
+                      animationDelay: `${i * 40}ms`,
+                      background: selectedChartDate === d.date
+                        ? 'var(--accent)'
+                        : 'color-mix(in srgb, var(--accent) 75%, transparent)'
                     }}
                   />
                   <div className="mt-3 text-[10px] text-[var(--text-secondary)] opacity-70 group-hover:opacity-100 truncate w-full text-center">
@@ -544,9 +545,9 @@ export default function Reports() {
             <div className="relative w-40 h-40 mb-6">
               <svg viewBox="0 0 100 100" className="-rotate-90 w-40 h-40">
                 {/* Non-billable Segment */}
-                <circle 
-                  cx="50" cy="50" r={radius} fill="none" 
-                  stroke="#d4cdc4" 
+                <circle
+                  cx="50" cy="50" r={radius} fill="none"
+                  stroke="var(--border-strong)"
                   strokeWidth={selectedDonutSegment === 'non-billable' ? "14" : "12"}
                   className={`cursor-pointer transition-all duration-300 ${selectedDonutSegment === 'billable' ? 'opacity-30' : ''}`}
                   onClick={() => setSelectedDonutSegment(s => s === 'non-billable' ? null : 'non-billable')}
@@ -554,7 +555,7 @@ export default function Reports() {
                 {/* Billable Segment */}
                 <circle
                   cx="50" cy="50" r={radius} fill="none"
-                  stroke="#fbbf24" 
+                  stroke="var(--accent)"
                   strokeWidth={selectedDonutSegment === 'billable' ? "14" : "12"}
                   strokeDasharray={`${circumference}`}
                   strokeDashoffset={`${billableDashoffset}`}
@@ -574,7 +575,7 @@ export default function Reports() {
                 onClick={() => setSelectedDonutSegment(s => s === 'billable' ? null : 'billable')}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-amber-400" />
+                  <span className="w-3 h-3 rounded-full" style={{ background: 'var(--accent)' }} />
                   <span className="text-sm text-[var(--text-secondary)]">Billable</span>
                 </div>
                 <span className="text-sm font-mono text-[var(--text-primary)]">{billableHours.toFixed(1)}h</span>
@@ -584,7 +585,7 @@ export default function Reports() {
                 onClick={() => setSelectedDonutSegment(s => s === 'non-billable' ? null : 'non-billable')}
               >
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-[#d4cdc4]" />
+                  <span className="w-3 h-3 rounded-full" style={{ background: 'var(--border-strong)' }} />
                   <span className="text-sm text-[var(--text-secondary)]">Internal</span>
                 </div>
                 <span className="text-sm font-mono text-[var(--text-primary)]">{nonBillableHours.toFixed(1)}h</span>
@@ -592,7 +593,7 @@ export default function Reports() {
             </div>
 
             {selectedDonutSegment && (
-              <div className="mt-4 w-full p-2 text-center text-xs text-amber-600 bg-amber-50 dark:bg-amber-500/10 rounded animate-fade-in border border-amber-200 dark:border-amber-500/20">
+              <div className="mt-4 w-full p-2 text-center text-xs rounded animate-fade-in border" style={{ color: 'var(--accent-text)', background: 'var(--accent-subtle)', borderColor: 'var(--accent-border)' }}>
                 Showing <strong>{selectedDonutSegment}</strong> entries below.
               </div>
             )}

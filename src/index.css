@@ -483,8 +483,8 @@ body {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(245,158,11,0.20); }
-  50%       { box-shadow: 0 0 28px rgba(245,158,11,0.50); }
+  0%, 100% { box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 20%, transparent); }
+  50%       { box-shadow: 0 0 28px color-mix(in srgb, var(--accent) 50%, transparent); }
 }
 
 @keyframes pulse-dot {
@@ -526,8 +526,8 @@ body {
 }
 
 @keyframes timer-glow-emerald {
-  0%, 100% { box-shadow: 0 0 12px rgba(16,185,129,0.2); }
-  50%       { box-shadow: 0 0 24px rgba(16,185,129,0.6); }
+  0%, 100% { text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 35%, transparent); }
+  50%       { text-shadow: 0 0 32px color-mix(in srgb, var(--accent) 70%, transparent); }
 }
 
 /* ── Animation utilities ── */

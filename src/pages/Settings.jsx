@@ -59,6 +59,12 @@ export default function Settings() {
   const [billingRate, setBillingRate] = useState(() => {
     try { return localStorage.getItem('ws_billingRate') || '95'; } catch { return '95'; }
   });
+  const [dailyTarget, setDailyTarget] = useState(() => {
+    try { return localStorage.getItem('ws_dailyTarget') || '8'; } catch { return '8'; }
+  });
+  const [weeklyTarget, setWeeklyTarget] = useState(() => {
+    try { return localStorage.getItem('ws_weeklyTarget') || '40'; } catch { return '40'; }
+  });
 
   const handleSaveWorkspace = () => {
     try {
@@ -66,6 +72,9 @@ export default function Settings() {
       localStorage.setItem('ws_industry', industry);
       localStorage.setItem('ws_timezone', timezone);
       localStorage.setItem('ws_dateFormat', dateFormat);
+      localStorage.setItem('ws_billingRate', billingRate);
+      localStorage.setItem('ws_dailyTarget', dailyTarget);
+      localStorage.setItem('ws_weeklyTarget', weeklyTarget);
     } catch {}
     triggerToast("Settings saved", "Workspace settings updated.", "success");
   };
@@ -176,7 +185,45 @@ export default function Settings() {
               </div>
             </div>
             
-            <div className="pt-4 mt-2 border-t" style={{ borderColor: 'var(--border-default)' }}>
+            <div className="pt-4 border-t" style={{ borderColor: 'var(--border-default)' }}>
+              <h4 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Hours & Billing</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Daily Hours Target</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="24"
+                    value={dailyTarget}
+                    onChange={e => setDailyTarget(e.target.value)}
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Hours you aim to work per day</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Weekly Hours Target</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="168"
+                    value={weeklyTarget}
+                    onChange={e => setWeeklyTarget(e.target.value)}
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Hours you aim to work per week</span>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Default Hourly Rate ($/hr)</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={billingRate}
+                    onChange={e => setBillingRate(e.target.value)}
+                  />
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Used in billing calculations on Reports</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2">
               <Button onClick={handleSaveWorkspace} variant="primary">Save Changes</Button>
             </div>
           </div>

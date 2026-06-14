@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { tasks as allTasks, projects, teamMembers } from '../data/mockData';
+import { tasks as initialTasks, projects, teamMembers } from '../data/mockData';
 import { Play, Check, X, Clock, ChevronRight, Circle, AlertCircle, CheckCircle2, Loader, Plus } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 
@@ -9,7 +9,8 @@ const truncate = (str, n) => {
 };
 
 export default function Tasks() {
-  const { activeRole, startTimer, triggerToast } = useOutletContext();
+  const { activeRole, startTimer, triggerToast, taskList } = useOutletContext();
+  const allTasks = taskList || initialTasks;
 
   // State
   const [selectedTask, setSelectedTask] = useState(null);
@@ -25,7 +26,7 @@ export default function Tasks() {
   const baseTasks = useMemo(() => allTasks.map(t => ({
     ...t,
     status: statusOverrides[t.id] || t.status
-  })), [statusOverrides]);
+  })), [allTasks, statusOverrides]);
 
   // Filter tasks based on role assignment
   const myTasks = isEmployee

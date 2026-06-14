@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 
-export default function SlideOutDrawer({ isOpen, onClose, title, children, footer }) {
+export default function SlideOutDrawer({ isOpen, onClose, title, children, footer, headerAction }) {
   const [hoverClose, setHoverClose] = useState(false);
   
   // Close on Escape key
@@ -49,19 +49,22 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
           style={{ borderBottom: '1px solid var(--border-default)' }}
         >
           <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-          <button
-            onClick={onClose}
-            onMouseEnter={() => setHoverClose(true)}
-            onMouseLeave={() => setHoverClose(false)}
-            className="w-8 h-8 rounded-md flex items-center justify-center transition-all duration-150"
-            style={{ 
-              color: hoverClose ? 'var(--text-primary)' : 'var(--text-muted)',
-              background: hoverClose ? 'var(--bg-sunken)' : 'transparent'
-            }}
-            aria-label="Close"
-          >
-            <X size={16} />
-          </button>
+          <div className="flex items-center gap-2">
+            {headerAction}
+            <button
+              onClick={onClose}
+              onMouseEnter={() => setHoverClose(true)}
+              onMouseLeave={() => setHoverClose(false)}
+              className="w-8 h-8 rounded-md flex items-center justify-center transition-all duration-150"
+              style={{
+                color: hoverClose ? 'var(--text-primary)' : 'var(--text-muted)',
+                background: hoverClose ? 'var(--bg-sunken)' : 'transparent'
+              }}
+              aria-label="Close"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Body - Callers must structure their own sticky footer if footer content is passed through children */}
