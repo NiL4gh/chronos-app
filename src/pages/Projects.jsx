@@ -518,7 +518,8 @@ export default function Projects() {
   const totalProjectCount = projectData.length;
 
   return (
-    <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full flex flex-col gap-6" style={{ background: 'transparent' }}>
+    <div className="flex h-full overflow-hidden">
+    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 animate-fade-in flex flex-col gap-6" style={{ background: 'transparent' }}>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Projects</h1>
         <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -802,6 +803,17 @@ export default function Projects() {
 
         </div>
       </SlideOutDrawer>
+    </div>
+
+      {/* Project Detail Panel */}
+      {selectedProject && (
+        <div className="w-96 flex-shrink-0 border-l border-[var(--border-default)] overflow-y-auto">
+          <ProjectDetailPanel
+            project={selectedProject}
+            onClose={() => setSelectedProject(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }
