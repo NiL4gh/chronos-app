@@ -1009,7 +1009,12 @@ export default function MyTime() {
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            setSelectedEntry(log);
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setSelectedEntry({
+                              log,
+                              x: Math.min(rect.right + 8, window.innerWidth - 296),
+                              y: Math.max(8, rect.top),
+                            });
                           }}
                         >
                           <div className="font-semibold text-[10px] leading-tight truncate" style={{ color: projectColor }}>
@@ -1203,7 +1208,14 @@ export default function MyTime() {
                       style={{ borderBottom: '1px solid var(--border-default)' }}
                       onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-sunken)'}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                      onClick={() => setSelectedEntry(log)}
+                      onClick={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        setSelectedEntry({
+                          log,
+                          x: Math.min(rect.right + 8, window.innerWidth - 296),
+                          y: Math.max(8, rect.top),
+                        });
+                      }}
                     >
                       <td className="px-4 py-2.5 text-[var(--text-primary)] font-medium max-w-[200px]">
                         <span className="truncate block">{log.task || <span className="text-[var(--text-muted)]">(No description)</span>}</span>
@@ -1404,39 +1416,116 @@ export default function MyTime() {
         {activeView === 'table' && renderTableView()}
       </div>
 
-      {/* Entry Detail Card */}
+      {/* Calendar entry popover */}
       {selectedEntry && (
-        <div className="absolute right-5 top-16 z-50 w-72 rounded-2xl shadow-2xl p-4 animate-fade-in" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-bold text-[var(--text-primary)]">Time Entry</span>
-            <button onClick={() => setSelectedEntry(null)} className="text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors">
-              <X size={14} />
-            </button>
-          </div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: getProjectColor(selectedEntry.projectId) }} />
-            <span className="text-sm font-semibold truncate" style={{ color: getProjectColor(selectedEntry.projectId) }}>{selectedEntry.projectName}</span>
-          </div>
-          <p className="text-sm text-[var(--text-primary)] mb-3 leading-snug">{selectedEntry.task || <span className="text-[var(--text-muted)]">(No task description)</span>}</p>
-          <div className="space-y-1.5 text-xs text-[var(--text-secondary)] mb-3">
-            <div className="flex justify-between">
-              <span>Time</span>
-              <span className="font-mono text-[var(--text-primary)]">{selectedEntry.startTime || '—'} – {selectedEntry.endTime || '—'}</span>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setSelectedEntry(null)} />
+          <div
+            className="fixed z-50 w-72 rounded-xl shadow-2xl animate-fade-in"
+            style={{
+              top: `${selectedEntry.y}px`,
+              left: `${selectedEntry.x}px`,
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
+            }}
+          >
+            {/* Popover header */}
+            <div
+              className="flex items-center justify-between px-4 py-3"
+              style={{ borderBottom: '1px solid var(--border-default)' }}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div
+                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                  style={{ background: getProjectColor(selectedEntry.log.projectId) }}
+                />
+                <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
+                  {selectedEntry.log.task || '(No description)'}
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedEntry(null)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors ml-2 flex-shrink-0"
+                style={{ color: 'var(--text-muted)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                aria-label="Close"
+              >
+                <X size={13} />
+              </button>
             </div>
-            <div className="flex justify-between">
-              <span>Duration</span>
-              <span className="font-mono font-semibold text-[var(--text-primary)]">{(Number(selectedEntry.duration) || 0).toFixed(1)}h</span>
+
+            {/* Popover body */}
+            <div className="px-4 py-3 space-y-2">
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Project</span>
+                <span>{selectedEntry.log.projectName || '—'}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Date</span>
+                <span>{selectedEntry.log.date}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Time</span>
+                <span>
+                  {selectedEntry.log.startTime || '?'} – {selectedEntry.log.endTime || '?'}
+                  {' '}
+                  <span className="font-mono">({selectedEntry.log.duration?.toFixed(2)}h)</span>
+                </span>
+              </div>
+              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Source</span>
+                <span className="capitalize">{selectedEntry.log.source || 'manual'}</span>
+              </div>
+              {selectedEntry.log.billable && (
+                <div className="flex items-center gap-1 text-xs" style={{ color: 'rgb(5,150,105)' }}>
+                  <span>● Billable</span>
+                </div>
+              )}
             </div>
-            <div className="flex justify-between">
-              <span>Date</span>
-              <span className="text-[var(--text-primary)]">{selectedEntry.date}</span>
+
+            {/* Popover footer */}
+            <div
+              className="px-4 py-3 flex items-center justify-between"
+              style={{ borderTop: '1px solid var(--border-default)' }}
+            >
+              <button
+                onClick={() => {
+                  setDrawerEntry({
+                    ...selectedEntry.log,
+                    task: selectedEntry.log.task,
+                    projectId: selectedEntry.log.projectId,
+                    date: selectedEntry.log.date,
+                    startTime: selectedEntry.log.startTime || '',
+                    endTime: selectedEntry.log.endTime || '',
+                    billable: selectedEntry.log.billable ?? true,
+                    editId: selectedEntry.log.id,
+                  });
+                  setDrawerOpen(true);
+                  setSelectedEntry(null);
+                }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ background: 'var(--accent)', color: 'var(--accent-on)' }}
+              >
+                Edit entry
+              </button>
+              <button
+                onClick={() => {
+                  setLogs(prev => prev.filter(l => l.id !== selectedEntry.log.id));
+                  triggerToast('Entry deleted', selectedEntry.log.task || '', 'success');
+                  setSelectedEntry(null);
+                }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
+                style={{ color: 'rgb(220,38,38)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220,38,38,0.08)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              >
+                Delete
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <TrackingSourceBadge source={selectedEntry.source} />
-            {selectedEntry.billable && <Badge variant="success" size="sm">Billable</Badge>}
-          </div>
-        </div>
+        </>
       )}
 
       {/* Calendar sync panel (unchanged) */}

@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   Search, Grid3X3, List, Mail, Clock, Activity,
   X, BarChart2, FolderKanban, Calendar, TrendingUp,
-  CheckCircle2, Circle, Users,
+  CheckCircle2, Circle, Users, UserPlus,
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -72,7 +72,6 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
             />
           </div>
           <div className="min-w-0">
-            {/* Name — zone click → profile overview */}
             <button
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClickName(); }}
               className="text-sm font-medium text-left block truncate hover:text-amber-600 transition-colors duration-100"
@@ -177,13 +176,13 @@ function MemberGridCard({ member, selected, onClickName, onClickStatus, onClickP
 function MemberTableRow({ member, selected, onClickName, onClickStatus, idx }) {
   const statusInfo = STATUS_PILL[member.status] || STATUS_PILL.offline;
   const [hover, setHover] = useState(false);
-  
-  const bg = selected 
-    ? 'var(--bg-active)' 
-    : hover 
-      ? 'var(--bg-sunken)' 
-      : idx % 2 === 1 
-        ? 'var(--bg-sunken)' 
+
+  const bg = selected
+    ? 'var(--bg-active)'
+    : hover
+      ? 'var(--bg-sunken)'
+      : idx % 2 === 1
+        ? 'var(--bg-sunken)'
         : 'transparent';
 
   return (
@@ -333,10 +332,8 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
       {/* Body — scrollable */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3 bg-base" style={{ background: 'transparent' }}>
 
-        {/* ── Overview tab ── */}
         {activeTab === 'Overview' && (
           <>
-            {/* Metric cards — 3-col compact grid */}
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: 'Today', value: `${member.hoursToday}h` },
@@ -345,10 +342,7 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
                 { label: 'Entries', value: memberLogs.length },
                 { label: 'Capacity', value: member.availableHoursPerWeek ? `${member.availableHoursPerWeek}h` : '40h' },
               ].map(({ label, value }) => (
-                <div
-                  key={label}
-                  className="glass-card rounded-xl p-3"
-                >
+                <div key={label} className="glass-card rounded-xl p-3">
                   <p className="text-[10px] uppercase tracking-wider font-semibold"
                     style={{ color: 'var(--text-muted)' }}>{label}</p>
                   <p className="text-base font-bold font-sans tabular-nums mt-1"
@@ -357,21 +351,18 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
               ))}
             </div>
 
-            {/* Activity level */}
             <div className="glass-card rounded-xl p-3">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>
                   Activity Level
                 </p>
-                <span className="text-sm font-sans tabular-nums font-bold"
-                  style={{ color: 'var(--text-primary)' }}>
+                <span className="text-sm font-sans tabular-nums font-bold" style={{ color: 'var(--text-primary)' }}>
                   {member.activityLevel}%
                 </span>
               </div>
               <ActivityBar value={member.activityLevel} />
             </div>
 
-            {/* Current project */}
             {member.currentProject && (
               <div className="glass-card rounded-xl p-3">
                 <p className="text-[10px] uppercase tracking-wider font-semibold mb-1"
@@ -389,7 +380,6 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
           </>
         )}
 
-        {/* ── Time Logs tab ── */}
         {activeTab === 'Time Logs' && (
           <div className="space-y-3">
             {memberLogs.length === 0 ? (
@@ -397,14 +387,9 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
                 No time logs recorded.
               </p>
             ) : memberLogs.map(log => (
-              <div
-                key={log.id}
-                className="glass-card rounded-xl p-4"
-              >
+              <div key={log.id} className="glass-card rounded-xl p-4">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {log.task}
-                  </p>
+                  <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{log.task}</p>
                   <TrackingSourceBadge source={log.source} />
                 </div>
                 <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>{log.projectName}</p>
@@ -415,16 +400,13 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
                   <span className="text-sm font-sans tabular-nums font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {log.duration}h
                   </span>
-                  {log.billable && (
-                    <CheckCircle2 size={14} className="text-emerald-600" />
-                  )}
+                  {log.billable && <CheckCircle2 size={14} className="text-emerald-600" />}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* ── Projects tab ── */}
         {activeTab === 'Projects' && (
           <div className="space-y-3">
             {memberProjects.length === 0 ? (
@@ -436,26 +418,17 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
                 ? Math.round((proj.loggedHours / proj.goalHours) * 100)
                 : 0;
               return (
-                <div
-                  key={proj.id}
-                  className="glass-card rounded-xl p-5"
-                >
+                <div key={proj.id} className="glass-card rounded-xl p-5">
                   <div className="flex items-center gap-3 mb-3">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ background: proj.color }}
-                    />
-                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {proj.name}
-                    </p>
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: proj.color }} />
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{proj.name}</p>
                     <Badge variant={proj.status === 'active' ? 'success' : proj.status === 'paused' ? 'warning' : 'neutral'}>
                       {proj.status}
                     </Badge>
                   </div>
                   <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>{proj.client}</p>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs uppercase tracking-wider font-semibold"
-                      style={{ color: 'var(--text-muted)' }}>Progress</span>
+                    <span className="text-xs uppercase tracking-wider font-semibold" style={{ color: 'var(--text-muted)' }}>Progress</span>
                     <span className="text-sm font-sans tabular-nums" style={{ color: 'var(--text-primary)' }}>
                       {proj.loggedHours}h / {proj.goalHours}h
                     </span>
@@ -473,233 +446,170 @@ function MemberDetailPanel({ member, initialTab, onClose }) {
 
 // ─── Team Page ────────────────────────────────────────────
 export default function Team() {
-  const { activeRole, triggerToast } = useOutletContext();
-  const [query, setQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid');
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [detailTab, setDetailTab] = useState('Overview');
+  const { activeRole, triggerToast, logs } = useOutletContext();
 
-  const filtered = useMemo(() => {
-    const q = query.toLowerCase();
+  const memberHours = useMemo(() => {
+    const map = {};
+    (logs || timeLogs).forEach(log => {
+      map[log.userId] = (map[log.userId] || 0) + log.duration;
+    });
+    return map;
+  }, [logs]);
+
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return teamMembers;
+    const q = searchQuery.toLowerCase();
     return teamMembers.filter(m =>
-      m.name.toLowerCase().includes(q) ||
-      m.role.toLowerCase().includes(q) ||
-      (m.currentProject?.toLowerCase() || '').includes(q)
+      m.name.toLowerCase().includes(q) || (m.role || '').toLowerCase().includes(q)
     );
-  }, [query]);
-
-  const openDetail = (member, tab = 'Overview') => {
-    setSelectedMember(member);
-    setDetailTab(tab);
-  };
-
-  const closeDetail = () => setSelectedMember(null);
-
-  // Stats
-  const activeCount  = teamMembers.filter(m => m.status === 'active').length;
-  const idleCount    = teamMembers.filter(m => m.status === 'idle').length;
-  const avgHours     = (teamMembers.reduce((s, m) => s + m.hoursWeek, 0) / teamMembers.length).toFixed(1);
+  }, [searchQuery]);
 
   return (
-    <div className="px-4 md:px-6 py-4 md:py-5 animate-fade-in h-full" style={{ background: 'transparent' }}>
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Team</h1>
-        <p className="text-xs text-[var(--text-muted)] mt-0.5">
-          {activeCount} active · {teamMembers.length} total members
-        </p>
-      </div>
+    <div className="px-5 py-5 max-w-none space-y-5 animate-fade-in">
 
-      {/* ── Stat row ── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-6">
-        <StatCard icon={Users}    label="Total Members" value={teamMembers.length} />
-        <StatCard icon={Activity} label="Active Now"     value={activeCount} />
-        <StatCard icon={Clock}    label="Idle"           value={idleCount} />
-        <StatCard icon={TrendingUp} label="Avg Hrs/Week" value={`${avgHours}h`} />
-      </div>
-
-      {/* ── Main split layout ── */}
-      <div
-        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl"
-        style={{
-          border: '1px solid var(--border-default)',
-          background: 'var(--bg-surface)',
-          height: 'calc(100vh - 220px)',
-        }}
-      >
-        {/* Left — member list */}
-        <div
-          className={`flex flex-col transition-all duration-300 ease-in-out bg-base w-full ${selectedMember ? 'md:w-[45%]' : 'md:w-full'}`}
-          style={{
-            borderRight: selectedMember ? '1px solid var(--border-default)' : 'none',
-            minWidth: 0,
-            background: 'var(--bg-base)'
-          }}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>Team</h1>
+          <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            {teamMembers.length} members
+          </p>
+        </div>
+        <button
+          onClick={() => triggerToast('Invites coming soon', '', 'info')}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+          style={{ background: 'var(--accent)', color: 'var(--accent-on)' }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
-          {/* Toolbar */}
-          <div
-            className="flex items-center gap-4 px-5 py-4 shrink-0"
-            style={{ borderBottom: '1px solid var(--border-default)' }}
-          >
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <Input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search members…"
-                className="w-full pl-10 pr-4 py-2"
-              />
-            </div>
+          <UserPlus size={14} />
+          Invite members
+        </button>
+      </div>
 
-            {/* View toggle */}
-            <div
-              className="flex rounded-lg overflow-hidden shrink-0"
-              style={{ border: '1px solid var(--border-default)' }}
-            >
-              {[
-                { mode: 'grid', icon: Grid3X3 },
-                { mode: 'list', icon: List },
-              ].map(({ mode, icon: Icon }) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className="w-10 h-10 flex items-center justify-center transition-all duration-150"
-                  style={{
-                    background: viewMode === mode ? 'var(--accent-subtle)' : 'var(--bg-sunken)',
-                    color: viewMode === mode ? 'var(--accent-text)' : 'var(--text-muted)',
-                    border: viewMode === mode ? '1px solid var(--accent-border)' : '1px solid transparent'
-                  }}
-                  onMouseEnter={(e) => {
-                    if (viewMode !== mode) e.currentTarget.style.color = 'var(--text-primary)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (viewMode !== mode) e.currentTarget.style.color = 'var(--text-muted)';
-                  }}
+      {/* Search */}
+      <div
+        className="flex items-center gap-2 px-3 py-2 rounded-xl"
+        style={{ border: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
+      >
+        <Search size={14} style={{ color: 'var(--text-muted)' }} />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search members..."
+          className="flex-1 text-sm bg-transparent focus:outline-none"
+          style={{ color: 'var(--text-primary)' }}
+        />
+      </div>
+
+      {/* Data table */}
+      <div
+        className="overflow-hidden rounded-xl"
+        style={{ border: '1px solid var(--border-default)' }}
+      >
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-default)' }}>
+              {['MEMBER', 'ROLE', 'STATUS', 'WORK HOURS'].map(col => (
+                <th
+                  key={col}
+                  className="text-left px-5 py-3 text-[10px] font-semibold uppercase tracking-widest"
+                  style={{ color: 'var(--text-muted)' }}
                 >
-                  <Icon size={16} />
-                </button>
+                  {col}
+                </th>
               ))}
-            </div>
-
-            {/* Invite button */}
-            <button
-              className="shrink-0 px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-150"
-              style={{
-                background: 'var(--accent-subtle)',
-                border: '1px solid var(--accent-border)',
-                color: 'var(--accent-text)',
-              }}
-              onClick={() => triggerToast?.('Coming soon', 'Invite flow is in Phase 2.', 'info')}
-            >
-              + Invite
-            </button>
-          </div>
-
-          {/* Member list */}
-          <div className="flex-1 overflow-y-auto">
-            {selectedMember ? (
-              // ─── COMPACT MASTER-DETAIL LIST VIEW ───
-              <div className="divide-y divide-[var(--border-default)]">
-                {filtered.map((member, idx) => {
-                  const isSel = selectedMember.id === member.id;
-                  return (
-                    <div
-                      key={member.id}
-                      onClick={() => openDetail(member, 'Overview')}
-                      className={`relative flex items-center justify-between px-5 py-3.5 cursor-pointer transition-all duration-150 first:rounded-t-[15px] last:rounded-b-[15px] ${
-                        isSel 
-                          ? 'bg-[var(--bg-active)] font-medium' 
-                          : 'hover:bg-[var(--bg-sunken)]'
-                      }`}
-                      style={{
-                        backgroundColor: !isSel && idx % 2 === 1 ? 'var(--bg-sunken)' : undefined
-                      }}
-                    >
-                      {/* Active Selection Indicator Pill */}
-                      {isSel && (
-                        <div className="absolute left-1.5 top-1/2 -translate-y-1/2 h-6 w-1 bg-[var(--accent)] rounded-full" />
-                      )}
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative shrink-0">
-                          <Avatar name={member.name} size="sm" />
-                          <span
-                            className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
-                            style={{
-                              background: DOT_COLOR[member.status],
-                              borderColor: 'var(--bg-surface)',
-                            }}
-                          />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-semibold text-[var(--text-primary)] truncate">
-                            {member.name}
-                          </p>
-                          <p className="text-xs text-[var(--text-muted)] truncate mt-0.5">
-                            {member.role}
-                          </p>
-                        </div>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredMembers.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  No members match your search.
+                </td>
+              </tr>
+            ) : filteredMembers.map(member => {
+              const statusInfo = STATUS_PILL[member.status] || STATUS_PILL.offline;
+              const logged = memberHours[member.id] || 0;
+              const target = member.weeklyTarget || 40;
+              const pct = Math.min(100, Math.round((logged / target) * 100));
+              return (
+                <tr
+                  key={member.id}
+                  className="border-b transition-colors"
+                  style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                >
+                  {/* MEMBER */}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-3">
+                      <div className="relative shrink-0">
+                        <Avatar name={member.name} size="sm" />
+                        <span
+                          className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2"
+                          style={{ background: DOT_COLOR[member.status], borderColor: 'var(--bg-surface)' }}
+                        />
                       </div>
-                      <div className="text-right shrink-0">
-                        <span className="text-xs font-mono font-semibold text-[var(--text-secondary)]">
-                          {member.hoursWeek}h
-                        </span>
-                        <p className="text-[9px] text-[var(--text-muted)] uppercase tracking-wider font-medium">this week</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>{member.name}</p>
+                        <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{member.email || ''}</p>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div
-                className="p-5 grid gap-5 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-              >
-                {filtered.map(member => (
-                  <MemberGridCard
-                    key={member.id}
-                    member={member}
-                    selected={selectedMember?.id === member.id}
-                    onClickName={() => openDetail(member, 'Overview')}
-                    onClickStatus={() => openDetail(member, 'Overview')}
-                    onClickProject={() => openDetail(member, 'Projects')}
-                    onClickLogs={() => openDetail(member, 'Time Logs')}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="py-2 overflow-x-auto w-full">
-                <div className="min-w-[800px]">
-                  {filtered.map((member, idx) => (
-                  <MemberTableRow
-                    key={member.id}
-                    member={member}
-                    selected={selectedMember?.id === member.id}
-                    onClickName={() => openDetail(member, 'Overview')}
-                    onClickStatus={() => openDetail(member, 'Overview')}
-                    idx={idx}
-                  />
-                ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+                  </td>
 
-        {/* Right — inline detail panel */}
-        {selectedMember && (
+                  {/* ROLE */}
+                  <td className="px-5 py-3.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {member.role || '—'}
+                  </td>
+
+                  {/* STATUS */}
+                  <td className="px-5 py-3.5">
+                    <Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+                  </td>
+
+                  {/* WORK HOURS */}
+                  <td className="px-5 py-3.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-24 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${pct}%`,
+                            background: pct >= 100 ? 'rgb(5,150,105)' : 'var(--accent)',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-mono whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                        {logged.toFixed(1)}h / {target}h
+                      </span>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        {/* Invite row */}
+        <div
+          className="px-5 py-3 flex items-center gap-2 cursor-pointer transition-colors"
+          style={{ borderTop: '1px solid var(--border-default)', background: 'var(--bg-surface)' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+          onClick={() => triggerToast('Invites coming soon', '', 'info')}
+        >
           <div
-            className="w-full md:flex-1 min-w-0 overflow-hidden"
+            className="w-8 h-8 rounded-full border-2 border-dashed flex items-center justify-center flex-shrink-0"
+            style={{ borderColor: 'var(--border-strong)' }}
           >
-            <MemberDetailPanel
-              member={selectedMember}
-              initialTab={detailTab}
-              onClose={closeDetail}
-            />
+            <UserPlus size={13} style={{ color: 'var(--text-muted)' }} />
           </div>
-        )}
+          <span className="text-sm" style={{ color: 'var(--text-muted)' }}>Invite a team member...</span>
+        </div>
       </div>
     </div>
   );

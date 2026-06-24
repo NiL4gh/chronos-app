@@ -1,18 +1,14 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { tasks as initialTasks, projects, teamMembers } from '../data/mockData';
-import { Play, Check, X, Clock, ChevronRight, Circle, AlertCircle, CheckCircle2, Loader, Plus } from 'lucide-react';
+import { Play, Check, X, Clock, Circle, AlertCircle, CheckCircle2, Loader, Plus, ArrowUpDown } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
-
-const truncate = (str, n) => {
-  return str.length > n ? str.slice(0, n - 1) + '…' : str;
-};
+import Badge from '../components/ui/Badge.jsx';
 
 export default function Tasks() {
   const { activeRole, startTimer, triggerToast, taskList } = useOutletContext();
   const allTasks = taskList || initialTasks;
 
-  // State
   const [selectedTask, setSelectedTask] = useState(null);
   const [statusOverrides, setStatusOverrides] = useState({});
   const [filterStatus, setFilterStatus] = useState('all');
@@ -22,36 +18,61 @@ export default function Tasks() {
 
   const isEmployee = activeRole === 'employee';
 
-  // Compute base tasks with local status overrides
+  const [sortKey, setSortKey] = useState('status');
+  const [sortDir, setSortDir] = useState('asc');
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+
   const baseTasks = useMemo(() => allTasks.map(t => ({
     ...t,
     status: statusOverrides[t.id] || t.status
   })), [allTasks, statusOverrides]);
 
-  // Filter tasks based on role assignment
   const myTasks = isEmployee
     ? baseTasks.filter(t => t.assignedTo === 'u1')
     : baseTasks;
 
-  // Apply other status, priority, member, and search query filters
   const filteredTasks = useMemo(() => myTasks.filter(t => {
-    if (filterStatus !== 'all' && t.status !== filterStatus)
-      return false;
-    if (filterPriority !== 'all' && t.priority !== filterPriority)
-      return false;
-    if (!isEmployee && filterMember !== 'all' && t.assignedTo !== filterMember)
-      return false;
-    if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase()))
-      return false;
+    if (filterStatus !== 'all' && t.status !== filterStatus) return false;
+    if (filterPriority !== 'all' && t.priority !== filterPriority) return false;
+    if (!isEmployee && filterMember !== 'all' && t.assignedTo !== filterMember) return false;
+    if (searchQuery && !t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
     return true;
   }), [myTasks, filterStatus, filterPriority, filterMember, searchQuery, isEmployee]);
 
-  // Sync selected task with latest data
-  const currentSelectedTask = selectedTask
-    ? baseTasks.find(t => t.id === selectedTask.id)
-    : null;
+  const PRIORITY_ORDER = { urgent: 0, high: 1, medium: 2, low: 3 };
+  const STATUS_ORDER   = { 'in-progress': 0, todo: 1, done: 2 };
 
-  // Cycle Status handler: todo -> in-progress -> done -> todo
+  const sortedTasks = useMemo(() => {
+    return [...filteredTasks].sort((a, b) => {
+      let aVal, bVal;
+      if (sortKey === 'title')    { aVal = a.title; bVal = b.title; }
+      if (sortKey === 'project')  { aVal = a.projectName || ''; bVal = b.projectName || ''; }
+      if (sortKey === 'priority') { aVal = PRIORITY_ORDER[a.priority] ?? 99; bVal = PRIORITY_ORDER[b.priority] ?? 99; }
+      if (sortKey === 'status')   { aVal = STATUS_ORDER[a.status] ?? 99; bVal = STATUS_ORDER[b.status] ?? 99; }
+      if (sortKey === 'logged')   { aVal = a.timeLogged || 0; bVal = b.timeLogged || 0; }
+      if (typeof aVal === 'string') {
+        return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }, [filteredTasks, sortKey, sortDir]);
+
+  const PRIORITY_META = {
+    urgent: { color: 'rgb(220,38,38)',    label: 'Urgent' },
+    high:   { color: 'rgb(217,119,6)',    label: 'High' },
+    medium: { color: 'var(--accent)',     label: 'Medium' },
+    low:    { color: 'var(--text-muted)', label: 'Low' },
+  };
+
+  const STATUS_META_TASK = {
+    'in-progress': { variant: 'warning', label: 'In Progress' },
+    todo:          { variant: 'neutral',  label: 'To Do' },
+    done:          { variant: 'success',  label: 'Done' },
+  };
+
   const cycleStatus = (taskId) => {
     const current = statusOverrides[taskId] ||
       allTasks.find(t => t.id === taskId)?.status || 'todo';
@@ -60,28 +81,19 @@ export default function Tasks() {
     setStatusOverrides(prev => ({ ...prev, [taskId]: next }));
   };
 
-  // Header metric counts
   const todoCount = myTasks.filter(t => t.status === 'todo').length;
   const inProgressCount = myTasks.filter(t => t.status === 'in-progress').length;
 
-  const today = new Date().toISOString().split('T')[0];
-
-  const groups = [
-    { id: 'in-progress', label: 'In Progress' },
-    { id: 'todo', label: 'To Do' },
-    { id: 'done', label: 'Done' }
-  ];
-
   return (
     <div className="px-5 py-5 max-w-none space-y-6">
-      
-      {/* ── Page Header ── */}
+
+      {/* Page Header */}
       <div className="shrink-0 select-none">
         <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Tasks Workspace</h1>
         <p className="text-xs text-[var(--text-muted)] mt-0.5">Manage task priority levels, assignees, and focus sessions.</p>
       </div>
 
-      {/* ── Summary Stats Header Row ──────────────────────── */}
+      {/* Summary Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0 select-none">
         <div className="glass-card py-4 px-5 flex items-center justify-between min-h-[96px] lift-on-hover transition-all">
           <div className="flex flex-col gap-1">
@@ -124,13 +136,12 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* FILTER BAR */}
+      {/* Filter Bar */}
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-xs text-[var(--text-muted)] font-medium mr-1">
           {isEmployee ? 'Mine · ' : ''}{todoCount} to do · {inProgressCount} in progress
         </span>
 
-        {/* Status Pills */}
         <div className="flex items-center bg-[var(--bg-sunken)] border border-[var(--border-default)] rounded-lg p-0.5">
           {['all', 'todo', 'in-progress', 'done'].map((status) => {
             const labels = { all: 'All', todo: 'To Do', 'in-progress': 'In Progress', done: 'Done' };
@@ -149,7 +160,6 @@ export default function Tasks() {
           })}
         </div>
 
-        {/* Priority Select */}
         <select
           value={filterPriority}
           onChange={(e) => setFilterPriority(e.target.value)}
@@ -161,7 +171,6 @@ export default function Tasks() {
           <option value="low">Low</option>
         </select>
 
-        {/* Member Select (Admin Only) */}
         {!isEmployee && (
           <select
             value={filterMember}
@@ -177,7 +186,6 @@ export default function Tasks() {
           </select>
         )}
 
-        {/* Search Input */}
         <input
           type="text"
           value={searchQuery}
@@ -187,341 +195,156 @@ export default function Tasks() {
         />
       </div>
 
-      {/* MAIN CONTENT Split Panel */}
-      <div className="flex gap-6">
-        {/* TASK LIST PANEL */}
-        <div
-          className={`flex-1 min-w-0 transition-all duration-200 ${
-            currentSelectedTask ? 'hidden md:block md:w-[55%] md:flex-none' : 'w-full md:w-[60%] md:flex-none'
-          }`}
-        >
-          {filteredTasks.length === 0 ? (
-            <div className="text-center py-16 text-[var(--text-muted)]">
-              <CheckCircle2 size={32} className="mx-auto mb-3 opacity-30" />
-              <p className="text-sm">No tasks found</p>
-            </div>
-          ) : (
-            groups.map((group) => {
-              const groupTasks = filteredTasks.filter(t => t.status === group.id);
-              if (groupTasks.length === 0) return null;
+      {/* Tasks data table */}
+      <div
+        className="overflow-hidden rounded-xl"
+        style={{ border: '1px solid var(--border-default)' }}
+      >
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-default)' }}>
+              {[
+                { key: 'title',    label: 'TASK' },
+                { key: 'project',  label: 'PROJECT' },
+                { key: 'priority', label: 'PRIORITY' },
+                { key: 'status',   label: 'STATUS' },
+                { key: 'logged',   label: 'LOGGED' },
+                { key: null,       label: 'ASSIGNEE' },
+                { key: null,       label: '' },
+              ].map(({ key, label }) => (
+                <th
+                  key={label + (key || '')}
+                  className={`text-left px-4 py-3 text-[10px] font-semibold uppercase tracking-widest ${key ? 'cursor-pointer' : ''}`}
+                  style={{ color: 'var(--text-muted)' }}
+                  onClick={key ? () => toggleSort(key) : undefined}
+                >
+                  <span className="flex items-center gap-1">
+                    {label}
+                    {key && <ArrowUpDown size={10} />}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedTasks.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  No tasks match your filters.
+                </td>
+              </tr>
+            ) : sortedTasks.map(task => {
+              const priorityMeta = PRIORITY_META[task.priority] || PRIORITY_META.medium;
+              const statusMeta   = STATUS_META_TASK[task.status] || STATUS_META_TASK.todo;
+              const isSelected   = selectedTask?.id === task.id;
+              const proj = projects.find(p => p.id === task.projectId);
               return (
-                <div key={group.id} className="mb-6">
-                  <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] px-1 py-2 mb-2">
-                    {group.label} · {groupTasks.length}
-                  </div>
-                  <div className="glass-card overflow-hidden border border-[var(--border-default)]">
-                    {groupTasks.map((task, idx) => (
-                      <div
-                        key={task.id}
-                        onClick={() => setSelectedTask(
-                          selectedTask?.id === task.id ? null : task
-                        )}
-                        className={`relative group flex items-center gap-3 px-4 py-3 border-b border-b-[var(--border-default)] last:border-b-0 cursor-pointer transition-colors hover:bg-[var(--bg-sunken)]  ${
-                          selectedTask?.id === task.id
-                            ? 'bg-[var(--bg-active)]'
-                            : ''
-                        }`}
-                        style={{}}
+                <tr
+                  key={task.id}
+                  onClick={() => setSelectedTask(isSelected ? null : task)}
+                  className="cursor-pointer transition-colors border-b"
+                  style={{
+                    borderColor: 'var(--border-default)',
+                    background: isSelected ? 'var(--accent-subtle)' : 'var(--bg-surface)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'var(--bg-sunken)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'var(--bg-surface)';
+                  }}
+                >
+                  {/* TASK */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <button
+                        onClick={(e) => { e.stopPropagation(); cycleStatus(task.id); }}
+                        className="flex-shrink-0 w-4 h-4 rounded-full border-2 flex items-center justify-center transition-colors"
+                        style={{
+                          borderColor: task.status === 'done' ? 'rgb(5,150,105)' : 'var(--border-strong)',
+                          background: task.status === 'done' ? 'rgb(5,150,105)' : 'transparent',
+                        }}
+                        title="Cycle status"
                       >
-                        {/* Active Selection Indicator Pill */}
-                        {selectedTask?.id === task.id && (
-                          <div className="absolute left-1 top-1/2 -translate-y-1/2 h-6 w-1 bg-[var(--accent)] rounded-full" />
-                        )}
-                        {/* Status Checkbox */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            cycleStatus(task.id);
-                          }}
-                          className="focus:outline-none flex-shrink-0"
-                        >
-                          {task.status === 'todo' && (
-                            <Circle
-                              size={16}
-                              className="text-[var(--border-strong)] hover:text-amber-400 transition-colors"
-                            />
-                          )}
-                          {task.status === 'in-progress' && (
-                            <Loader size={16} className="text-amber-400 animate-spin" />
-                          )}
-                          {task.status === 'done' && (
-                            <CheckCircle2 size={16} className="text-emerald-500" />
-                          )}
-                        </button>
+                        {task.status === 'done' && <Check size={9} style={{ color: 'white' }} />}
+                      </button>
+                      <span
+                        className="font-medium truncate max-w-[220px]"
+                        style={{
+                          color: task.status === 'done' ? 'var(--text-muted)' : 'var(--text-primary)',
+                          textDecoration: task.status === 'done' ? 'line-through' : 'none',
+                        }}
+                      >
+                        {task.title}
+                      </span>
+                    </div>
+                  </td>
 
-                        {/* Title & Metadata */}
-                        <div className="flex-1 min-w-0">
-                          <span
-                            className={`text-sm font-medium block truncate ${
-                              task.status === 'done'
-                                ? 'line-through text-[var(--text-muted)]'
-                                : 'text-[var(--text-primary)]'
-                            }`}
-                          >
-                            {task.title}
-                          </span>
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[var(--text-muted)] mt-0.5">
-                            <span>{task.projectName}</span>
-                            <span>·</span>
-                            {!isEmployee && (
-                              <>
-                                <span>{task.assignedToName}</span>
-                                <span>·</span>
-                              </>
-                            )}
-                            <span
-                              className={
-                                task.status !== 'done' && task.dueDate && task.dueDate < today
-                                  ? 'text-red-500 font-medium'
-                                  : ''
-                              }
-                            >
-                              Due {task.dueDate}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Dashed connector line */}
-                        <div className="hidden sm:block flex-1 border-b border-dashed border-[var(--border-default)] mx-3 h-3 opacity-40" />
-
-                        {/* Assignee Avatar */}
-                        <div className="flex-shrink-0 shrink-0">
-                          <Avatar name={task.assignedToName} size="xs" />
-                        </div>
-
-                        {/* Priority Dot */}
-                        <div className="flex-shrink-0 shrink-0">
-                          {task.priority === 'high' && (
-                            <span className="w-2 h-2 rounded-full bg-red-500 block" />
-                          )}
-                          {task.priority === 'medium' && (
-                            <span className="w-2 h-2 rounded-full bg-amber-400 block" />
-                          )}
-                          {task.priority === 'low' && (
-                            <span className="w-2 h-2 rounded-full bg-[var(--border-strong)] block" />
-                          )}
-                        </div>
-
-                        {/* Time Logged / Est. ratio badge */}
-                        <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded flex-shrink-0 shrink-0">
-                          {task.timeLogged}h / 8h est.
-                        </span>
-
-                        {/* Hover Quick Action Timer Play Button */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startTimer(task.title, task.projectId);
-                            triggerToast?.('Timer Started', `Started tracking: ${task.title}`, 'success');
-                          }}
-                          className="p-1 rounded-md text-amber-500 hover:bg-amber-50 hover:text-amber-600 transition-colors flex-shrink-0 shrink-0 opacity-0 group-hover:opacity-100"
-                          title="Start Tracking"
-                        >
-                          <Play size={12} fill="currentColor" />
-                        </button>
+                  {/* PROJECT */}
+                  <td className="px-4 py-3">
+                    {proj ? (
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: proj.color || 'var(--accent)' }} />
+                        <span className="text-xs truncate max-w-[120px]" style={{ color: 'var(--text-secondary)' }}>{proj.name}</span>
                       </div>
-                    ))}
-                  </div>
-                </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--text-disabled)' }}>—</span>
+                    )}
+                  </td>
+
+                  {/* PRIORITY */}
+                  <td className="px-4 py-3">
+                    <span className="text-xs font-semibold" style={{ color: priorityMeta.color }}>
+                      {priorityMeta.label}
+                    </span>
+                  </td>
+
+                  {/* STATUS */}
+                  <td className="px-4 py-3">
+                    <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+                  </td>
+
+                  {/* LOGGED */}
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {task.timeLogged ? `${task.timeLogged}h` : '—'}
+                  </td>
+
+                  {/* ASSIGNEE */}
+                  <td className="px-4 py-3">
+                    {task.assignedToName ? (
+                      <div className="flex items-center gap-1.5">
+                        <Avatar name={task.assignedToName} size="sm" />
+                        <span className="text-xs truncate max-w-[80px]" style={{ color: 'var(--text-secondary)' }}>
+                          {task.assignedToName.split(' ')[0]}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--text-disabled)' }}>—</span>
+                    )}
+                  </td>
+
+                  {/* ACTIONS */}
+                  <td className="px-4 py-3">
+                    {!isEmployee && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startTimer(task.title, task.projectId, task.id);
+                          triggerToast('Timer started', task.title, 'success');
+                        }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-[var(--bg-sunken)]"
+                        style={{ color: 'var(--text-muted)' }}
+                        title={`Start timer for ${task.title}`}
+                      >
+                        <Play size={12} fill="currentColor" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
               );
-            })
-          )}
-        </div>
-
-        {/* TASK DETAIL PANEL */}
-        <div className="hidden md:block w-full md:w-[400px] flex-shrink-0">
-          {currentSelectedTask ? (
-            <div className="glass-card p-6 sticky top-6 animate-fade-in">
-              {/* Header Row */}
-              <div className="flex items-center justify-between gap-4 mb-4">
-                <div className="text-xs text-[var(--text-muted)] flex items-center gap-1">
-                  <span>Tasks</span>
-                  <ChevronRight size={12} />
-                  <span className="truncate">{truncate(currentSelectedTask.title, 30)}</span>
-                </div>
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-[var(--bg-sunken)] text-[var(--text-muted)] flex-shrink-0"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-
-              {/* Task Title & Project */}
-              <h2 className="text-lg font-semibold text-[var(--text-primary)] mb-1 leading-snug">
-                {currentSelectedTask.title}
-              </h2>
-              <p className="text-sm text-[var(--text-muted)] mb-5">
-                {currentSelectedTask.projectName}
-              </p>
-
-              {/* Actions row */}
-              <div className="flex gap-2 mb-6">
-                <button
-                  onClick={() =>
-                    startTimer(currentSelectedTask.title, currentSelectedTask.projectId)
-                  }
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-300 text-neutral-950 text-sm font-semibold transition-colors"
-                >
-                  <Play size={14} />
-                  <span>Start Timer</span>
-                </button>
-                <button
-                  onClick={() =>
-                    setStatusOverrides((prev) => ({ ...prev, [currentSelectedTask.id]: 'done' }))
-                  }
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[var(--border-default)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] text-sm font-medium transition-colors"
-                >
-                  <Check size={14} />
-                  <span>Mark Done</span>
-                </button>
-              </div>
-
-              {/* Detail Grid */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
-                {/* Status */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Status
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
-                    {currentSelectedTask.status === 'todo' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--border-strong)]" />
-                        <span>To Do</span>
-                      </>
-                    )}
-                    {currentSelectedTask.status === 'in-progress' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
-                        <span>In Progress</span>
-                      </>
-                    )}
-                    {currentSelectedTask.status === 'done' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        <span className="text-emerald-700">Done</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Priority */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Priority
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)] flex items-center gap-1.5 font-medium">
-                    {currentSelectedTask.priority === 'high' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-red-500" />
-                        <span className="text-red-600">High</span>
-                      </>
-                    )}
-                    {currentSelectedTask.priority === 'medium' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-                        <span className="text-amber-700">Medium</span>
-                      </>
-                    )}
-                    {currentSelectedTask.priority === 'low' && (
-                      <>
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--border-strong)]" />
-                        <span>Low</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Due Date */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Due Date
-                  </div>
-                  <div
-                    className={`text-sm ${
-                      currentSelectedTask.status !== 'done' &&
-                      currentSelectedTask.dueDate &&
-                      currentSelectedTask.dueDate < today
-                        ? 'text-red-600 font-semibold'
-                        : 'text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {currentSelectedTask.dueDate || 'No due date'}
-                    {currentSelectedTask.status !== 'done' &&
-                      currentSelectedTask.dueDate &&
-                      currentSelectedTask.dueDate < today && (
-                        <span className="text-xs ml-1 font-normal">(Overdue)</span>
-                      )}
-                  </div>
-                </div>
-
-                {/* Time Logged */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Time Logged
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)] font-mono">
-                    {currentSelectedTask.timeLogged}h
-                  </div>
-                </div>
-
-                {/* Assigned To */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Assigned To
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)] truncate">
-                    {currentSelectedTask.assignedToName}
-                  </div>
-                </div>
-
-                {/* Project */}
-                <div>
-                  <div className="text-xs font-medium uppercase tracking-wider text-[var(--text-muted)] mb-1">
-                    Project
-                  </div>
-                  <div className="text-sm text-[var(--text-primary)] truncate">
-                    {currentSelectedTask.projectName}
-                  </div>
-                </div>
-              </div>
-
-              {/* Description */}
-              {currentSelectedTask.description && (
-                <div className="border-t border-[var(--border-default)] pt-4 mt-4">
-                  <div className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-1">
-                    Description
-                  </div>
-                  <p className="text-sm text-[var(--text-secondary)] leading-relaxed mt-1">
-                    {currentSelectedTask.description}
-                  </p>
-                </div>
-              )}
-
-              {/* Time logged estimate progress */}
-              {currentSelectedTask.timeLogged > 0 && (
-                <div className="border-t border-[var(--border-default)] pt-4 mt-4">
-                  <div className="flex justify-between text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)] mb-2">
-                    <span>Progress</span>
-                    <span className="font-mono">{currentSelectedTask.timeLogged}h / 8h est.</span>
-                  </div>
-                  <div className="progress-track">
-                    <div className="progress-fill" style={{ width: `${Math.min(100, (currentSelectedTask.timeLogged / 8) * 100)}%` }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="glass-card p-8 sticky top-6 flex flex-col items-center justify-center text-center h-[320px] border border-[var(--border-default)] animate-fade-in">
-              <CheckCircle2 size={36} className="text-[var(--text-muted)] opacity-25 mb-4" />
-              <h3 className="text-sm font-semibold text-[var(--text-primary)]">Select a Task</h3>
-              <p className="text-xs text-[var(--text-muted)] mt-1.5 max-w-[220px] leading-relaxed">
-                Choose a task from the list to view its activity logs, manage priority levels, or start the active tracking timer.
-              </p>
-            </div>
-          )}
-        </div>
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
