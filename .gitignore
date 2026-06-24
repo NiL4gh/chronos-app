@@ -21,6 +21,9 @@ patch-*.js
 screenshot-app.*
 chrome_err.log
 
+# Claude Code internal directories
+.claude/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
