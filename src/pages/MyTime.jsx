@@ -74,12 +74,8 @@ export default function MyTime() {
 
   const currentRole = activeRole || role || 'admin';
 
-  const [focusTask, setFocusTask] = useState('');
-  const [focusProject, setFocusProject] = useState(projects[0]?.id || '');
-
   // State
   const [activeView, setActiveView] = useState('calendar');
-  const [calendarDayCount, setCalendarDayCount] = useState(7);
   const [showCalendarPanel, setShowCalendarPanel] = useState(false);
   const [navigationScale, setNavigationScale] = useState('week'); // 'week' | 'month'
   const currentUserId = 'u1'; // Priya Sharma for employee role
@@ -388,82 +384,35 @@ export default function MyTime() {
       );
     }
 
-    // ── HERO STOPPED STATE: Start Timer Cockpit HUD ─────────────────
+    // ── HERO STOPPED STATE ─────────────────────────────────
     return (
       <div className="glass-elevated rounded-2xl border border-[var(--border-default)] overflow-hidden shadow-md p-5 flex flex-col items-center">
-        {/* Row 1: Ready Monospace Display */}
+        {/* Timer display */}
         <div className="text-center select-none mb-5">
           <span className="text-5xl font-bold font-mono tracking-tight text-[var(--text-muted)] leading-none">
             00:00:00
           </span>
         </div>
 
-        {/* Row 2: Interactive Wings Grid */}
-        <div className="w-full grid grid-cols-3 items-center gap-4 pt-3 border-t border-[var(--border-default)]/30">
-          {/* Left Wing: Project picker & Telemetry Indicator */}
-          <div className="flex flex-col gap-1.5 justify-start">
-            <div className="flex items-center gap-1.5 shrink-0 select-none">
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: getProjectColor(focusProject) }}
-              />
-              <select
-                value={focusProject}
-                onChange={e => setFocusProject(e.target.value)}
-                className="text-xs font-bold text-[var(--text-secondary)] bg-transparent focus:outline-none cursor-pointer max-w-[180px] truncate"
-              >
-                {projects.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+        {/* Start button */}
+        <button
+          onClick={() => {
+            startTimer('Focus session', projects[0]?.id || '');
+            triggerToast('Timer started', 'Focus session', 'success');
+          }}
+          className="shrink-0 flex items-center justify-center p-3 rounded-full bg-amber-400 hover:bg-amber-300 transition-all duration-150 timer-cta-pulse press-on-click"
+          style={{
+            width: '42px',
+            height: '42px',
+            color: 'var(--text-primary)',
+            boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)',
+          }}
+          title="Start live focus timer"
+        >
+          <Play size={14} fill="currentColor" className="ml-0.5" />
+        </button>
 
-          {/* Center Stage: Start Action button */}
-          <div className="flex justify-center select-none">
-            <button
-              onClick={() => {
-                const label = focusTask.trim() || 'Focus session';
-                const proj = focusProject || projects[0]?.id || '';
-                startTimer(label, proj);
-                setFocusTask('');
-                triggerToast('Timer started', label, 'success');
-              }}
-              className="shrink-0 flex items-center justify-center p-3 rounded-full bg-amber-400 hover:bg-amber-300 transition-all duration-150 timer-cta-pulse press-on-click"
-              style={{
-                width: '42px',
-                height: '42px',
-                color: 'var(--text-primary)',
-                boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)',
-              }}
-              title="Start live focus timer"
-            >
-              <Play size={14} fill="currentColor" className="ml-0.5" />
-            </button>
-          </div>
-
-          {/* Right Wing: Task Description input */}
-          <div className="flex justify-end min-w-0 flex-1">
-            <input
-              type="text"
-              placeholder="What are you working on?"
-              value={focusTask}
-              onChange={e => setFocusTask(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter' && focusTask.trim()) {
-                  const label = focusTask.trim();
-                  const proj = focusProject || projects[0]?.id || '';
-                  startTimer(label, proj);
-                  setFocusTask('');
-                  triggerToast('Timer started', label, 'success');
-                }
-              }}
-              className="w-full max-w-[220px] h-9 bg-[var(--bg-sunken)] hover:bg-[var(--bg-surface)] border border-[var(--border-default)] focus:border-[var(--accent)] focus:bg-[var(--bg-surface)] rounded-xl px-3 text-xs font-semibold focus:outline-none text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-all shadow-sm"
-            />
-          </div>
-        </div>
-
-        {/* Quick re-use chips bar below */}
+        {/* Quick re-use chips */}
         {filteredLogs.length > 0 && (
           <div className="w-full mt-4 pt-3 border-t border-[var(--border-default)]/20 flex items-center gap-2 overflow-x-auto scrollbar-none select-none">
             <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] shrink-0">
@@ -804,13 +753,15 @@ export default function MyTime() {
   // Sub-renderer for Calendar View
   const renderCalendarView = () => {
     const ROW_HEIGHT = 60; // 60px per hour
-    const visibleDays = weekDays.slice(0, calendarDayCount);
+    const CALENDAR_START = 0; // midnight
+    const CALENDAR_HOURS = 24;
+    const visibleDays = weekDays;
     return (
       <div className="h-full w-full flex flex-col min-h-0 bg-[var(--bg-surface)] overflow-hidden">
         {/* Header row */}
         <div
           className="border-b border-[var(--border-default)] bg-[var(--bg-elevated)] shrink-0 select-none"
-          style={{ display: 'grid', gridTemplateColumns: `64px repeat(${calendarDayCount}, 1fr)` }}
+          style={{ display: 'grid', gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)` }}
         >
           <div className="w-16 h-12" /> {/* Empty corner */}
           {visibleDays.map((day, idx) => {
@@ -838,13 +789,13 @@ export default function MyTime() {
         <div className="flex-1 overflow-y-auto min-h-0 relative bg-[var(--bg-surface)]">
           <div
             className="relative"
-            style={{ display: 'grid', gridTemplateColumns: `64px repeat(${calendarDayCount}, 1fr)`, height: `${17 * ROW_HEIGHT}px` }}
+            style={{ display: 'grid', gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)`, height: `${CALENDAR_HOURS * ROW_HEIGHT}px` }}
           >
             {/* Left side hour labels */}
             <div className="relative h-full w-16 select-none border-r border-[var(--border-default)]">
-              {Array.from({ length: 17 }).map((_, i) => {
-                const h = 7 + i;
-                const displayHour = h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`;
+              {Array.from({ length: CALENDAR_HOURS }).map((_, i) => {
+                const h = CALENDAR_START + i;
+                const displayHour = h === 0 ? '12 AM' : h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`;
                 return (
                   <div
                     key={h}
@@ -859,7 +810,7 @@ export default function MyTime() {
 
             {/* Sub-grid of horizontal hour lines */}
             <div className="absolute left-16 right-0 top-0 bottom-0 pointer-events-none">
-              {Array.from({ length: 17 }).map((_, i) => (
+              {Array.from({ length: CALENDAR_HOURS }).map((_, i) => (
                 <div
                   key={i}
                   className="absolute left-0 right-0 border-b border-[var(--border-default)]/40"
@@ -883,7 +834,7 @@ export default function MyTime() {
                     const rect = e.currentTarget.getBoundingClientRect();
                     const clickY = e.clientY - rect.top;
                     const hourFraction = clickY / ROW_HEIGHT;
-                    const clickHour = Math.floor(hourFraction) + 7; // Calendar starts at 7 AM
+                    const clickHour = Math.floor(hourFraction) + CALENDAR_START;
                     const clickMin = Math.floor((hourFraction % 1) * 60);
 
                     // Round to nearest 15 minute interval
@@ -939,7 +890,7 @@ export default function MyTime() {
                       const endH = parseHour(log.endTime);
                       const duration = Number(log.duration) || Math.max(0.25, endH - startH);
                       return { log, startH, endH: startH + duration, duration };
-                    }).filter(e => e.startH < 24 && e.endH > 7);
+                    }).filter(e => e.startH < CALENDAR_START + CALENDAR_HOURS && e.endH > CALENDAR_START);
 
                     // Cluster overlapping entries and assign column indices
                     const withCols = [];
@@ -981,9 +932,11 @@ export default function MyTime() {
                     });
 
                     return sorted.map((entry, i) => {
-                      const { log, startH, endH, duration } = entry;
-                      const topOffset = (startH - 7) * ROW_HEIGHT;
-                      const blockHeight = duration * ROW_HEIGHT;
+                      const { log, startH, endH } = entry;
+                      const visibleStartH = Math.max(startH, CALENDAR_START);
+                      const visibleEndH = Math.min(endH, CALENDAR_START + CALENDAR_HOURS);
+                      const topOffset = (visibleStartH - CALENDAR_START) * ROW_HEIGHT;
+                      const blockHeight = (visibleEndH - visibleStartH) * ROW_HEIGHT;
                       const projectColor = getProjectColor(log.projectId);
                       const col = colAssigned[i];
                       const numCols = groupMaxCol[i];
@@ -1037,7 +990,7 @@ export default function MyTime() {
 
                   {/* Today's red/amber time line indicator */}
                   {isToday && (
-                    <CurrentTimeIndicator rowHeight={ROW_HEIGHT} />
+                    <CurrentTimeIndicator rowHeight={ROW_HEIGHT} calendarStart={CALENDAR_START} />
                   )}
                 </div>
               );
@@ -1250,116 +1203,92 @@ export default function MyTime() {
     <div className="flex flex-col h-full min-h-0 animate-fade-in relative -mx-6 -my-5">
 
       {/* ── Navigation Bar ───────────────────────────── */}
-      <div className="h-12 border-b border-[var(--border-default)] px-5 flex items-center justify-between bg-[var(--bg-surface)] shrink-0 select-none">
+      <div className="h-12 border-b border-[var(--border-default)] px-5 flex items-center gap-4 bg-[var(--bg-surface)] shrink-0 select-none">
 
-        {/* Left: range label + prev/next + date jump */}
-        <div className="flex items-center gap-3">
-          <div ref={dateJumpRef} className="relative flex items-center gap-2">
+        {/* Left cluster: ← [Week|Month] → */}
+        <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5 gap-0.5 shrink-0">
+          <button
+            onClick={goToPrev}
+            className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
+          >
+            <ChevronLeft size={13} strokeWidth={2.5} />
+          </button>
+          {['week', 'month'].map(scale => (
             <button
-              type="button"
-              onClick={() => setDateJumpOpen(v => !v)}
-              className="text-sm font-bold text-[var(--text-primary)] tracking-tight hover:text-[var(--accent-text)] transition-colors"
-              title="Jump to date"
+              key={scale}
+              onClick={() => {
+                setNavigationScale(scale);
+                if (scale === 'month') {
+                  setCurrentWeekStart(new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1));
+                } else {
+                  setCurrentWeekStart(getMonday(currentWeekStart));
+                }
+              }}
+              className={`px-2.5 h-7 text-[10px] font-semibold rounded-md transition-all capitalize ${
+                navigationScale === scale
+                  ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
+                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+              }`}
             >
-              {formatRangeLabel()}
+              {scale}
             </button>
-            {navigationScale === 'week' && (
-              <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded-md border border-[var(--border-default)]">
-                W{weekNumber}
-              </span>
-            )}
-            {dateJumpOpen && (
-              <div className="absolute top-full mt-2 left-0 z-50">
-                <DateTimePicker
-                  autoOpen
-                  value={currentWeekStart.toISOString().split('T')[0]}
-                  onChange={val => {
-                    const picked = new Date(val + 'T00:00:00');
-                    setCurrentWeekStart(navigationScale === 'month'
-                      ? new Date(picked.getFullYear(), picked.getMonth(), 1)
-                      : getMonday(picked)
-                    );
-                    setDateJumpOpen(false);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-
-          {/* Week / Month scale toggle */}
-          <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5">
-            {['week', 'month'].map(scale => (
-              <button
-                key={scale}
-                onClick={() => {
-                  setNavigationScale(scale);
-                  if (scale === 'month') {
-                    setCurrentWeekStart(new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1));
-                  } else {
-                    setCurrentWeekStart(getMonday(currentWeekStart));
-                  }
-                }}
-                className={`px-2.5 h-6 text-[10px] font-semibold rounded-md transition-all capitalize ${
-                  navigationScale === scale
-                    ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                }`}
-              >
-                {scale}
-              </button>
-            ))}
-          </div>
-
-          {/* Prev / Today / Next */}
-          <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5 gap-0.5">
-            <button
-              onClick={goToPrev}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
-            >
-              <ChevronLeft size={13} strokeWidth={2.5} />
-            </button>
-            {!isCurrentPeriod && (
-              <button
-                onClick={goToToday}
-                className="px-2 h-7 text-[10px] font-semibold rounded-md text-amber-700 hover:bg-[var(--bg-surface)] transition-all press-on-click"
-              >
-                Today
-              </button>
-            )}
-            <button
-              onClick={goToNext}
-              className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
-            >
-              <ChevronRight size={13} strokeWidth={2.5} />
-            </button>
-          </div>
+          ))}
+          <button
+            onClick={goToNext}
+            className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
+          >
+            <ChevronRight size={13} strokeWidth={2.5} />
+          </button>
         </div>
 
-        {/* Right: view switcher */}
-        <div className="flex items-center gap-2">
-          {/* Day-count controls — visible only in calendar view */}
-          {activeView === 'calendar' && (
-            <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5">
-              {[
-                { count: 1, label: 'Day' },
-                { count: 3, label: '3 Days' },
-                { count: 5, label: '5 Days' },
-                { count: 7, label: 'Week' },
-              ].map(({ count, label }) => (
-                <button
-                  key={count}
-                  onClick={() => setCalendarDayCount(count)}
-                  className={`px-2.5 h-6 text-[10px] font-semibold rounded-md transition-all ${
-                    calendarDayCount === count
-                      ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
-                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
+        {/* Center: date range label + jump + This Week/Month */}
+        <div ref={dateJumpRef} className="relative flex items-center gap-2 flex-1 min-w-0">
+          <button
+            type="button"
+            onClick={() => setDateJumpOpen(v => !v)}
+            className="text-sm font-bold text-[var(--text-primary)] tracking-tight hover:text-[var(--accent-text)] transition-colors truncate"
+            title="Jump to date"
+          >
+            {formatRangeLabel()}
+          </button>
+          {navigationScale === 'week' && (
+            <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded-md border border-[var(--border-default)] shrink-0">
+              W{weekNumber}
+            </span>
+          )}
+          {!isCurrentPeriod && (
+            <button
+              onClick={goToToday}
+              className="shrink-0 px-2 h-6 text-[10px] font-semibold rounded-md transition-all press-on-click"
+              style={{
+                color: 'var(--accent-text)',
+                background: 'var(--accent-subtle)',
+                border: '1px solid var(--accent-border)',
+              }}
+            >
+              {navigationScale === 'week' ? '↩ This Week' : '↩ This Month'}
+            </button>
+          )}
+          {dateJumpOpen && (
+            <div className="absolute top-full mt-2 left-0 z-50">
+              <DateTimePicker
+                autoOpen
+                value={currentWeekStart.toISOString().split('T')[0]}
+                onChange={val => {
+                  const picked = new Date(val + 'T00:00:00');
+                  setCurrentWeekStart(navigationScale === 'month'
+                    ? new Date(picked.getFullYear(), picked.getMonth(), 1)
+                    : getMonday(picked)
+                  );
+                  setDateJumpOpen(false);
+                }}
+              />
             </div>
           )}
+        </div>
+
+        {/* Right: view switcher + stats toggle + Log time */}
+        <div className="flex items-center gap-2 shrink-0">
           <div className="flex items-center bg-[var(--bg-sunken)] border border-[var(--border-default)] rounded-lg p-0.5">
             {[
               { key: 'list', icon: List, label: 'List' },
@@ -1382,7 +1311,6 @@ export default function MyTime() {
             ))}
           </div>
 
-          {/* Stats toggle button */}
           {activeView === 'list' && (
             <button
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
@@ -1391,13 +1319,12 @@ export default function MyTime() {
                   ? 'bg-[var(--bg-sunken)] border-[var(--border-strong)] text-[var(--text-primary)]'
                   : 'bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-sunken)] hover:text-[var(--text-primary)]'
               }`}
-              title={sidebarExpanded ? "Hide Stats Sidebar" : "Show Stats Sidebar"}
+              title={sidebarExpanded ? 'Hide Stats' : 'Show Stats'}
             >
               <Activity size={14} />
             </button>
           )}
 
-          {/* Add entry button */}
           <button
             onClick={() => setDrawerOpen(true)}
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold transition-all press-on-click select-none"
@@ -1592,7 +1519,7 @@ export default function MyTime() {
 }
 
 // CurrentTimeIndicator component
-function CurrentTimeIndicator({ rowHeight }) {
+function CurrentTimeIndicator({ rowHeight, calendarStart = 0 }) {
   const [offset, setOffset] = useState(-10);
 
   useEffect(() => {
@@ -1601,8 +1528,8 @@ function CurrentTimeIndicator({ rowHeight }) {
       const h = now.getHours();
       const m = now.getMinutes();
       const currentH = h + m / 60;
-      if (currentH >= 7 && currentH <= 24) {
-        setOffset((currentH - 7) * rowHeight);
+      if (currentH >= calendarStart && currentH <= calendarStart + 24) {
+        setOffset((currentH - calendarStart) * rowHeight);
       } else {
         setOffset(-10);
       }
@@ -1611,7 +1538,7 @@ function CurrentTimeIndicator({ rowHeight }) {
     calcOffset();
     const interval = setInterval(calcOffset, 60000);
     return () => clearInterval(interval);
-  }, [rowHeight]);
+  }, [rowHeight, calendarStart]);
 
   if (offset < 0) return null;
 

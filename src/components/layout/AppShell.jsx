@@ -10,7 +10,7 @@ import Input, { Select } from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import { projects, tasks, timeLogs, invoices } from '../../data/mockData.js';
-import { Clock } from 'lucide-react';
+import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 
 // ─── Role ───────────────────────────────────────────────
@@ -450,26 +450,158 @@ export default function AppShell() {
         </main>
       </div>
 
-      {/* Manual Time Entry Drawer */}
-      <SlideOutDrawer
-        isOpen={drawerOpen}
-        onClose={() => {
-          const { task, projectId, startTime, endTime } = drawerEntry;
-          const hasData = task || projectId || startTime || endTime;
-          if (hasData) {
-            setPendingClose(true);
-            return;
-          }
-          setDrawerOpen(false);
-          setPendingClose(false);
-          setDrawerEntry({
-            task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
-          });
-        }}
-        title="Log Time Entry"
-        headerAction={
-          !pendingClose ? (
-            <div className="flex items-center gap-2">
+      {/* Manual Time Entry Modal */}
+      {drawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          onClick={() => {
+            const { task, projectId, startTime, endTime } = drawerEntry;
+            if (task || projectId || startTime || endTime) {
+              setPendingClose(true);
+            } else {
+              setDrawerOpen(false);
+              setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-default)]">
+              <span className="text-sm font-bold text-[var(--text-primary)]">Log Time Entry</span>
+              <button
+                onClick={() => {
+                  const { task, projectId, startTime, endTime } = drawerEntry;
+                  if (task || projectId || startTime || endTime) {
+                    setPendingClose(true);
+                  } else {
+                    setDrawerOpen(false);
+                    setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                  }
+                }}
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-all"
+              >
+                <X size={14} />
+              </button>
+            </div>
+
+            {/* Modal body */}
+            <div className="px-5 py-5 space-y-5 overflow-y-auto">
+              {/* Discard confirmation banner */}
+              {pendingClose && (
+                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
+                  style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
+                  <span className="text-sm text-[var(--text-secondary)]">Discard unsaved entry?</span>
+                  <div className="flex gap-2 shrink-0">
+                    <Button variant="ghost" size="sm" onClick={() => setPendingClose(false)}>Keep editing</Button>
+                    <Button variant="danger" size="sm" onClick={() => {
+                      setPendingClose(false);
+                      setDrawerOpen(false);
+                      setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                    }}>Discard</Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Task Description */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+                  What did you work on?
+                </label>
+                <Input
+                  placeholder="e.g. Client call, Design review…"
+                  value={drawerEntry.task}
+                  onChange={e => setDrawerEntry(prev => ({ ...prev, task: e.target.value }))}
+                />
+              </div>
+
+              {/* Project */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
+                  Project
+                </label>
+                <Select
+                  className="w-full"
+                  value={drawerEntry.projectId}
+                  onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
+                >
+                  <option value="">— Select a project —</option>
+                  {projectList.map(p => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </Select>
+              </div>
+
+              {/* When */}
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
+                  When did you work?
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">Date</label>
+                    <div className="flex-1">
+                      <DateTimePicker
+                        value={drawerEntry.date}
+                        onChange={val => setDrawerEntry(prev => ({ ...prev, date: val }))}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">From</label>
+                    <div className="relative inline-flex items-center flex-1">
+                      <DateTimePicker
+                        mode="time"
+                        timeValue={drawerEntry.startTime}
+                        onTimeChange={val => setDrawerEntry(prev => ({ ...prev, startTime: val }))}
+                      />
+                    </div>
+                    <span className="text-sm text-[var(--text-muted)] px-1">–</span>
+                    <label className="text-xs text-[var(--text-secondary)] shrink-0 mr-2">to</label>
+                    <div className="relative inline-flex items-center flex-1">
+                      <DateTimePicker
+                        mode="time"
+                        timeValue={drawerEntry.endTime}
+                        onTimeChange={val => setDrawerEntry(prev => ({ ...prev, endTime: val }))}
+                      />
+                    </div>
+                  </div>
+                  {(() => {
+                    const { startTime, endTime } = drawerEntry;
+                    if (!startTime || !endTime) return null;
+                    const [sH, sM] = startTime.split(':').map(Number);
+                    const [eH, eM] = endTime.split(':').map(Number);
+                    const sMin = sH * 60 + sM;
+                    const eMin = eH * 60 + eM;
+                    if (eMin > sMin) {
+                      const diff = eMin - sMin;
+                      const durationString = Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff % 60}m`;
+                      return (
+                        <div style={{ paddingLeft: '4.5rem' }}>
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                            style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent-text)' }}>
+                            <Clock size={11} className="shrink-0" />
+                            <span>{durationString}</span>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return (
+                      <div style={{ paddingLeft: '4.5rem' }}>
+                        <p className="text-xs text-red-500 mt-1">End time must be after start time</p>
+                      </div>
+                    );
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* Modal footer */}
+            <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-default)]">
               <Button variant="ghost" size="sm" onClick={() => {
                 setPendingClose(false);
                 setDrawerOpen(false);
@@ -494,7 +626,6 @@ export default function AppShell() {
                   let diffMin = endMin - startMin;
                   if (diffMin < 0) diffMin += 1440;
                   const duration = Number((diffMin / 60).toFixed(2));
-
                   const newLog = {
                     id: `log-${Date.now()}`,
                     userId: 'u1',
@@ -508,7 +639,6 @@ export default function AppShell() {
                     source: 'manual',
                     billable: true,
                   };
-
                   setLogs(prev => [newLog, ...prev]);
                   setDrawerOpen(false);
                   setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
@@ -518,144 +648,9 @@ export default function AppShell() {
                 Save Entry
               </Button>
             </div>
-          ) : null
-        }
-      >
-        <div className="space-y-5">
-          {/* Discard confirmation banner */}
-          {pendingClose && (
-            <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-              style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
-              <span className="text-sm text-[var(--text-secondary)]">Discard unsaved entry?</span>
-              <div className="flex gap-2 shrink-0">
-                <Button variant="ghost" size="sm" onClick={() => setPendingClose(false)}>Keep editing</Button>
-                <Button variant="danger" size="sm" onClick={() => {
-                  setPendingClose(false);
-                  setDrawerOpen(false);
-                  setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-                }}>Discard</Button>
-              </div>
-            </div>
-          )}
-
-          {/* FIELD GROUP 1 — Task Description */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-              What did you work on?
-            </label>
-            <Input
-              placeholder="e.g. Client call, Design review…"
-              value={drawerEntry.task}
-              onChange={e => setDrawerEntry(prev => ({ ...prev, task: e.target.value }))}
-            />
-          </div>
-
-          {/* FIELD GROUP 2 — Project */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-              Project
-            </label>
-            <Select
-              className="w-full"
-              value={drawerEntry.projectId}
-              onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
-            >
-              <option value="">— Select a project —</option>
-              {projectList.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </Select>
-          </div>
-
-          {/* FIELD GROUP 3 — WHEN DID YOU WORK? */}
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-2">
-              When did you work?
-            </label>
-
-            <div className="space-y-3">
-              {/* Date row */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">
-                  Date
-                </label>
-                <div className="flex-1">
-                  <DateTimePicker
-                    value={drawerEntry.date}
-                    onChange={val => setDrawerEntry(prev => ({ ...prev, date: val }))}
-                  />
-                </div>
-              </div>
-
-              {/* Time range row */}
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">
-                  From
-                </label>
-                <div className="relative inline-flex items-center flex-1">
-                  <DateTimePicker
-                    mode="time"
-                    timeValue={drawerEntry.startTime}
-                    onTimeChange={val => setDrawerEntry(prev => ({ ...prev, startTime: val }))}
-                  />
-                </div>
-                <span className="text-sm text-[var(--text-muted)] px-1">–</span>
-                <label className="text-xs text-[var(--text-secondary)] shrink-0 mr-2">
-                  to
-                </label>
-                <div className="relative inline-flex items-center flex-1">
-                  <DateTimePicker
-                    mode="time"
-                    timeValue={drawerEntry.endTime}
-                    onTimeChange={val => setDrawerEntry(prev => ({ ...prev, endTime: val }))}
-                  />
-                </div>
-              </div>
-
-              {/* Duration Preview and Validation */}
-              {(() => {
-                const { startTime, endTime } = drawerEntry;
-                if (!startTime || !endTime) return null;
-
-                const [startH, startM] = startTime.split(':').map(Number);
-                const [endH, endM] = endTime.split(':').map(Number);
-                const startMin = startH * 60 + startM;
-                const endMin = endH * 60 + endM;
-
-                if (endMin > startMin) {
-                  const diff = endMin - startMin;
-                  const hours = Math.floor(diff / 60);
-                  const mins = diff % 60;
-                  const durationString = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-                  return (
-                    <div style={{ paddingLeft: '4.5rem' }}>
-                      <div
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-                        style={{
-                          background: 'var(--accent-subtle)',
-                          border: '1px solid var(--accent-border)',
-                          color: 'var(--accent-text)',
-                        }}
-                      >
-                        <Clock size={11} className="shrink-0" />
-                        <span>{durationString}</span>
-                      </div>
-                    </div>
-                  );
-                } else {
-                  return (
-                    <div style={{ paddingLeft: '4.5rem' }}>
-                      <p className="text-xs text-red-500 mt-1">
-                        End time must be after start time
-                      </p>
-                    </div>
-                  );
-                }
-              })()}
-            </div>
           </div>
         </div>
-      </SlideOutDrawer>
+      )}
 
       {/* Command Palette */}
       {commandPaletteOpen && (

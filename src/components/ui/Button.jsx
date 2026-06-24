@@ -11,7 +11,7 @@ const Button = forwardRef(function Button(
   ref
 ) {
   const [hover, setHover] = useState(false);
-  const baseClasses = 'inline-flex items-center gap-2 rounded-md font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
+  const baseClasses = 'inline-flex items-center gap-2 rounded-lg font-medium transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed';
   
   const getStyles = () => {
     switch (variant) {

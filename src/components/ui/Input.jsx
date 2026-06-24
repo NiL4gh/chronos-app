@@ -10,7 +10,7 @@ export default function Input({ className = '', ...props }) {
         background: 'var(--bg-surface)',
         border: `1px solid ${focused ? 'var(--border-focus)' : 'var(--border-default)'}`,
         color: 'var(--text-primary)',
-        colorScheme: 'light',
+        colorScheme: 'inherit',
         boxShadow: focused ? '0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none',
       }}
       onFocus={(e) => {
@@ -41,6 +41,7 @@ export function Select({ children, className = '', ...props }) {
         background: 'var(--bg-surface)',
         border: `1px solid ${focused ? 'var(--border-focus)' : 'var(--border-default)'}`,
         color: 'var(--text-primary)',
+        colorScheme: 'inherit',
         boxShadow: focused ? '0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent)' : 'none',
       }}
       onFocus={(e) => {

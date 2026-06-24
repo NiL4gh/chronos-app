@@ -270,7 +270,7 @@ body {
 .progress-fill {
   height: 100%;
   border-radius: 9999px;
-  background: var(--text-primary);
+  background: var(--accent);
   transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -310,7 +310,7 @@ body {
 .date-pill.active {
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(245,158,11,0.35);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .date-pill.today:not(.active) {
@@ -329,7 +329,7 @@ body {
 .date-pill.active .day-label,
 .date-pill.active .date-num,
 .date-pill.active .hour-count {
-  color: white;
+  color: var(--accent-on);
 }
 
 .date-pill.today:not(.active) .day-label,
@@ -363,7 +363,7 @@ body {
 .date-pill .pill-bar-fill {
   height: 100%;
   border-radius: 9999px;
-  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   transition: width 0.4s ease;
 }
 
@@ -554,7 +554,7 @@ body {
   position: absolute;
   inset: -2px;
   border-radius: 10px;
-  border: 1.5px solid rgba(245,158,11,0.45);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 45%, transparent);
   animation: pulse-ring 2.5s ease-out infinite;
   pointer-events: none;
 }
@@ -579,7 +579,26 @@ body {
    ============================================================ */
 input[type="date"],
 input[type="time"],
-input[type="datetime-local"] { color-scheme: dark; }
+input[type="datetime-local"] { color-scheme: inherit; }
+
+/* ── Select elements (global fallback for raw <select>) ── */
+select {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  color: var(--text-primary);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  padding: 0.375rem 0.75rem;
+  outline: none;
+  color-scheme: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+select:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 20%, transparent);
+}
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   display: none;

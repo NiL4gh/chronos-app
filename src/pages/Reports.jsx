@@ -1,18 +1,14 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  Download, Filter, TrendingUp, Clock, DollarSign, Users, 
-  ChevronDown, ChevronUp, X, CheckCircle2, FileText
+import {
+  Download, Filter, TrendingUp, Clock,
+  X, CheckCircle2, FileText
 } from 'lucide-react';
 import Button from '../components/ui/Button';
-import SplitButton from '../components/ui/SplitButton';
-import Badge from '../components/ui/Badge';
 import Input, { Select } from '../components/ui/Input';
 import DateTimePicker from '../components/ui/DateTimePicker';
 import { useOutletContext } from 'react-router-dom';
 import TrackingSourceBadge from '../components/ui/TrackingSourceBadge';
-import EmptyState from '../components/ui/EmptyState';
-
-import { teamMembers, projects, timeLogs, billingRates } from '../data/mockData';
+import { teamMembers, projects, billingRates } from '../data/mockData';
 
 export default function Reports() {
   const { triggerToast, role, logs } = useOutletContext();
@@ -26,39 +22,33 @@ export default function Reports() {
   // Filter State
   const [filterStart, setFilterStart] = useState(defaultStart);
   const [filterEnd, setFilterEnd] = useState(defaultEnd);
-  const [filterMember, setFilterMember] = useState('all');
   const [filterProject, setFilterProject] = useState('all');
 
   // Interactive States
   const [expandedMetric, setExpandedMetric] = useState(null);
   const [selectedChartDate, setSelectedChartDate] = useState(null);
   const [selectedDonutSegment, setSelectedDonutSegment] = useState(null);
-  const [expandedMembersTable, setExpandedMembersTable] = useState({});
-  const [selectedReportsMember, setSelectedReportsMember] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
-  const [memberPanelTab, setMemberPanelTab] = useState('Overview');
 
-  // Options — sentinel value is 'all' to match filter logic
-  const memberOptions = [{ value: 'all', label: 'All Members' }, ...teamMembers.map(m => ({ value: m.id, label: m.name }))];
+  // Options
   const projectOptions = [{ value: 'all', label: 'All Projects' }, ...projects.map(p => ({ value: p.id, label: p.name }))];
 
-  // Filtered Logs
+  // Filtered Logs — current user only
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
+      if (log.userId !== 'u1') return false;
       if (log.date < filterStart || log.date > filterEnd) return false;
-      if (filterMember !== 'all' && log.userId !== filterMember) return false;
       if (filterProject !== 'all' && log.projectId !== filterProject) return false;
       return true;
     });
-  }, [logs, filterStart, filterEnd, filterMember, filterProject]);
+  }, [logs, filterStart, filterEnd, filterProject]);
 
   // Metrics
   const totalHours = filteredLogs.reduce((acc, log) => acc + log.duration, 0);
   const billableLogs = filteredLogs.filter(log => log.billable);
   const billableHours = billableLogs.reduce((acc, log) => acc + log.duration, 0);
   const revenue = billableHours * (billingRates?.default || 95);
-  const activeMembersSet = new Set(filteredLogs.map(log => log.userId));
-  const activeMembersCount = activeMembersSet.size;
+  const myEntriesCount = filteredLogs.length;
 
   // Bar Chart Data (Daily Hours)
   const dailyData = useMemo(() => {
@@ -66,16 +56,16 @@ export default function Reports() {
     // ensure all dates in range are represented or just ones with data?
     // the prompt says "One bar per day in filteredLogs date range. Max 14 bars."
     filteredLogs.forEach(log => {
-      if (!map[log.date]) map[log.date] = { hours: 0, members: new Set() };
+      if (!map[log.date]) map[log.date] = { hours: 0, entries: 0 };
       map[log.date].hours += log.duration;
-      map[log.date].members.add(log.userId);
+      map[log.date].entries += 1;
     });
     let sortedDates = Object.keys(map).sort();
-    if (sortedDates.length > 14) sortedDates = sortedDates.slice(-14); // Max 14
+    if (sortedDates.length > 14) sortedDates = sortedDates.slice(-14);
     return sortedDates.map(date => ({
       date,
       hours: map[date].hours,
-      membersCount: map[date].members.size
+      entries: map[date].entries,
     }));
   }, [filteredLogs]);
 
@@ -88,32 +78,6 @@ export default function Reports() {
   const circumference = 2 * Math.PI * radius;
   const billableDashoffset = circumference * (1 - billablePct / 100);
 
-  // Table Data (grouped by member)
-  const logsForTable = useMemo(() => {
-    return filteredLogs.filter(log => {
-      if (selectedDonutSegment === 'billable' && !log.billable) return false;
-      if (selectedDonutSegment === 'non-billable' && log.billable) return false;
-      return true;
-    });
-  }, [filteredLogs, selectedDonutSegment]);
-
-  const groupedByMember = useMemo(() => {
-    const map = {};
-    logsForTable.forEach(log => {
-      if (!map[log.userId]) {
-        const mem = teamMembers.find(m => m.id === log.userId);
-        map[log.userId] = {
-          member: mem,
-          logs: [],
-          totalHours: 0
-        };
-      }
-      map[log.userId].logs.push(log);
-      map[log.userId].totalHours += log.duration;
-    });
-    return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
-  }, [logsForTable]);
-
   const groupedByProject = useMemo(() => {
     const map = {};
     filteredLogs.forEach(log => {
@@ -124,19 +88,15 @@ export default function Reports() {
           color: proj?.color || 'var(--accent)',
           totalHours: 0,
           billableHours: 0,
-          memberIds: new Set(),
+          entryCount: 0,
         };
       }
       map[log.projectId].totalHours += log.duration;
       if (log.billable) map[log.projectId].billableHours += log.duration;
-      map[log.projectId].memberIds.add(log.userId);
+      map[log.projectId].entryCount += 1;
     });
     return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
   }, [filteredLogs]);
-
-  const toggleMemberTable = (id) => {
-    setExpandedMembersTable(prev => ({ ...prev, [id]: !prev[id] }));
-  };
 
   const handleExportCSV = () => {
     const headers = ['Date', 'Member', 'Project', 'Task', 'Duration (h)',
@@ -367,9 +327,6 @@ export default function Reports() {
     }, 500);
   };
 
-  const selectedMemberData = selectedReportsMember ? teamMembers.find(m => m.id === selectedReportsMember) : null;
-  const selectedMemberLogs = selectedMemberData ? filteredLogs.filter(l => l.userId === selectedMemberData.id) : [];
-
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* MAIN CONTENT AREA */}
@@ -377,7 +334,7 @@ export default function Reports() {
         <div className="mb-6">
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Reports</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
-            Analyse team performance and export time data.
+            Analyse your tracked hours and export time data.
           </p>
         </div>
 
@@ -432,13 +389,7 @@ export default function Reports() {
             </div>
             
             <div className="w-px h-8 bg-[var(--border-default)] hidden md:block mb-1" />
-            
-            <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
-              <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Member</label>
-              <Select value={filterMember} onChange={e => setFilterMember(e.target.value)}>
-                {memberOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </Select>
-            </div>
+
             <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Project</label>
               <Select value={filterProject} onChange={e => setFilterProject(e.target.value)}>
@@ -472,7 +423,7 @@ export default function Reports() {
           {[
             { id: 'total', label: 'Total Hours', val: totalHours.toFixed(1), icon: Clock },
             { id: 'billable', label: 'Billable Hours', val: billableHours.toFixed(1), icon: TrendingUp },
-            { id: 'active', label: 'Active Members', val: activeMembersCount, icon: Users },
+            { id: 'entries', label: 'My Entries', val: myEntriesCount, icon: CheckCircle2 },
           ].map(metric => (
             <div 
               key={metric.id} 
@@ -496,7 +447,7 @@ export default function Reports() {
             <p className="text-sm text-[var(--text-secondary)]">
               {expandedMetric === 'total' && "Total hours logged across all applied filters in the specified period."}
               {expandedMetric === 'billable' && `This represents ${billablePct}% of total logged time.`}
-              {expandedMetric === 'active' && "Count of unique team members who have logged time matching filters."}
+              {expandedMetric === 'entries' && "Number of individual time entries matching the current filters."}
             </p>
           </div>
         )}
@@ -522,7 +473,7 @@ export default function Reports() {
                     className="absolute -top-10 scale-0 group-hover:scale-100 transition-transform origin-bottom text-xs px-2 py-1 rounded shadow-xl whitespace-nowrap z-20 pointer-events-none"
                     style={{ background: 'var(--text-primary)', color: 'var(--bg-surface)' }}
                   >
-                    {d.date} — {d.hours.toFixed(1)}h logged by {d.membersCount} members
+                    {d.date} — {d.hours.toFixed(1)}h across {d.entries} {d.entries === 1 ? 'entry' : 'entries'}
                   </div>
                   
                   {/* Bar */}
@@ -646,101 +597,6 @@ export default function Reports() {
           </div>
         </div>
 
-        {/* DETAILED BREAKDOWN TABLE */}
-        <div className="mt-6 border-t border-[var(--border-default)] pt-4 flex flex-col">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Detailed Breakdown</h2>
-          </div>
-          
-          <div className="overflow-x-auto w-full">
-            <div className="divide-y divide-[var(--border-default)] min-w-[800px]">
-              {groupedByMember.length === 0 ? (
-              <div className="py-12">
-                <EmptyState
-                  icon={Filter}
-                  title="No data matches your filters"
-                  description="Try adjusting the date range, member, or project filters above to see results."
-                />
-              </div>
-            ) : groupedByMember.map(group => {
-              const mem = group.member;
-              const isExpanded = expandedMembersTable[mem?.id];
-              const utilPct = mem ? (group.totalHours / Math.max(1, (mem.hoursWeek || 40))) * 100 : 0;
-              
-              return (
-                <div key={mem?.id || 'unknown'} className="flex flex-col text-sm">
-                  {/* Member Section Header */}
-                  <div className="flex items-center justify-between px-6 py-3 bg-[var(--bg-sunken)] hover:bg-[var(--bg-sunken)] transition-colors cursor-pointer group" onClick={() => toggleMemberTable(mem?.id)}>
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-[var(--text-secondary)] text-xs shrink-0">
-                        {mem?.name.split(' ').map(n=>n[0]).join('')}
-                      </div>
-                      <div 
-                        className="font-semibold text-[var(--text-primary)] hover:text-amber-500 transition-colors"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedReportsMember(selectedReportsMember === mem?.id ? null : mem?.id);
-                        }}
-                      >
-                        {mem?.name || 'Unknown Member'}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="flex flex-col items-end">
-                        <span className="font-mono font-bold text-[var(--text-primary)]">{group.totalHours.toFixed(1)}h</span>
-                        <span className="text-[10px] text-[var(--text-secondary)] uppercase">Logged</span>
-                      </div>
-                      <div className="hidden sm:flex flex-col items-end">
-                        <span className="font-mono text-[var(--text-primary)]">{utilPct.toFixed(0)}%</span>
-                        <span className="text-[10px] text-[var(--text-secondary)] uppercase">Utilization</span>
-                      </div>
-                      <div className="text-[var(--text-muted)]">
-                        {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Entries */}
-                  {isExpanded && (
-                    <div className="divide-y divide-[var(--border-default)]/50 bg-[var(--bg-base)]">
-                      {group.logs.map(log => {
-                        const proj = projects.find(p => p.id === log.projectId);
-                        return (
-                          <div key={log.id} className="flex items-center justify-between px-8 py-3 hover:bg-[var(--bg-sunken)] transition-colors">
-                            <div className="flex items-center gap-3 min-w-0 flex-1 pr-4">
-                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: proj?.color || '#ccc' }}></span>
-                              <span className="truncate text-[var(--text-primary)] font-medium">{log.task}</span>
-                            </div>
-                            <div className="flex items-center gap-6 shrink-0">
-                              <span className="text-[var(--text-secondary)] hidden md:block">{log.date}</span>
-                              <span className="font-mono text-[var(--text-secondary)] hidden sm:block">{log.startTime}-{log.endTime}</span>
-                              <TrackingSourceBadge source={log.source} />
-                              <div className="flex items-center gap-2 w-16 justify-end">
-                                <span className="font-mono font-semibold text-[var(--text-primary)]">{log.duration.toFixed(1)}h</span>
-                                <span className={`w-1.5 h-1.5 rounded-full ${log.billable ? 'bg-emerald-500' : 'bg-transparent'}`}></span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            </div>
-          </div>
-
-          {/* TOTALS ROW */}
-          <div className="px-6 py-4 bg-[var(--bg-sunken)] border border-[var(--border-default)] font-semibold flex flex-col sm:flex-row sm:justify-between items-start sm:items-center text-sm gap-4 sm:gap-0 rounded-b-xl">
-            <span className="text-[var(--text-secondary)] uppercase tracking-wider text-xs">Total</span>
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-8 items-start sm:items-center">
-              <span className="font-mono text-[var(--text-primary)]">{totalHours.toFixed(1)}h</span>
-              <span className="font-mono text-[var(--text-primary)]">{billableHours.toFixed(1)}h billable</span>
-            </div>
-          </div>
-        </div>
-
         {/* PROJECT BREAKDOWN TABLE */}
         <div className="glass-card overflow-hidden animate-fade-in">
           <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
@@ -754,7 +610,7 @@ export default function Reports() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-elevated)' }}>
-                  {['PROJECT', 'TRACKED', 'BILLABLE', 'MEMBERS', 'BILLABLE %'].map(col => (
+                  {['PROJECT', 'TRACKED', 'BILLABLE', 'ENTRIES', 'BILLABLE %'].map(col => (
                     <th
                       key={col}
                       className="text-left px-6 py-3 text-[10px] font-semibold uppercase tracking-widest"
@@ -766,7 +622,7 @@ export default function Reports() {
                 </tr>
               </thead>
               <tbody>
-                {groupedByProject.map(({ name, color, totalHours: projHours, billableHours: projBillable, memberIds }) => {
+                {groupedByProject.map(({ name, color, totalHours: projHours, billableHours: projBillable, entryCount }) => {
                   const billablePct = projHours > 0 ? Math.round((projBillable / projHours) * 100) : 0;
                   return (
                     <tr
@@ -789,7 +645,7 @@ export default function Reports() {
                         {projBillable.toFixed(1)}h
                       </td>
                       <td className="px-6 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                        {memberIds.size}
+                        {entryCount}
                       </td>
                       <td className="px-6 py-3">
                         <div className="flex items-center gap-2">
@@ -823,102 +679,6 @@ export default function Reports() {
 
       </div>
 
-      {/* RIGHT SIDE INLINE SPLIT PANEL (Member Details) */}
-      {selectedReportsMember && selectedMemberData && (
-        <div className="w-80 flex-shrink-0 border-l border-[var(--border-default)] bg-[var(--bg-surface)] overflow-y-auto animate-fade-in flex flex-col z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.05)] relative">
-          <div className="p-4 border-b border-[var(--border-default)] flex justify-between items-center sticky top-0 bg-[var(--bg-surface)] z-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-[var(--border-default)] flex items-center justify-center font-bold text-[var(--text-secondary)] shrink-0">
-                {selectedMemberData.name.split(' ').map(n=>n[0]).join('')}
-              </div>
-              <div>
-                <h3 className="font-bold text-[var(--text-primary)]">{selectedMemberData.name}</h3>
-                <p className="text-xs text-[var(--text-secondary)]">{selectedMemberData.role}</p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setSelectedReportsMember(null)}
-              className="p-1.5 rounded-full hover:bg-[var(--border-default)] dark:hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] transition-colors"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex border-b border-[var(--border-default)]">
-            <button
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${memberPanelTab === 'Overview' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
-              onClick={() => setMemberPanelTab('Overview')}
-            >
-              Overview
-            </button>
-            <button
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${memberPanelTab === 'Time' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
-              onClick={() => setMemberPanelTab('Time')}
-            >
-              Time Breakdown
-            </button>
-          </div>
-
-          <div className="p-4 flex-1">
-            {memberPanelTab === 'Overview' ? (
-              <div className="space-y-6">
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--text-secondary)]">Total Filtered Hours</span>
-                    <span className="font-mono font-semibold text-[var(--text-primary)]">{selectedMemberLogs.reduce((a,l)=>a+l.duration,0).toFixed(1)}h</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-[var(--text-secondary)]">Billable Hours</span>
-                    <span className="font-mono font-semibold text-emerald-500">{selectedMemberLogs.filter(l=>l.billable).reduce((a,l)=>a+l.duration,0).toFixed(1)}h</span>
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Capacity Utilization</h4>
-                  <div className="w-full h-2 rounded-full bg-[var(--border-default)] overflow-hidden">
-                    <div 
-                      className="h-full bg-amber-500 rounded-full" 
-                      style={{ width: `${Math.min(100, (selectedMemberLogs.reduce((a,l)=>a+l.duration,0) / (selectedMemberData.availableHoursPerWeek || 40)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <h4 className="text-xs font-bold text-[var(--text-secondary)] uppercase tracking-wider mb-2">Projects in Period</h4>
-                  <div className="space-y-2">
-                    {Array.from(new Set(selectedMemberLogs.map(l => l.projectId))).map(pid => {
-                      const proj = projects.find(p => p.id === pid);
-                      const projHours = selectedMemberLogs.filter(l => l.projectId === pid).reduce((a,l)=>a+l.duration,0);
-                      return (
-                        <div key={pid} className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: proj?.color || '#ccc' }}></span>
-                            <span className="text-[var(--text-secondary)]">{proj?.name || pid}</span>
-                          </div>
-                          <span className="font-mono text-[var(--text-primary)]">{projHours.toFixed(1)}h</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {selectedMemberLogs.map(log => (
-                  <div key={log.id} className="p-3 bg-[var(--bg-sunken)] rounded-lg border border-[var(--border-default)]">
-                    <p className="font-medium text-sm text-[var(--text-primary)] mb-1">{log.task}</p>
-                    <div className="flex justify-between items-center text-xs text-[var(--text-secondary)]">
-                      <span>{log.date}</span>
-                      <span className="font-mono">{log.duration}h</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -19,8 +19,8 @@ const STATUS_PILL = {
   offline: { variant: 'neutral', label: 'Offline' },
 };
 const DOT_COLOR = {
-  active:  '#10b981',
-  idle:    '#f59e0b',
+  active:  'var(--success-text)',
+  idle:    'var(--warning-text)',
   offline: 'var(--text-disabled)',
 };
 

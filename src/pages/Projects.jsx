@@ -159,11 +159,11 @@ function ProjectCard({ project, selected, onSelect }) {
 
         {/* Due date */}
         <div className="flex items-center gap-1.5">
-          <Calendar size={14} style={{ color: overdue ? '#dc2626' : dueSoon ? 'var(--accent)' : 'var(--text-disabled)' }} />
+          <Calendar size={14} style={{ color: overdue ? 'var(--danger-text)' : dueSoon ? 'var(--accent)' : 'var(--text-disabled)' }} />
           <span
             className="text-xs"
             style={{
-              color: overdue ? '#dc2626' : dueSoon ? 'var(--accent)' : 'var(--text-muted)',
+              color: overdue ? 'var(--danger-text)' : dueSoon ? 'var(--accent)' : 'var(--text-muted)',
               fontWeight: (overdue || dueSoon) ? '600' : '500',
             }}
           >
