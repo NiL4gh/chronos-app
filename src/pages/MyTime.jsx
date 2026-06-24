@@ -78,7 +78,8 @@ export default function MyTime() {
   const [focusProject, setFocusProject] = useState(projects[0]?.id || '');
 
   // State
-  const [activeView, setActiveView] = useState('list');
+  const [activeView, setActiveView] = useState('calendar');
+  const [calendarDayCount, setCalendarDayCount] = useState(7);
   const [showCalendarPanel, setShowCalendarPanel] = useState(false);
   const [navigationScale, setNavigationScale] = useState('week'); // 'week' | 'month'
   const currentUserId = 'u1'; // Priya Sharma for employee role
@@ -244,6 +245,9 @@ export default function MyTime() {
     if (navigationScale === 'month') {
       return currentWeekStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
     }
+    const now = getMonday(new Date());
+    const isCurrentWeek = currentWeekStart.getTime() === now.getTime();
+    if (isCurrentWeek) return 'This week';
     const start = weekDays[0];
     const end = weekDays[6];
     if (!start || !end) return '';
@@ -253,7 +257,6 @@ export default function MyTime() {
     const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
     const endDay = end.getDate();
     const endYear = end.getFullYear();
-
     if (startYear !== endYear) {
       return `${startMonth} ${startDay}, ${startYear} – ${endMonth} ${endDay}, ${endYear}`;
     } else if (startMonth !== endMonth) {
@@ -801,12 +804,16 @@ export default function MyTime() {
   // Sub-renderer for Calendar View
   const renderCalendarView = () => {
     const ROW_HEIGHT = 60; // 60px per hour
+    const visibleDays = weekDays.slice(0, calendarDayCount);
     return (
       <div className="h-full w-full flex flex-col min-h-0 bg-[var(--bg-surface)] overflow-hidden">
         {/* Header row */}
-        <div className="grid grid-cols-[64px_repeat(7,_1fr)] border-b border-[var(--border-default)] bg-[var(--bg-elevated)] shrink-0 select-none">
+        <div
+          className="border-b border-[var(--border-default)] bg-[var(--bg-elevated)] shrink-0 select-none"
+          style={{ display: 'grid', gridTemplateColumns: `64px repeat(${calendarDayCount}, 1fr)` }}
+        >
           <div className="w-16 h-12" /> {/* Empty corner */}
-          {weekDays.map((day, idx) => {
+          {visibleDays.map((day, idx) => {
             const dateStr = day.toISOString().split('T')[0];
             const isSelected = selectedDate === dateStr;
             const isToday = day.toDateString() === new Date().toDateString();
@@ -829,7 +836,10 @@ export default function MyTime() {
 
         {/* Scrollable Time Grid */}
         <div className="flex-1 overflow-y-auto min-h-0 relative bg-[var(--bg-surface)]">
-          <div className="relative grid grid-cols-[64px_repeat(7,_1fr)]" style={{ height: `${17 * ROW_HEIGHT}px` }}>
+          <div
+            className="relative"
+            style={{ display: 'grid', gridTemplateColumns: `64px repeat(${calendarDayCount}, 1fr)`, height: `${17 * ROW_HEIGHT}px` }}
+          >
             {/* Left side hour labels */}
             <div className="relative h-full w-16 select-none border-r border-[var(--border-default)]">
               {Array.from({ length: 17 }).map((_, i) => {
@@ -858,8 +868,8 @@ export default function MyTime() {
               ))}
             </div>
 
-            {/* Columns for the 7 days */}
-            {weekDays.map((day, colIdx) => {
+            {/* Columns for the visible days */}
+            {visibleDays.map((day, colIdx) => {
               const dateStr = day.toISOString().split('T')[0];
               const isSelected = selectedDate === dateStr;
               const isToday = day.toDateString() === new Date().toDateString();
@@ -991,6 +1001,9 @@ export default function MyTime() {
                             width: `calc(${colW}% - ${gap * 2}px)`,
                             backgroundColor: `${projectColor}20`,
                             borderLeft: `3px solid ${projectColor}`,
+                            backgroundImage: log.source === 'manual'
+                              ? 'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px)'
+                              : undefined,
                             zIndex: 10,
                             overflow: 'hidden',
                           }}
@@ -1312,6 +1325,29 @@ export default function MyTime() {
 
         {/* Right: view switcher */}
         <div className="flex items-center gap-2">
+          {/* Day-count controls — visible only in calendar view */}
+          {activeView === 'calendar' && (
+            <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5">
+              {[
+                { count: 1, label: 'Day' },
+                { count: 3, label: '3 Days' },
+                { count: 5, label: '5 Days' },
+                { count: 7, label: 'Week' },
+              ].map(({ count, label }) => (
+                <button
+                  key={count}
+                  onClick={() => setCalendarDayCount(count)}
+                  className={`px-2.5 h-6 text-[10px] font-semibold rounded-md transition-all ${
+                    calendarDayCount === count
+                      ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex items-center bg-[var(--bg-sunken)] border border-[var(--border-default)] rounded-lg p-0.5">
             {[
               { key: 'list', icon: List, label: 'List' },
