@@ -9,12 +9,12 @@ import {
 import Avatar from '../ui/Avatar.jsx';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D', section: 'General',   hidden: true },
   { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M', section: 'General' },
-  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false, section: 'Workspace', hidden: true },
-  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: true,  shortcut: 'G T', section: 'Workspace', hidden: true },
-  { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P', section: 'Workspace' },
   { to: '/reports',   icon: BarChart3,       label: 'Reports',     adminOnly: false, shortcut: 'G R', section: 'Workspace' },
+  { to: '/projects',  icon: FolderKanban,    label: 'Projects',    adminOnly: false, shortcut: 'G P', section: 'Workspace' },
+  { to: '/tasks',     icon: CheckSquare,     label: 'Tasks',       adminOnly: false, shortcut: 'G K', section: 'Workspace' },
+  { to: '/team',      icon: Users,           label: 'Team',        adminOnly: false, shortcut: 'G T', section: 'Workspace' },
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard',   adminOnly: false, shortcut: 'G D', section: 'General',   hidden: true },
 ];
 
 const BOTTOM_NAV = [
