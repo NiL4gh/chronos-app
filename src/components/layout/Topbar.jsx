@@ -503,18 +503,20 @@ export default function Topbar({
         ) : (
           <button
             onClick={handleStartTimer}
-            className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg font-semibold text-xs transition-all duration-150 press-on-click timer-cta-pulse select-none"
+            className="flex items-center justify-center transition-all duration-200 press-on-click timer-cta-pulse"
             style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
               background: 'var(--accent)',
               color: 'var(--accent-on)',
               border: 'none',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent)'; }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
             aria-label="Start timer"
           >
-            <Play size={11} fill="currentColor" className="shrink-0" />
-            Start
+            <Play size={13} fill="currentColor" />
           </button>
         )}
 

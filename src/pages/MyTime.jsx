@@ -394,24 +394,33 @@ export default function MyTime() {
           </span>
         </div>
 
-        {/* Start button — wide pill, not a circle */}
-        <button
-          onClick={() => {
-            startTimer('Focus session', projects[0]?.id || '');
-            triggerToast('Timer started', 'Focus session', 'success');
-          }}
-          className="timer-cta-pulse press-on-click inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-150 select-none"
-          style={{
-            background: 'var(--accent)',
-            color: 'var(--accent-on)',
-            boxShadow: '0 2px 12px color-mix(in srgb, var(--accent) 40%, transparent)',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}
-        >
-          <Play size={13} fill="currentColor" className="ml-0.5 shrink-0" />
-          Start Timer
-        </button>
+        {/* Start button */}
+        <div className="w-full grid grid-cols-3 items-center pt-3 border-t border-[var(--border-default)]/30">
+          <div />
+          <div className="flex justify-center select-none">
+            <button
+              onClick={() => {
+                startTimer('Focus session', projects[0]?.id || '');
+                triggerToast('Timer started', 'Focus session', 'success');
+              }}
+              className="shrink-0 flex items-center justify-center timer-cta-pulse press-on-click transition-all duration-200"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                background: 'var(--accent)',
+                color: 'var(--accent-on)',
+                border: 'none',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+              aria-label="Start timer"
+            >
+              <Play size={14} fill="currentColor" className="ml-0.5" />
+            </button>
+          </div>
+          <div />
+        </div>
 
         {/* Quick re-use chips */}
         {filteredLogs.length > 0 && (
