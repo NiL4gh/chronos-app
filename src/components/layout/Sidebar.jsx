@@ -29,12 +29,13 @@ const SHORTCUTS = [
   { key: '⌘K',  label: 'Command' },
 ];
 
-export default function Sidebar({ 
-  activeRole, 
-  onRoleSwitch, 
-  triggerToast, 
-  onOpenHelp, 
-  theme, 
+export default function Sidebar({
+  activeRole,
+  onRoleSwitch,
+  triggerToast,
+  onOpenHelp,
+  onOpenSettings,
+  theme,
   setTheme,
   expanded = false,
   onToggleExpand
@@ -138,6 +139,22 @@ export default function Sidebar({
               <button
                 key={label}
                 onClick={onOpenHelp}
+                className={[
+                  collapsed ? 'justify-center' : '',
+                  'w-[calc(100%-24px)] flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] border border-transparent transition-colors'
+                ].join(' ')}
+                title={collapsed ? label : undefined}
+              >
+                <Icon size={16} className="flex-shrink-0 text-[var(--text-muted)]" />
+                {!collapsed && <span className="truncate">{label}</span>}
+              </button>
+            );
+          }
+          if (to === '/settings') {
+            return (
+              <button
+                key={label}
+                onClick={onOpenSettings}
                 className={[
                   collapsed ? 'justify-center' : '',
                   'w-[calc(100%-24px)] flex items-center gap-3 rounded-xl mx-3 px-3 py-2.5 text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] border border-transparent transition-colors'
@@ -289,8 +306,8 @@ export default function Sidebar({
               {/* 4. Settings link */}
               <button
                 onClick={() => {
-                  navigate('/settings');
                   setProfileOpen(false);
+                  onOpenSettings?.();
                 }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors text-left text-[var(--text-secondary)]"
                 onMouseEnter={(e) => {

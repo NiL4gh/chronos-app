@@ -5,6 +5,7 @@ import Topbar from './Topbar.jsx';
 import SlideOutDrawer from '../ui/SlideOutDrawer.jsx';
 import Toast from '../ui/Toast.jsx';
 import CommandPalette from './CommandPalette.jsx';
+import { SettingsContent } from '../../pages/Settings.jsx';
 import Input, { Select } from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
@@ -104,6 +105,9 @@ export default function AppShell() {
 
   // Help drawer state
   const [helpOpen, setHelpOpen] = useState(false);
+
+  // Settings modal state
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   // Theme + accent state (pre-paint script already applied the stored values)
   const [theme, setTheme] = useState(getStoredTheme);
@@ -404,6 +408,7 @@ export default function AppShell() {
         onRoleSwitch={() => setActiveRole(r => r === 'admin' ? 'employee' : 'admin')}
         triggerToast={triggerToast}
         onOpenHelp={() => setHelpOpen(true)}
+        onOpenSettings={() => setSettingsOpen(true)}
         theme={theme}
         setTheme={setTheme}
         expanded={sidebarExpanded}
@@ -742,6 +747,36 @@ export default function AppShell() {
               <Button variant="ghost" size="sm" onClick={() => setStopConfirmOpen(false)}>Keep running</Button>
               <Button variant="primary" size="sm" onClick={() => { setStopConfirmOpen(false); stopTimer(); }}>Stop & save</Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Settings Modal */}
+      {settingsOpen && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center"
+          style={{ background: 'rgba(0,0,0,0.45)' }}
+        >
+          <div className="absolute inset-0 z-0" onClick={() => setSettingsOpen(false)} />
+          <div
+            className="relative z-10 w-full max-w-4xl mx-4 rounded-2xl overflow-hidden shadow-2xl animate-fade-in"
+            style={{
+              height: '90vh',
+              maxHeight: '720px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border-default)',
+            }}
+          >
+            <SettingsContent
+              keyBindings={keyBindings}
+              setKeyBindings={setKeyBindings}
+              triggerToast={triggerToast}
+              theme={theme}
+              setTheme={setTheme}
+              accent={accent}
+              setAccent={setAccent}
+              onClose={() => setSettingsOpen(false)}
+            />
           </div>
         </div>
       )}
