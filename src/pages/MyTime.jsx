@@ -394,22 +394,23 @@ export default function MyTime() {
           </span>
         </div>
 
-        {/* Start button */}
+        {/* Start button — wide pill, not a circle */}
         <button
           onClick={() => {
             startTimer('Focus session', projects[0]?.id || '');
             triggerToast('Timer started', 'Focus session', 'success');
           }}
-          className="shrink-0 flex items-center justify-center p-3 rounded-full bg-amber-400 hover:bg-amber-300 transition-all duration-150 timer-cta-pulse press-on-click"
+          className="timer-cta-pulse press-on-click inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-150 select-none"
           style={{
-            width: '42px',
-            height: '42px',
-            color: 'var(--text-primary)',
-            boxShadow: '0 2px 8px color-mix(in srgb, var(--accent) 35%, transparent)',
+            background: 'var(--accent)',
+            color: 'var(--accent-on)',
+            boxShadow: '0 2px 12px color-mix(in srgb, var(--accent) 40%, transparent)',
           }}
-          title="Start live focus timer"
+          onMouseEnter={e => e.currentTarget.style.background = 'var(--accent-hover)'}
+          onMouseLeave={e => e.currentTarget.style.background = 'var(--accent)'}
         >
-          <Play size={14} fill="currentColor" className="ml-0.5" />
+          <Play size={13} fill="currentColor" className="ml-0.5 shrink-0" />
+          Start Timer
         </button>
 
         {/* Quick re-use chips */}
