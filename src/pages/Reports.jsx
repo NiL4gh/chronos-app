@@ -99,27 +99,57 @@ export default function Reports() {
   }, [filteredLogs]);
 
   const handleExportCSV = () => {
-    const headers = ['Date', 'Member', 'Project', 'Task', 'Duration (h)',
-      'Billable', 'Source'];
-    const rows = filteredLogs.map(log => [
-      log.date,
-      log.userName,
-      log.projectName,
-      log.task,
-      log.duration,
-      log.billable ? 'Yes' : 'No',
-      log.source
-    ]);
-    const csvContent = [headers, ...rows]
-      .map(row => row.map(cell =>
-        `"${String(cell).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const rate = billingRates?.default || 95;
+    const escape = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+
+    const headers = [
+      'Date', 'Project', 'Task', 'Start Time', 'End Time',
+      'Duration (h)', 'Billable', 'Rate (USD/h)', 'Amount (USD)', 'Type'
+    ];
+
+    const rows = filteredLogs.map(log => {
+      const amount = log.billable ? (log.duration * rate).toFixed(2) : '0.00';
+      return [
+        log.date,
+        log.projectName,
+        log.task,
+        log.startTime || '',
+        log.endTime || '',
+        Number(log.duration).toFixed(2),
+        log.billable ? 'Yes' : 'No',
+        log.billable ? rate.toFixed(2) : '0.00',
+        amount,
+        log.source === 'manual' ? 'Manual' : 'Timer',
+      ];
+    });
+
+    const totalHrs = filteredLogs.reduce((s, l) => s + l.duration, 0);
+    const totalBillableHrs = filteredLogs.filter(l => l.billable).reduce((s, l) => s + l.duration, 0);
+    const totalAmount = (totalBillableHrs * rate).toFixed(2);
+
+    const summaryRows = [
+      [],
+      ['SUMMARY'],
+      ['Period', `${filterStart} to ${filterEnd}`],
+      ['Total Hours', totalHrs.toFixed(2)],
+      ['Billable Hours', totalBillableHrs.toFixed(2)],
+      ['Total Amount (USD)', `$${totalAmount}`],
+      ['Generated', new Date().toISOString()],
+      ['Source', 'Chronos Time Tracker'],
+    ];
+
+    const allRows = [headers, ...rows, ...summaryRows];
+    const csvBody = allRows
+      .map(row => (row.length === 0 ? '' : row.map(escape).join(',')))
+      .join('\r\n');
+
+    // UTF-8 BOM so Excel opens correctly
+    const BOM = '﻿';
+    const blob = new Blob([BOM + csvBody], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    const dateRange = `${filterStart}_to_${filterEnd}`;
-    link.download = `chronos-report-${dateRange}.csv`;
+    link.download = `chronos-time-report_${filterStart}_${filterEnd}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -127,204 +157,203 @@ export default function Reports() {
   };
 
   const handleExportPDF = () => {
-    const totalHours = filteredLogs.reduce((s, l) => s + l.duration, 0)
-      .toFixed(1);
-    const billableHours = filteredLogs
-      .filter(l => l.billable)
-      .reduce((s, l) => s + l.duration, 0)
-      .toFixed(1);
-    const revenue = (parseFloat(billableHours) * (billingRates?.default || 95)).toFixed(0);
-    const activeMembers = [...new Set(filteredLogs.map(l =>
-      l.userName))].length;
+    const rate = billingRates?.default || 95;
+    const pdfTotalHours = filteredLogs.reduce((s, l) => s + l.duration, 0);
+    const pdfBillableHours = filteredLogs.filter(l => l.billable).reduce((s, l) => s + l.duration, 0);
+    const pdfRevenue = (pdfBillableHours * rate).toFixed(2);
+    const pdfEntries = filteredLogs.length;
+    const generatedAt = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    const printContent = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Chronos Report</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Inter',
-              sans-serif;
-            color: #1c1917;
-            padding: 40px;
-            font-size: 13px;
-          }
-          .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 32px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #1c1917;
-          }
-          .logo { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
-          .meta { text-align: right; color: #78716c; font-size: 12px;
-            line-height: 1.6; }
-          .metrics {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-            margin-bottom: 32px;
-          }
-          .metric-card {
-            padding: 16px;
-            border: 1px solid #e8e3dc;
-            border-radius: 8px;
-          }
-          .metric-label {
-            font-size: 10px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #78716c;
-            margin-bottom: 6px;
-          }
-          .metric-value {
-            font-size: 24px;
-            font-weight: 800;
-            color: #1c1917;
-          }
-          .section-title {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: #78716c;
-            margin-bottom: 12px;
-            margin-top: 28px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-          }
-          th {
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #78716c;
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 1px solid #e8e3dc;
-            background: #faf9f7;
-          }
-          td {
-            padding: 9px 12px;
-            border-bottom: 1px solid #f0ede8;
-            color: #1c1917;
-            font-size: 12px;
-          }
-          tr:last-child td { border-bottom: none; }
-          .billable-yes {
-            color: #166534;
-            font-weight: 600;
-          }
-          .billable-no { color: #78716c; }
-          .source-auto {
-            color: #166534;
-            font-size: 11px;
-          }
-          .source-manual {
-            color: #92400e;
-            font-size: 11px;
-          }
-          .footer {
-            margin-top: 40px;
-            padding-top: 16px;
-            border-top: 1px solid #e8e3dc;
-            font-size: 11px;
-            color: #a8a29e;
-            display: flex;
-            justify-content: space-between;
-          }
-          @media print {
-            body { padding: 24px; }
-            @page { margin: 16mm; size: A4; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div>
-            <div class="logo">Chronos</div>
-            <div style="color:#78716c;font-size:12px;margin-top:4px">
-              Time Report
-            </div>
-          </div>
-          <div class="meta">
-            <div><strong>Period:</strong> ${filterStart} — ${filterEnd}</div>
-            <div><strong>Generated:</strong>
-              ${new Date().toLocaleDateString('en-US', {
-                year: 'numeric', month: 'long', day: 'numeric'
-              })}
-            </div>
-          </div>
-        </div>
+    const groupedByProject = {};
+    filteredLogs.forEach(log => {
+      if (!groupedByProject[log.projectName]) groupedByProject[log.projectName] = { hours: 0, billable: 0 };
+      groupedByProject[log.projectName].hours += log.duration;
+      if (log.billable) groupedByProject[log.projectName].billable += log.duration;
+    });
 
-        <div class="metrics">
-          <div class="metric-card">
-            <div class="metric-label">Total Hours</div>
-            <div class="metric-value">${totalHours}h</div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-label">Billable Hours</div>
-            <div class="metric-value">${billableHours}h</div>
-          </div>
+    const printContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chronos Time Report — ${filterStart} to ${filterEnd}</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Helvetica Neue', Arial, sans-serif;
+      color: #111827;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .page { padding: 40px 48px; max-width: 900px; margin: 0 auto; }
 
-          <div class="metric-card">
-            <div class="metric-label">Active Members</div>
-            <div class="metric-value">${activeMembers}</div>
-          </div>
-        </div>
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; padding-bottom: 24px; border-bottom: 2px solid #111827; margin-bottom: 32px; }
+    .brand { font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #111827; }
+    .brand-sub { font-size: 11px; color: #6b7280; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; }
+    .meta-block { text-align: right; color: #6b7280; font-size: 11px; line-height: 1.8; }
+    .meta-block strong { color: #111827; }
 
-        <div class="section-title">Time Log Detail</div>
-        <table>
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Member</th>
-              <th>Project</th>
-              <th>Task</th>
-              <th>Hours</th>
-              <th>Billable</th>
-              <th>Source</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${filteredLogs.map(log => `
-              <tr>
-                <td>${log.date}</td>
-                <td>${log.userName}</td>
-                <td>${log.projectName}</td>
-                <td>${log.task}</td>
-                <td>${log.duration}h</td>
-                <td class="${log.billable ? 'billable-yes' : 'billable-no'}">
-                  ${log.billable ? 'Yes' : 'No'}
-                </td>
-                <td class="source-${log.source}">${log.source}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
+    /* Metrics */
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 36px; }
+    .metric { padding: 14px 16px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; }
+    .metric-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-bottom: 6px; }
+    .metric-value { font-size: 22px; font-weight: 800; color: #111827; font-variant-numeric: tabular-nums; }
+    .metric-sub { font-size: 10px; color: #6b7280; margin-top: 2px; }
 
-        <div class="footer">
-          <span>Chronos — Time Intelligence Platform</span>
-          <span>Confidential</span>
-        </div>
-      </body>
-      </html>
-    `;
+    /* Section */
+    .section-header { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin: 28px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #e5e7eb; }
 
-    const printWindow = window.open('', '_blank',
-      'width=900,height=700,scrollbars=yes');
+    /* Project summary */
+    .project-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    .project-table th { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; padding: 6px 10px; text-align: left; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; }
+    .project-table td { padding: 7px 10px; border-bottom: 1px solid #f3f4f6; font-size: 11px; color: #374151; }
+    .project-table tr:last-child td { border-bottom: none; }
+    .text-right { text-align: right; }
+    .mono { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+    /* Detail table */
+    .detail-table { width: 100%; border-collapse: collapse; }
+    .detail-table th { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #9ca3af; padding: 7px 10px; text-align: left; background: #f3f4f6; border-bottom: 1px solid #e5e7eb; }
+    .detail-table td { padding: 7px 10px; border-bottom: 1px solid #f3f4f6; font-size: 11px; color: #374151; vertical-align: top; }
+    .detail-table tr:nth-child(even) td { background: #f9fafb; }
+    .detail-table tr:last-child td { border-bottom: none; }
+    .billable-badge { display: inline-block; padding: 1px 6px; border-radius: 9999px; font-size: 9px; font-weight: 700; }
+    .billable-yes { background: #d1fae5; color: #065f46; }
+    .billable-no  { background: #f3f4f6; color: #9ca3af; }
+    .source-badge { font-size: 9px; color: #6b7280; text-transform: capitalize; }
+    .amount { font-variant-numeric: tabular-nums; font-weight: 600; color: #111827; }
+
+    /* Totals row */
+    .totals-row td { background: #f3f4f6 !important; font-weight: 700; color: #111827; border-top: 2px solid #e5e7eb; }
+
+    /* Footer */
+    .footer { margin-top: 36px; padding-top: 14px; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+
+    @media print {
+      body { font-size: 11px; }
+      .page { padding: 0; }
+      @page { margin: 15mm 18mm; size: A4; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div>
+      <div class="brand">Chronos</div>
+      <div class="brand-sub">Time Report</div>
+    </div>
+    <div class="meta-block">
+      <div><strong>Period:</strong> ${filterStart} &ndash; ${filterEnd}</div>
+      <div><strong>Generated:</strong> ${generatedAt}</div>
+      <div><strong>Entries:</strong> ${pdfEntries}</div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric">
+      <div class="metric-label">Total Hours</div>
+      <div class="metric-value">${pdfTotalHours.toFixed(1)}</div>
+      <div class="metric-sub">logged</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Billable Hours</div>
+      <div class="metric-value">${pdfBillableHours.toFixed(1)}</div>
+      <div class="metric-sub">${pdfTotalHours > 0 ? Math.round((pdfBillableHours / pdfTotalHours) * 100) : 0}% of total</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Non-Billable</div>
+      <div class="metric-value">${(pdfTotalHours - pdfBillableHours).toFixed(1)}</div>
+      <div class="metric-sub">hours</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Revenue</div>
+      <div class="metric-value">$${Number(pdfRevenue).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
+      <div class="metric-sub">@ $${rate}/h</div>
+    </div>
+  </div>
+
+  <div class="section-header">By Project</div>
+  <table class="project-table">
+    <thead>
+      <tr>
+        <th>Project</th>
+        <th class="text-right">Total Hours</th>
+        <th class="text-right">Billable Hours</th>
+        <th class="text-right">Amount (USD)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${Object.entries(groupedByProject).sort((a, b) => b[1].hours - a[1].hours).map(([name, data]) => `
+      <tr>
+        <td>${name}</td>
+        <td class="text-right mono">${data.hours.toFixed(2)}h</td>
+        <td class="text-right mono">${data.billable.toFixed(2)}h</td>
+        <td class="text-right mono">$${(data.billable * rate).toFixed(2)}</td>
+      </tr>`).join('')}
+      <tr class="totals-row">
+        <td>Total</td>
+        <td class="text-right mono">${pdfTotalHours.toFixed(2)}h</td>
+        <td class="text-right mono">${pdfBillableHours.toFixed(2)}h</td>
+        <td class="text-right mono">$${pdfRevenue}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="section-header">Time Log Detail</div>
+  <table class="detail-table">
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>Project</th>
+        <th>Task</th>
+        <th>Start</th>
+        <th>End</th>
+        <th class="text-right">Hours</th>
+        <th>Billable</th>
+        <th class="text-right">Amount</th>
+        <th>Type</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${filteredLogs.map(log => `
+      <tr>
+        <td>${log.date}</td>
+        <td>${log.projectName}</td>
+        <td>${log.task || '—'}</td>
+        <td>${log.startTime || '—'}</td>
+        <td>${log.endTime || '—'}</td>
+        <td class="text-right mono">${Number(log.duration).toFixed(2)}h</td>
+        <td><span class="billable-badge ${log.billable ? 'billable-yes' : 'billable-no'}">${log.billable ? 'Billable' : 'Non-bill.'}</span></td>
+        <td class="text-right amount">${log.billable ? '$' + (log.duration * rate).toFixed(2) : '—'}</td>
+        <td class="source-badge">${log.source === 'manual' ? 'Manual' : 'Timer'}</td>
+      </tr>`).join('')}
+      <tr class="totals-row">
+        <td colspan="5">Total</td>
+        <td class="text-right mono">${pdfTotalHours.toFixed(2)}h</td>
+        <td></td>
+        <td class="text-right mono">$${pdfRevenue}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <span>Chronos &mdash; Time Intelligence Platform &mdash; Confidential</span>
+    <span>Generated ${generatedAt}</span>
+  </div>
+
+</div>
+</body>
+</html>`;
+
+    const printWindow = window.open('', '_blank', 'width=960,height=750,scrollbars=yes');
     printWindow.document.write(printContent);
     printWindow.document.close();
     printWindow.focus();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+    setTimeout(() => { printWindow.print(); }, 600);
   };
 
   return (
