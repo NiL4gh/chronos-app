@@ -36,6 +36,7 @@ export default function Reports() {
   const [expandedMembersTable, setExpandedMembersTable] = useState({});
   const [selectedReportsMember, setSelectedReportsMember] = useState(null);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [memberPanelTab, setMemberPanelTab] = useState('Overview');
 
   // Options — sentinel value is 'all' to match filter logic
   const memberOptions = [{ value: 'all', label: 'All Members' }, ...teamMembers.map(m => ({ value: m.id, label: m.name }))];
@@ -112,6 +113,26 @@ export default function Reports() {
     });
     return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
   }, [logsForTable]);
+
+  const groupedByProject = useMemo(() => {
+    const map = {};
+    filteredLogs.forEach(log => {
+      if (!map[log.projectId]) {
+        const proj = projects.find(p => p.id === log.projectId);
+        map[log.projectId] = {
+          name: log.projectName || proj?.name || 'Unknown',
+          color: proj?.color || 'var(--accent)',
+          totalHours: 0,
+          billableHours: 0,
+          memberIds: new Set(),
+        };
+      }
+      map[log.projectId].totalHours += log.duration;
+      if (log.billable) map[log.projectId].billableHours += log.duration;
+      map[log.projectId].memberIds.add(log.userId);
+    });
+    return Object.values(map).sort((a, b) => b.totalHours - a.totalHours);
+  }, [filteredLogs]);
 
   const toggleMemberTable = (id) => {
     setExpandedMembersTable(prev => ({ ...prev, [id]: !prev[id] }));
@@ -359,6 +380,31 @@ export default function Reports() {
             Analyse team performance and export time data.
           </p>
         </div>
+
+        {/* Secondary tab nav */}
+        <div
+          className="flex items-center gap-1 border-b -mx-4 md:-mx-6 px-4 md:px-6"
+          style={{ borderColor: 'var(--border-default)' }}
+        >
+          {['Overview', 'Time tags'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className="px-4 py-2.5 text-sm font-medium transition-colors relative"
+              style={{ color: activeTab === tab ? 'var(--text-primary)' : 'var(--text-muted)' }}
+            >
+              {tab}
+              {activeTab === tab && (
+                <div
+                  className="absolute bottom-0 left-0 right-0 h-0.5 rounded-t-sm"
+                  style={{ background: 'var(--accent)' }}
+                />
+              )}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'Overview' && <>
 
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
@@ -695,6 +741,86 @@ export default function Reports() {
           </div>
         </div>
 
+        {/* PROJECT BREAKDOWN TABLE */}
+        <div className="glass-card overflow-hidden animate-fade-in">
+          <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
+            <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>By Project</h3>
+          </div>
+          {groupedByProject.length === 0 ? (
+            <div className="py-12 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+              No project data for selected period.
+            </div>
+          ) : (
+            <table className="w-full text-sm border-collapse">
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-elevated)' }}>
+                  {['PROJECT', 'TRACKED', 'BILLABLE', 'MEMBERS', 'BILLABLE %'].map(col => (
+                    <th
+                      key={col}
+                      className="text-left px-6 py-3 text-[10px] font-semibold uppercase tracking-widest"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      {col}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {groupedByProject.map(({ name, color, totalHours: projHours, billableHours: projBillable, memberIds }) => {
+                  const billablePct = projHours > 0 ? Math.round((projBillable / projHours) * 100) : 0;
+                  return (
+                    <tr
+                      key={name}
+                      className="border-b transition-colors"
+                      style={{ borderColor: 'var(--border-default)', background: 'var(--bg-surface)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-surface)'}
+                    >
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color }} />
+                          <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{name}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-3 font-mono text-sm" style={{ color: 'var(--text-primary)' }}>
+                        {projHours.toFixed(1)}h
+                      </td>
+                      <td className="px-6 py-3 font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {projBillable.toFixed(1)}h
+                      </td>
+                      <td className="px-6 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        {memberIds.size}
+                      </td>
+                      <td className="px-6 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                            <div
+                              className="h-full rounded-full"
+                              style={{ width: `${billablePct}%`, background: 'var(--accent)' }}
+                            />
+                          </div>
+                          <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+                            {billablePct}%
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        </>}
+
+        {activeTab === 'Time tags' && (
+          <div className="glass-card p-10 text-center animate-fade-in mt-6">
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Time tags</p>
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tag-based reporting is coming soon.</p>
+          </div>
+        )}
+
       </div>
 
       {/* RIGHT SIDE INLINE SPLIT PANEL (Member Details) */}
@@ -720,22 +846,22 @@ export default function Reports() {
 
           {/* Tabs */}
           <div className="flex border-b border-[var(--border-default)]">
-            <button 
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Overview' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
-              onClick={() => setActiveTab('Overview')}
+            <button
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${memberPanelTab === 'Overview' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
+              onClick={() => setMemberPanelTab('Overview')}
             >
               Overview
             </button>
-            <button 
-              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'Time' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
-              onClick={() => setActiveTab('Time')}
+            <button
+              className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${memberPanelTab === 'Time' ? 'border-amber-500 text-amber-600 dark:text-amber-400' : 'border-transparent text-[var(--text-secondary)] hover:text-neutral-800 dark:hover:text-neutral-200'}`}
+              onClick={() => setMemberPanelTab('Time')}
             >
               Time Breakdown
             </button>
           </div>
 
           <div className="p-4 flex-1">
-            {activeTab === 'Overview' ? (
+            {memberPanelTab === 'Overview' ? (
               <div className="space-y-6">
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm">

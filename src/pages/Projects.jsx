@@ -3,7 +3,7 @@ import { useOutletContext } from 'react-router-dom';
 import {
   Plus, Search, CheckCircle2, PauseCircle, Circle,
   Users, DollarSign, Calendar, ChevronDown,
-  X, TrendingUp, Edit3, Trash2,
+  X, TrendingUp, Edit3, Trash2, ArrowUpDown,
 } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
@@ -477,6 +477,14 @@ export default function Projects() {
     triggerToast?.('Project created', `"${proj.name}" has been added.`, 'success');
   };
 
+  const [sortKey, setSortKey] = useState('name');
+  const [sortDir, setSortDir] = useState('asc');
+
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortKey(key); setSortDir('asc'); }
+  };
+
   const filtered = useMemo(() => {
     return projectData.filter(p => {
       const matchStatus = statusFilter === 'All' || p.status === statusFilter.toLowerCase();
@@ -485,6 +493,21 @@ export default function Projects() {
       return matchStatus && matchQuery;
     });
   }, [projectData, statusFilter, query]);
+
+  const sortedProjects = useMemo(() => {
+    return [...filtered].sort((a, b) => {
+      let aVal, bVal;
+      if (sortKey === 'name')   { aVal = a.name;           bVal = b.name; }
+      if (sortKey === 'client') { aVal = a.client || '';    bVal = b.client || ''; }
+      if (sortKey === 'due')    { aVal = a.dueDate || '9999'; bVal = b.dueDate || '9999'; }
+      if (sortKey === 'logged') { aVal = a.loggedHours;    bVal = b.loggedHours; }
+      if (sortKey === 'budget') { aVal = a.budget;         bVal = b.budget; }
+      if (typeof aVal === 'string') {
+        return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+      }
+      return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+  }, [filtered, sortKey, sortDir]);
 
   // Summary stats
   const active    = projectData.filter(p => p.status === 'active').length;
@@ -503,118 +526,222 @@ export default function Projects() {
         </p>
       </div>
 
-      {/* ── Main split layout ── */}
+      {/* Toolbar */}
       <div
-        className="flex flex-col md:flex-row gap-0 overflow-hidden rounded-2xl flex-1 glass-card backdrop-blur-md"
-        style={{
-          minHeight: '500px',
-        }}
+        className="flex items-center gap-4 px-5 py-4 shrink-0 flex-wrap rounded-xl"
+        style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
       >
-        {/* Left — project grid */}
-        <div
-          className={`flex flex-col transition-all duration-300 ease-in-out w-full ${selectedProject ? 'md:w-[55%]' : 'md:w-full'}`}
-          style={{
-            borderRight: selectedProject ? '1px solid var(--border-default)' : 'none',
-            minWidth: 0,
-            background: 'transparent',
-          }}
-        >
-          {/* Toolbar */}
-          <div
-            className="flex items-center gap-4 px-5 py-4 shrink-0 flex-wrap"
-            style={{ borderBottom: '1px solid var(--border-default)' }}
-          >
-            {/* Status filter tabs */}
-            <div className="flex flex-wrap gap-2">
-              {STATUS_FILTERS.map(f => (
-                <button
-                  key={f}
-                  onClick={() => setStatusFilter(f)}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
-                  style={{
-                    background: statusFilter === f ? 'var(--accent-subtle)' : 'transparent',
-                    color: statusFilter === f ? 'var(--accent-text)' : 'var(--text-muted)',
-                    border: statusFilter === f ? '1px solid var(--accent-border)' : '1px solid transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (statusFilter !== f) {
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                      e.currentTarget.style.background = 'var(--bg-sunken)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (statusFilter !== f) {
-                      e.currentTarget.style.color = 'var(--text-muted)';
-                      e.currentTarget.style.background = 'transparent';
-                    }
-                  }}
-                >
-                  {f}
-                </button>
-              ))}
-            </div>
-
-            {/* Search */}
-            <div className="relative flex-1 min-w-[160px]">
-              <Search
-                size={16}
-                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
-                style={{ color: 'var(--text-muted)' }}
-              />
-              <Input
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                placeholder="Search projects…"
-                className="w-full pl-10 pr-4 py-2"
-              />
-            </div>
-
-            {/* New project button — admin only */}
-            {isAdmin && (
-              <Button
-                variant="primary"
-                className="shrink-0 flex items-center gap-2 !px-4 !py-2"
-                onClick={() => setCreateOpen(true)}
-              >
-                <Plus size={16} /> New Project
-              </Button>
-            )}
-          </div>
-
-          {/* Grid */}
-          <div className="flex-1 overflow-y-auto p-5">
-            {filtered.length === 0 ? (
-              <EmptyState
-                icon={FolderKanban}
-                title="No projects found"
-                description="Try adjusting your filters or search query."
-              />
-            ) : (
-              <div
-                className={`grid gap-5 ${selectedProject ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'}`}
-              >
-                {filtered.map(project => (
-                  <ProjectCard
-                    key={project.id}
-                    project={project}
-                    selected={selectedProject?.id === project.id}
-                    onSelect={setSelectedProject}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+        {/* Status filter tabs */}
+        <div className="flex flex-wrap gap-2">
+          {STATUS_FILTERS.map(f => (
+            <button
+              key={f}
+              onClick={() => setStatusFilter(f)}
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150"
+              style={{
+                background: statusFilter === f ? 'var(--accent-subtle)' : 'transparent',
+                color: statusFilter === f ? 'var(--accent-text)' : 'var(--text-muted)',
+                border: statusFilter === f ? '1px solid var(--accent-border)' : '1px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                if (statusFilter !== f) {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.background = 'var(--bg-sunken)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (statusFilter !== f) {
+                  e.currentTarget.style.color = 'var(--text-muted)';
+                  e.currentTarget.style.background = 'transparent';
+                }
+              }}
+            >
+              {f}
+            </button>
+          ))}
         </div>
 
-        {/* Right — inline detail panel */}
-        {selectedProject && (
-          <div className="w-full md:flex-1 min-w-0 overflow-hidden">
-            <ProjectDetailPanel
-              project={projectData.find(p => p.id === selectedProject.id) || selectedProject}
-              onClose={() => setSelectedProject(null)}
-            />
-          </div>
+        {/* Search */}
+        <div className="relative flex-1 min-w-[160px]">
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none z-10"
+            style={{ color: 'var(--text-muted)' }}
+          />
+          <Input
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            placeholder="Search projects…"
+            className="w-full pl-10 pr-4 py-2"
+          />
+        </div>
+
+        {/* New project button — admin only */}
+        {isAdmin && (
+          <Button
+            variant="primary"
+            className="shrink-0 flex items-center gap-2 !px-4 !py-2"
+            onClick={() => setCreateOpen(true)}
+          >
+            <Plus size={16} /> New Project
+          </Button>
         )}
+      </div>
+
+      {/* Projects table */}
+      <div
+        className="overflow-hidden rounded-xl"
+        style={{ border: '1px solid var(--border-default)' }}
+      >
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr style={{ background: 'var(--bg-elevated)', borderBottom: '1px solid var(--border-default)' }}>
+              {[
+                { key: 'name',   label: 'PROJECT' },
+                { key: 'client', label: 'CLIENT' },
+                { key: 'due',    label: 'DUE DATE' },
+                { key: 'logged', label: 'TIME' },
+                { key: 'budget', label: 'BUDGET' },
+                { key: null,     label: 'STATUS' },
+                { key: null,     label: 'TAGS' },
+              ].map(({ key, label }) => (
+                <th
+                  key={label}
+                  className={`text-left px-4 py-3 text-[10px] font-semibold uppercase tracking-widest select-none ${key ? 'cursor-pointer hover:text-[var(--text-primary)] transition-colors' : ''}`}
+                  style={{ color: 'var(--text-muted)' }}
+                  onClick={key ? () => toggleSort(key) : undefined}
+                >
+                  <span className="flex items-center gap-1">
+                    {label}
+                    {key && <ArrowUpDown size={10} />}
+                  </span>
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedProjects.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-16 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
+                  No projects match your filters.
+                </td>
+              </tr>
+            ) : sortedProjects.map(project => {
+              const statusMeta = STATUS_META[project.status] || STATUS_META.active;
+              const loggedPct = project.goalHours > 0
+                ? Math.min(100, Math.round((project.loggedHours / project.goalHours) * 100))
+                : 0;
+              const budgetPct = project.budget > 0
+                ? Math.min(100, Math.round((project.spent / project.budget) * 100))
+                : 0;
+              const isSelected = selectedProject?.id === project.id;
+              return (
+                <tr
+                  key={project.id}
+                  onClick={() => setSelectedProject(isSelected ? null : project)}
+                  className="cursor-pointer transition-colors border-b"
+                  style={{
+                    borderColor: 'var(--border-default)',
+                    background: isSelected ? 'var(--accent-subtle)' : 'var(--bg-surface)',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'var(--bg-sunken)';
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.background = 'var(--bg-surface)';
+                  }}
+                >
+                  {/* PROJECT */}
+                  <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: project.color || 'var(--accent)' }} />
+                      <span className="truncate max-w-[180px]">{project.name}</span>
+                    </div>
+                  </td>
+
+                  {/* CLIENT */}
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {project.client || '—'}
+                  </td>
+
+                  {/* DUE DATE */}
+                  <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                    {project.dueDate ? formatDue(project.dueDate) : '—'}
+                  </td>
+
+                  {/* TIME */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${loggedPct}%`,
+                            background: loggedPct >= 100 ? 'var(--color-success)' : 'var(--accent)',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                        {project.loggedHours}h / {project.goalHours}h
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* BUDGET */}
+                  <td className="px-4 py-3">
+                    {project.budget > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${budgetPct}%`,
+                              background: budgetPct >= 100 ? 'rgb(220,38,38)' : budgetPct >= 80 ? 'rgb(217,119,6)' : 'var(--accent)',
+                            }}
+                          />
+                        </div>
+                        <span className="text-xs whitespace-nowrap" style={{ color: 'var(--text-muted)' }}>
+                          ${project.spent.toLocaleString()} / ${project.budget.toLocaleString()}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs" style={{ color: 'var(--text-disabled)' }}>—</span>
+                    )}
+                  </td>
+
+                  {/* STATUS */}
+                  <td className="px-4 py-3">
+                    <Badge variant={statusMeta.variant}>{statusMeta.label}</Badge>
+                  </td>
+
+                  {/* TAGS */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      {(project.tags || []).slice(0, 2).map(tag => (
+                        <span
+                          key={tag}
+                          className="text-[10px] px-2 py-0.5 rounded-md font-medium"
+                          style={{
+                            background: 'var(--bg-sunken)',
+                            border: '1px solid var(--border-default)',
+                            color: 'var(--text-secondary)',
+                          }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {(project.tags || []).length > 2 && (
+                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>
+                          +{project.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Create Project Drawer */}
