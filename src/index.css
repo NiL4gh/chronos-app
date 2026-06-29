@@ -10,8 +10,8 @@
   color-scheme: light;
 
   /* ── Neutral chrome ── */
-  --bg-base:        #f7f7f8;   /* app canvas */
-  --bg-canvas:      #f7f7f8;
+  --bg-base:        #f8f8fa;   /* app canvas */
+  --bg-canvas:      #f8f8fa;
   --sidebar-bg:     #ffffff;
   --bg-surface:     #ffffff;
   --bg-elevated:    #ffffff;
@@ -19,7 +19,7 @@
   --bg-hover:       #f3f3f5;
   --bg-overlay:     #ffffff;
   --bg-active:      #ebebed;
-  --bg-body:        #f7f7f8;
+  --bg-body:        #f8f8fa;
 
   /* ── Borders ── */
   --border-default: #e7e7ea;
@@ -54,9 +54,9 @@
   --fw-bold: 700; --fw-extrabold: 800; --fw-black: 900;
 
   /* ── Shadows ── */
-  --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.04);
-  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
-  --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.06), 0 2px 6px -2px rgba(0,0,0,0.04);
+  --shadow-xs: 0 1px 2px 0 rgba(0,0,0,0.06);
+  --shadow-sm: 0 1px 3px 0 rgba(0,0,0,0.08), 0 1px 2px -1px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px -2px rgba(0,0,0,0.08), 0 2px 6px -2px rgba(0,0,0,0.05);
   --shadow-lg: 0 10px 24px -4px rgba(0,0,0,0.08), 0 4px 10px -4px rgba(0,0,0,0.04);
   --shadow-xl: 0 20px 48px -8px rgba(0,0,0,0.10), 0 8px 20px -8px rgba(0,0,0,0.06);
 

@@ -21,6 +21,12 @@ function formatTimer(s) {
 
 const MOCK_TAGS = ['Design', 'Development', 'Meeting', 'Review', 'Bug Fix'];
 
+const MOCK_RECENT_TASKS = [
+  { id: 'task-3', title: 'Review design mockups', project: 'Redesign Landing Page', projectId: 'p1', timeAgo: '2h ago' },
+  { id: 'task-1', title: 'Setup auth routing', project: 'API Gateway v2', projectId: 'p2', timeAgo: '4h ago' },
+  { id: 'task-5', title: 'Update dependencies', project: 'Infrastructure Migration', projectId: 'p4', timeAgo: '1d ago' },
+];
+
 export default function Topbar({
   onOpenCommandPalette,
   onOpenDrawer,
@@ -49,11 +55,13 @@ export default function Topbar({
   const [projectPopupOpen, setProjectPopupOpen] = useState(false);
   const [taskPopupOpen, setTaskPopupOpen] = useState(false);
   const [tagPopupOpen, setTagPopupOpen] = useState(false);
+  const [recentTasksPopupOpen, setRecentTasksPopupOpen] = useState(false);
   const [projectSearch, setProjectSearch] = useState('');
   const [taskSearch, setTaskSearch] = useState('');
   const projectPopupRef = useRef(null);
   const taskPopupRef = useRef(null);
   const tagPopupRef = useRef(null);
+  const recentTasksPopupRef = useRef(null);
 
   useEffect(() => {
     if (!projectPopupOpen) return;
@@ -89,6 +97,17 @@ export default function Topbar({
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [tagPopupOpen]);
+
+  useEffect(() => {
+    if (!recentTasksPopupOpen) return;
+    const handler = (e) => {
+      if (recentTasksPopupRef.current && !recentTasksPopupRef.current.contains(e.target)) {
+        setRecentTasksPopupOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [recentTasksPopupOpen]);
 
   const mockNotifications = [
     {
@@ -166,21 +185,73 @@ export default function Topbar({
           )}
 
           {/* Description input — always editable */}
-          <input
-            type="text"
-            value={timerRunning ? timerTaskLabel : taskInput}
-            onChange={e =>
-              timerRunning
-                ? onUpdateTimer({ task: e.target.value })
-                : setTaskInput(e.target.value)
-            }
-            onKeyDown={e => {
-              if (e.key === 'Enter' && !timerRunning) handleStartTimer();
-            }}
-            placeholder="What are you working on?"
-            className="flex-1 text-sm px-0 focus:outline-none bg-transparent min-w-0"
-            style={{ color: 'var(--text-primary)' }}
-          />
+          <div className="relative flex-1 flex" ref={recentTasksPopupRef}>
+            <input
+              type="text"
+              value={timerRunning ? timerTaskLabel : taskInput}
+              onChange={e => {
+                if (timerRunning) {
+                  onUpdateTimer({ task: e.target.value });
+                } else {
+                  setTaskInput(e.target.value);
+                  setRecentTasksPopupOpen(false);
+                }
+              }}
+              onFocus={() => {
+                setRecentTasksPopupOpen(true);
+                setProjectPopupOpen(false);
+                setTaskPopupOpen(false);
+                setTagPopupOpen(false);
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter' && !timerRunning) handleStartTimer();
+              }}
+              placeholder="What are you working on?"
+              className="flex-1 text-sm px-0 focus:outline-none bg-transparent min-w-0"
+              style={{ color: 'var(--text-primary)' }}
+            />
+            {recentTasksPopupOpen && (
+              <div
+                className="absolute top-full mt-3 left-0 w-80 z-50 rounded-xl shadow-lg overflow-hidden"
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border-default)',
+                }}
+              >
+                <div className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-muted)] border-b" style={{ borderColor: 'var(--border-default)' }}>
+                  Recent Tasks
+                </div>
+                <div className="py-1">
+                  {MOCK_RECENT_TASKS.map(task => (
+                    <button
+                      key={task.id}
+                      onClick={() => {
+                        if (timerRunning) {
+                          onUpdateTimer({ task: task.title, projectId: task.projectId, taskId: task.id });
+                        } else {
+                          setTaskInput(task.title);
+                          setProjectInput(task.projectId);
+                          setTaskIdInput(task.id);
+                        }
+                        setRecentTasksPopupOpen(false);
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2 text-sm hover:bg-[var(--bg-sunken)] transition-colors text-left"
+                      style={{ color: 'var(--text-primary)' }}
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="font-medium truncate text-xs">{task.title}</span>
+                        <span className="text-[11px] truncate text-[var(--text-muted)]">{task.project}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0 text-[11px] text-[var(--text-muted)]">
+                        <Clock size={11} />
+                        <span>{task.timeAgo}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Divider */}
           <div className="w-px h-4 flex-shrink-0" style={{ background: 'var(--border-default)' }} />
@@ -524,10 +595,11 @@ export default function Topbar({
         <button
           onClick={onOpenDrawer}
           title="Manual entry (N)"
-          className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-[var(--bg-sunken)] transition-colors"
+          className="h-8 px-3 flex items-center gap-2 rounded-lg hover:bg-[var(--bg-sunken)] transition-colors text-sm font-medium"
           style={{ color: 'var(--text-muted)' }}
         >
           <Plus size={14} />
+          <span>Manual</span>
         </button>
 
         {/* Search / command palette */}
