@@ -1,12 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { tasks as initialTasks, projects, teamMembers } from '../data/mockData';
+import { supabase } from '../lib/supabase';
 import { Play, Check, X, Clock, Circle, AlertCircle, CheckCircle2, Loader, Plus, ArrowUpDown } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';
 
 export default function Tasks() {
-  const { activeRole, startTimer, triggerToast, taskList } = useOutletContext();
+  const { activeRole, startTimer, triggerToast, taskList, demoMode } = useOutletContext();
   const allTasks = taskList || initialTasks;
 
   const [selectedTask, setSelectedTask] = useState(null);
@@ -73,12 +74,23 @@ export default function Tasks() {
     done:          { variant: 'success',  label: 'Done' },
   };
 
-  const cycleStatus = (taskId) => {
+  const cycleStatus = async (taskId) => {
     const current = statusOverrides[taskId] ||
       allTasks.find(t => t.id === taskId)?.status || 'todo';
     const next = current === 'todo' ? 'in-progress'
       : current === 'in-progress' ? 'done' : 'todo';
     setStatusOverrides(prev => ({ ...prev, [taskId]: next }));
+
+    if (!demoMode) {
+      const { error } = await supabase
+        .from('tasks')
+        .update({ status: next })
+        .eq('id', taskId);
+      if (error) {
+        console.error('[Tasks] Error cycling task status in Supabase:', error.message);
+        triggerToast?.('Sync error', 'Failed to update task status.', 'warning');
+      }
+    }
   };
 
   const todoCount = myTasks.filter(t => t.status === 'todo').length;

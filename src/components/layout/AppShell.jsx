@@ -53,14 +53,231 @@ export default function AppShell() {
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
 
   // Shared logs state
-  const [logs, setLogs] = useState(timeLogs);
+  const [logs, setLogsState] = useState(timeLogs);
+  const setLogs = setLogsState;
 
   // Shared invoices state
-  const [invoiceList, setInvoiceList] = useState(invoices);
+  const [invoiceList, setInvoiceListState] = useState(invoices);
 
   // Shared projects / tasks state
-  const [projectList, setProjectList] = useState(projects);
-  const [taskList, setTaskList] = useState(tasks);
+  const [projectList, setProjectListState] = useState(projects);
+  const [taskList, setTaskListState] = useState(tasks);
+
+  // Custom setters to auto-persist to Supabase
+  const setProjectList = useCallback((updater) => {
+    setProjectListState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (!demoMode && user && orgId) {
+        const newItems = next.filter(n => !prev.some(p => p.id === n.id));
+        newItems.forEach(async (proj) => {
+          const { error } = await supabase.from('projects').insert({
+            id: proj.id.startsWith('p-') ? undefined : proj.id,
+            name: proj.name,
+            client: proj.client,
+            description: proj.description || '',
+            status: proj.status,
+            color: proj.color,
+            goal_type: proj.goalType,
+            goal_hours: proj.goalHours,
+            budget: proj.budget,
+            spent: proj.spent,
+            due_date: proj.dueDate,
+            org_id: orgId,
+            created_by: user.id
+          });
+          if (error) console.error('[AppShell] Supabase project insert error:', error.message);
+        });
+      }
+      return next;
+    });
+  }, [demoMode, user, orgId]);
+
+  const setTaskList = useCallback((updater) => {
+    setTaskListState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (!demoMode && user && orgId) {
+        const newItems = next.filter(n => !prev.some(p => p.id === n.id));
+        newItems.forEach(async (task) => {
+          const { error } = await supabase.from('tasks').insert({
+            id: task.id.startsWith('task-') ? undefined : task.id,
+            title: task.title,
+            project_id: task.projectId || null,
+            status: task.status,
+            priority: task.priority,
+            assigned_to: user.id,
+            created_by: user.id,
+            description: task.description || '',
+            org_id: orgId
+          });
+          if (error) console.error('[AppShell] Supabase task insert error:', error.message);
+        });
+      }
+      return next;
+    });
+  }, [demoMode, user, orgId]);
+
+  const setInvoiceList = useCallback((updater) => {
+    setInvoiceListState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (!demoMode && user && orgId) {
+        const newItems = next.filter(n => !prev.some(p => p.id === n.id));
+        newItems.forEach(async (inv) => {
+          const { error } = await supabase.from('invoices').insert({
+            id: inv.id.startsWith('inv-') ? undefined : inv.id,
+            invoice_number: inv.invoiceNumber,
+            project_id: inv.projectId || null,
+            client_name: inv.client?.name || '',
+            client_email: inv.client?.email || '',
+            client_address: inv.client?.address || '',
+            issue_date: inv.issueDate,
+            due_date: inv.dueDate,
+            status: inv.status,
+            requires_signature: inv.requiresSignature,
+            subtotal: inv.subtotal,
+            tax: inv.tax,
+            total: inv.total,
+            notes: inv.notes || '',
+            line_items: inv.lineItems || [],
+            org_id: orgId
+          });
+          if (error) console.error('[AppShell] Supabase invoice insert error:', error.message);
+        });
+      }
+      return next;
+    });
+  }, [demoMode, user, orgId]);
+
+  // Load all live data from Supabase
+  useEffect(() => {
+    if (demoMode) {
+      setProjectListState(projects);
+      setTaskListState(tasks);
+      setInvoiceListState(invoices);
+      setLogsState(timeLogs);
+      return;
+    }
+
+    if (!user || !orgId) {
+      setProjectListState([]);
+      setTaskListState([]);
+      setInvoiceListState([]);
+      setLogsState([]);
+      return;
+    }
+
+    const loadData = async () => {
+      // 1. Projects
+      const { data: dbProjects } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      const mappedProjects = (dbProjects || []).map(p => ({
+        id: p.id,
+        name: p.name,
+        client: p.client || 'Internal',
+        description: p.description || '',
+        status: p.status,
+        color: p.color,
+        goalType: p.goal_type,
+        goalHours: Number(p.goal_hours || 0),
+        loggedHours: Number(p.logged_hours || 0),
+        budget: Number(p.budget || 0),
+        spent: Number(p.spent || 0),
+        dueDate: p.due_date,
+        tags: p.tags || [],
+        members: []
+      }));
+      setProjectListState(mappedProjects);
+
+      // 2. Tasks
+      const { data: dbTasks } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      const mappedTasks = (dbTasks || []).map(t => {
+        const p = mappedProjects.find(proj => proj.id === t.project_id);
+        return {
+          id: t.id,
+          title: t.title,
+          projectId: t.project_id,
+          projectName: p?.name || '',
+          assignedTo: t.assigned_to,
+          assignedToName: 'You',
+          createdBy: t.created_by,
+          status: t.status,
+          priority: t.priority,
+          dueDate: t.due_date,
+          timeLogged: Number(t.time_logged || 0),
+          description: t.description || ''
+        };
+      });
+      setTaskListState(mappedTasks);
+
+      // 3. Logs
+      const { data: dbLogs } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      const mappedLogs = (dbLogs || []).map(l => {
+        const p = mappedProjects.find(proj => proj.id === l.project_id);
+        const started = new Date(l.started_at);
+        const ended = l.ended_at ? new Date(l.ended_at) : null;
+        
+        return {
+          id: l.id,
+          userId: l.user_id,
+          userName: user?.email || 'You',
+          projectId: l.project_id,
+          projectName: p?.name || '',
+          task: l.description || 'Auto Tracked Task',
+          date: l.started_at.slice(0, 10),
+          startTime: started.toTimeString().slice(0, 5),
+          endTime: ended ? ended.toTimeString().slice(0, 5) : '',
+          duration: Number(l.duration_hours || 0),
+          source: l.source,
+          billable: l.billable,
+          tags: l.tags || []
+        };
+      });
+      setLogsState(mappedLogs);
+
+      // 4. Invoices
+      const { data: dbInvoices } = await supabase
+        .from('invoices')
+        .select('*')
+        .eq('org_id', orgId);
+      
+      const mappedInvoices = (dbInvoices || []).map(i => {
+        const p = mappedProjects.find(proj => proj.id === i.project_id);
+        return {
+          id: i.id,
+          invoiceNumber: i.invoice_number,
+          client: {
+            name: i.client_name || '',
+            email: i.client_email || '',
+            address: i.client_address || ''
+          },
+          project: p?.name || '',
+          projectId: i.project_id,
+          issueDate: i.issue_date,
+          dueDate: i.due_date,
+          status: i.status,
+          requiresSignature: i.requires_signature,
+          subtotal: Number(i.subtotal || 0),
+          tax: Number(i.tax || 0),
+          total: Number(i.total || 0),
+          notes: i.notes || '',
+          lineItems: i.line_items || []
+        };
+      });
+      setInvoiceListState(mappedInvoices);
+    };
+
+    loadData();
+  }, [demoMode, user, orgId]);
 
   const addProject = useCallback((name) => {
     const proj = {
