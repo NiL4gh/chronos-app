@@ -12,6 +12,8 @@ import Button from '../ui/Button.jsx';
 import { projects, tasks, timeLogs, invoices } from '../../data/mockData.js';
 import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
+import { useAuth } from '../../contexts/AuthContext.jsx';
+import { supabase } from '../../lib/supabase.js';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -27,9 +29,10 @@ function getMonday(d) {
 
 export default function AppShell() {
   const navigate = useNavigate();
+  const { isAdmin, orgId, user } = useAuth();
 
-  // Role
-  const [activeRole, setActiveRole] = useState('admin');
+  // Role is derived from real auth — no more client-side toggle
+  const activeRole = isAdmin ? 'admin' : 'employee';
 
   // Sidebar expand state (persisted to localStorage)
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
@@ -219,7 +222,7 @@ export default function AppShell() {
     if (taskId !== undefined) setTimerTaskId(taskId);
   }, []);
 
-  const stopTimer = useCallback(() => {
+  const stopTimer = useCallback(async () => {
     setTimerRunning(false);
     if (timerSeconds > 0) {
       const proj = projectList.find(p => p.id === timerProjectId) || projectList[0];
@@ -228,22 +231,47 @@ export default function AppShell() {
       const endStr = new Date().toTimeString().slice(0, 5);
       const durationHours = Number((timerSeconds / 3600).toFixed(2)) || 0.01;
 
+      // Optimistic local update — always visible immediately
       const newLog = {
         id: `log-${Date.now()}`,
-        userId: 'u1',
-        projectName: proj.name,
-        projectId: proj.id,
+        userId: user?.id || 'u1',
+        userName: user?.email || 'You',
+        projectName: proj?.name || '',
+        projectId: proj?.id || '',
         task: timerTaskLabel || 'Auto Tracked Task',
         date: new Date().toISOString().slice(0, 10),
         startTime: startStr,
         endTime: endStr,
         duration: durationHours,
         source: 'auto',
-        billable: true
+        billable: true,
       };
-
       setLogs(prev => [newLog, ...prev]);
-      triggerToast('Timer saved', `Logged ${durationHours}h to ${proj.name}.`, 'success');
+
+      // Persist to Supabase if logged in
+      if (user && orgId) {
+        const startedAt = new Date(startMs).toISOString();
+        const endedAt = new Date().toISOString();
+        const { error } = await supabase.from('time_logs').insert({
+          org_id: orgId,
+          user_id: user.id,
+          project_id: proj?.id || null,
+          description: timerTaskLabel || 'Auto Tracked Task',
+          started_at: startedAt,
+          ended_at: endedAt,
+          duration_hours: durationHours,
+          source: 'auto',
+          billable: true,
+        });
+        if (error) {
+          console.error('[AppShell] stopTimer Supabase error:', error.message);
+          triggerToast('Sync warning', 'Entry saved locally but not synced. Check your connection.', 'warning');
+        } else {
+          triggerToast('Timer saved', `Logged ${durationHours}h to ${proj?.name || 'project'}.`, 'success');
+        }
+      } else {
+        triggerToast('Timer saved', `Logged ${durationHours}h to ${proj?.name || 'project'}.`, 'success');
+      }
     }
     setTimerSeconds(0);
     setTimerTaskId('');
@@ -255,7 +283,7 @@ export default function AppShell() {
       localStorage.removeItem('timer_task_id');
       localStorage.removeItem('timer_saved_at');
     } catch {}
-  }, [timerSeconds, timerTaskLabel, timerProjectId, projectList, triggerToast]);
+  }, [timerSeconds, timerTaskLabel, timerProjectId, projectList, triggerToast, user, orgId]);
 
   // Guarded stop timer — shows in-app confirm if > 5 min
   const guardedStopTimer = useCallback(() => {
@@ -405,7 +433,6 @@ export default function AppShell() {
       {/* Sidebar */}
       <Sidebar
         activeRole={activeRole}
-        onRoleSwitch={() => setActiveRole(r => r === 'admin' ? 'employee' : 'admin')}
         triggerToast={triggerToast}
         onOpenHelp={() => setHelpOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
@@ -612,7 +639,7 @@ export default function AppShell() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
                   const { task, projectId, date, startTime, endTime } = drawerEntry;
                   if (!task || !projectId || !startTime || !endTime) {
                     triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
@@ -626,9 +653,12 @@ export default function AppShell() {
                   let diffMin = endMin - startMin;
                   if (diffMin < 0) diffMin += 1440;
                   const duration = Number((diffMin / 60).toFixed(2));
+
+                  // Optimistic local update
                   const newLog = {
                     id: `log-${Date.now()}`,
-                    userId: 'u1',
+                    userId: user?.id || 'u1',
+                    userName: user?.email || 'You',
                     projectName: proj.name,
                     projectId: proj.id,
                     task,
@@ -642,7 +672,31 @@ export default function AppShell() {
                   setLogs(prev => [newLog, ...prev]);
                   setDrawerOpen(false);
                   setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-                  triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
+
+                  // Persist to Supabase
+                  if (user && orgId) {
+                    const startedAt = new Date(`${date}T${startTime}:00`).toISOString();
+                    const endedAt   = new Date(`${date}T${endTime}:00`).toISOString();
+                    const { error } = await supabase.from('time_logs').insert({
+                      org_id: orgId,
+                      user_id: user.id,
+                      project_id: proj.id,
+                      description: task,
+                      started_at: startedAt,
+                      ended_at: endedAt,
+                      duration_hours: duration,
+                      source: 'manual',
+                      billable: true,
+                    });
+                    if (error) {
+                      console.error('[AppShell] manual entry Supabase error:', error.message);
+                      triggerToast('Sync warning', 'Saved locally but not synced.', 'warning');
+                    } else {
+                      triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
+                    }
+                  } else {
+                    triggerToast('Time entry saved', 'Your entry has been logged.', 'success');
+                  }
                 }}
               >
                 Save Entry

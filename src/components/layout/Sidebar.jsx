@@ -4,9 +4,10 @@ import {
   LayoutDashboard, Users, FolderKanban, BarChart3,
   FileText, Clock, Settings, HelpCircle, Timer,
   ChevronLeft, ChevronRight, UserCog, ChevronUp, ChevronDown,
-  Sun, Moon, CheckSquare
+  Sun, Moon, CheckSquare, LogOut
 } from 'lucide-react';
 import Avatar from '../ui/Avatar.jsx';
+import { useAuth } from '../../contexts/AuthContext.jsx';
 
 const NAV_ITEMS = [
   { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M', section: 'General' },
@@ -31,7 +32,6 @@ const SHORTCUTS = [
 
 export default function Sidebar({
   activeRole,
-  onRoleSwitch,
   triggerToast,
   onOpenHelp,
   onOpenSettings,
@@ -47,6 +47,7 @@ export default function Sidebar({
   const [hoverToggle, setHoverToggle] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
+  const { displayName, user, signOut } = useAuth();
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setProfileOpen(false); };
@@ -266,12 +267,12 @@ export default function Sidebar({
               e.currentTarget.style.background = 'transparent';
             }}
           >
-            <Avatar name="Niloy Pal" size="sm" />
+            <Avatar name={displayName || 'User'} size="sm" />
             {!collapsed && (
               <>
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                    Niloy Pal
+                    {displayName || 'User'}
                   </p>
                   <p className="text-xs text-[var(--text-muted)] truncate">
                     {activeRole === 'admin' ? 'Admin' : 'Employee'}
@@ -297,10 +298,10 @@ export default function Sidebar({
                 border: '1px solid var(--border-default)',
               }}
             >
-              {/* 1. User info header */}
+              {/* User info header */}
               <div className="px-3 py-2 border-b border-[var(--border-default)] mb-1 text-left">
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Niloy Pal</p>
-                <p className="text-xs text-[var(--text-muted)]">niloy@company.com</p>
+                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{displayName || 'User'}</p>
+                <p className="text-xs text-[var(--text-muted)]">{user?.email || ''}</p>
               </div>
 
               {/* 4. Settings link */}
@@ -348,10 +349,32 @@ export default function Sidebar({
                 <HelpCircle size={13} className="shrink-0" />
                 <span>Help & Docs</span>
               </button>
+
+              {/* Sign Out */}
+              <div className="border-t border-[var(--border-default)] mt-1 pt-1">
+                <button
+                  onClick={async () => {
+                    setProfileOpen(false);
+                    await signOut();
+                    navigate('/login', { replace: true });
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm cursor-pointer transition-colors text-left"
+                  style={{ color: '#ef4444' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(239,68,68,0.08)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <LogOut size={13} className="shrink-0" />
+                  <span>Sign out</span>
+                </button>
+              </div>
             </div>
           )}
-        </div>
-      </div>
+        </div>      {/* closes relative mx-2 mt-1 user wrapper */}
+      </div>        {/* closes py-2 space-y-0.5 bottom section */}
       </aside>
 
       {/* Collapse toggle */}
