@@ -14,6 +14,7 @@ import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
 import { supabase } from '../../lib/supabase.js';
+import OnboardingWorkspace from './OnboardingWorkspace.jsx';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -29,7 +30,7 @@ function getMonday(d) {
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const { isAdmin, orgId, user } = useAuth();
+  const { isAdmin, orgId, user, refreshProfile } = useAuth();
 
   // Role is derived from real auth — no more client-side toggle
   const activeRole = isAdmin ? 'admin' : 'employee';
@@ -421,6 +422,10 @@ export default function AppShell() {
     taskList, setTaskList, addTask,
     demoMode, setDemoMode,
   };
+
+  if (user && !orgId) {
+    return <OnboardingWorkspace onWorkspaceCreated={refreshProfile} />;
+  }
 
   return (
     <div
