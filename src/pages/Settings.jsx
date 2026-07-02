@@ -9,7 +9,7 @@ import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import { ACCENTS, THEME_OPTIONS } from '../lib/theme';
 
-export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent, onClose }) {
+export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent, demoMode, setDemoMode, onClose }) {
   const [activeSection, setActiveSection] = useState('personal');
   const [editingKey, setEditingKey] = useState(null);
 
@@ -94,6 +94,22 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
   // Appearance State
   const [density, setDensity] = useState('comfortable');
   const [collapsedSidebar, setCollapsedSidebar] = useState(false);
+
+  const handleToggleDemo = () => {
+    const nextVal = !demoMode;
+    setDemoMode(nextVal);
+    try {
+      localStorage.setItem('chronos_demo_mode', String(nextVal));
+    } catch {}
+    triggerToast(
+      nextVal ? 'Demo Mode Enabled' : 'Demo Mode Disabled',
+      'Reloading to apply changes...',
+      'success'
+    );
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
 
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg-surface)' }}>
@@ -309,6 +325,15 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
                   })}
                 </div>
               </div>
+              <div className="pt-6 border-t" style={{ borderColor: 'var(--border-default)' }}>
+                <label className="text-sm font-medium block mb-2" style={{ color: 'var(--text-primary)' }}>Demo Mode</label>
+                <Toggle
+                  label="Enable Demo Mode"
+                  description="Populate the app with pre-filled mock data for testing and preview."
+                  checked={demoMode}
+                  onChange={handleToggleDemo}
+                />
+              </div>
             </div>
           )}
 
@@ -493,7 +518,7 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
 }
 
 export default function Settings() {
-  const { keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent } = useOutletContext();
+  const { keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent, demoMode, setDemoMode } = useOutletContext();
   return (
     <div className="px-4 md:px-6 py-4 md:py-5 h-full animate-fade-in">
       <SettingsContent
@@ -504,6 +529,8 @@ export default function Settings() {
         setTheme={setTheme}
         accent={accent}
         setAccent={setAccent}
+        demoMode={demoMode}
+        setDemoMode={setDemoMode}
         onClose={null}
       />
     </div>

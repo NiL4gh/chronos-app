@@ -540,7 +540,7 @@ export default function Reports() {
                       <div key={log.id} className="flex justify-between items-center text-sm p-2 bg-[var(--bg-surface)] rounded-md border border-[var(--border-default)]">
                         <div className="flex items-center gap-3">
                           <div className="w-6 h-6 rounded-full bg-[var(--border-default)] flex items-center justify-center text-[10px] font-bold shrink-0">
-                            {mem?.name.split(' ').map(n=>n[0]).join('')}
+                            {(mem?.name || log.userName || 'U').split(' ').map(n=>n[0]).join('')}
                           </div>
                           <div>
                             <p className="font-medium text-[var(--text-primary)] flex items-center gap-2">

@@ -19,6 +19,20 @@ function formatTimer(s) {
   return `${h}:${m}:${sec}`;
 }
 
+function LiveTimerDisplay({ timerStart }) {
+  const [now, setNow] = useState(Date.now());
+  
+  useEffect(() => {
+    if (!timerStart) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [timerStart]);
+
+  if (!timerStart) return <span>00:00:00</span>;
+  const s = Math.floor((now - timerStart) / 1000);
+  return <span>{formatTimer(s)}</span>;
+}
+
 const MOCK_TAGS = ['Design', 'Development', 'Meeting', 'Review', 'Bug Fix'];
 
 const MOCK_RECENT_TASKS = [
@@ -31,7 +45,7 @@ export default function Topbar({
   onOpenCommandPalette,
   onOpenDrawer,
   timerRunning,
-  timerSeconds,
+  timerStart,
   timerTaskLabel,
   timerProjectId,
   timerTaskId,
@@ -548,7 +562,7 @@ export default function Topbar({
             className="font-mono font-bold text-sm tabular-nums"
             style={{ color: timerRunning ? 'var(--color-success)' : 'var(--text-muted)' }}
           >
-            {timerRunning ? formatTimer(timerSeconds) : '00:00:00'}
+            {timerRunning ? <LiveTimerDisplay timerStart={timerStart} /> : '00:00:00'}
           </span>
         </div>
 

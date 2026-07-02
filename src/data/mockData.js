@@ -4,8 +4,16 @@ function daysFromNow(n) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+const isDemo = () => {
+  try {
+    return localStorage.getItem('chronos_demo_mode') === 'true';
+  } catch {
+    return false;
+  }
+};
+
 // ─── TEAM MEMBERS ────────────────────────────────────────────────────────────
-export const teamMembers = [
+const _teamMembers = [
   {
     id: 'u1',
     name: 'Priya Sharma',
@@ -134,7 +142,7 @@ export const billingRates = {
 };
 
 // ─── PROJECTS ─────────────────────────────────────────────────────────────────
-export const projects = [
+const _projects = [
   {
     id: 'p1',
     name: 'Redesign Landing Page',
@@ -359,10 +367,10 @@ if (processedLogs.length < 20) {
   processedLogs = filterLogs(false);
 }
 
-export const timeLogs = processedLogs;
+const _timeLogs = processedLogs;
 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
-export const invoices = [
+const _invoices = [
   {
     id: 'inv-001',
     invoiceNumber: 'INV-2026-041',
@@ -436,7 +444,7 @@ export const invoices = [
 ];
 
 // ─── DASHBOARD METRICS ────────────────────────────────────────────────────────
-export const dashboardMetrics = {
+const _dashboardMetrics = {
   totalHoursToday: 19.2,
   totalHoursTodayDelta: +2.4,
   activeProjects: 4,
@@ -453,7 +461,7 @@ export const dashboardMetrics = {
 };
 
 // ─── REPORTS (weekly summary) ─────────────────────────────────────────────────
-export const reportRows = [
+const _reportRows = [
   { member: 'Priya Sharma', project: 'Redesign Landing Page', mon: 7.5, tue: 8.0, wed: 6.5, thu: 7.5, fri: 3.5, total: 33.0, billable: 33.0 },
   { member: 'Marcus Webb', project: 'API Gateway v2', mon: 6.0, tue: 7.5, wed: 8.0, thu: 6.5, fri: 4.25, total: 32.25, billable: 32.25 },
   { member: 'Aiko Tanaka', project: 'Design System v3', mon: 4.0, tue: 5.0, wed: 4.5, thu: 3.5, fri: 3.0, total: 20.0, billable: 0 },
@@ -462,7 +470,7 @@ export const reportRows = [
 ];
 
 // ─── TODOS ────────────────────────────────────────────────────────────────────
-export const todos = [
+const _todos = [
   { id: 'todo-1', userId: 'u1', title: 'Review API documentation updates', status: 'active', assignedBy: null, assignedByName: null, dueDate: daysFromNow(7), createdDate: daysFromNow(-7) },
   { id: 'todo-2', userId: 'u1', title: 'Update project estimates for Q3', status: 'done', assignedBy: null, assignedByName: null, dueDate: daysFromNow(-10), createdDate: daysFromNow(-14) },
   { id: 'todo-3', userId: 'u2', title: 'Write unit tests for auth module', status: 'active', assignedBy: null, assignedByName: null, dueDate: daysFromNow(14), createdDate: daysFromNow(-7) },
@@ -473,7 +481,7 @@ export const todos = [
   { id: 'todo-8', userId: 'u2', title: 'Document Kubernetes setup steps', status: 'done', assignedBy: 'u1', assignedByName: 'Priya Sharma', dueDate: daysFromNow(-5), createdDate: daysFromNow(-14) },
 ];
 
-export const tasks = [
+const _tasks = [
   {
     id: 'task-1',
     title: 'Implement rate limiting middleware',
@@ -643,3 +651,26 @@ export const tasks = [
     description: 'Define and document all brand color tokens.'
   }
 ];
+
+export const teamMembers = isDemo() ? _teamMembers : [];
+export const projects = isDemo() ? _projects : [];
+export const timeLogs = isDemo() ? _timeLogs : [];
+export const invoices = isDemo() ? _invoices : [];
+export const dashboardMetrics = isDemo() ? _dashboardMetrics : {
+  totalHoursToday: 0,
+  totalHoursTodayDelta: 0,
+  activeProjects: 0,
+  activeProjectsDelta: 0,
+  profitabilityMargin: 0,
+  profitabilityDelta: 0,
+  weeklyHours: [
+    { day: 'Mon', hours: 0 },
+    { day: 'Tue', hours: 0 },
+    { day: 'Wed', hours: 0 },
+    { day: 'Thu', hours: 0 },
+    { day: 'Fri', hours: 0 },
+  ],
+};
+export const reportRows = isDemo() ? _reportRows : [];
+export const todos = isDemo() ? _todos : [];
+export const tasks = isDemo() ? _tasks : [];

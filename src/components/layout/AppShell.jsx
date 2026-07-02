@@ -115,6 +115,13 @@ export default function AppShell() {
   // Theme + accent state (pre-paint script already applied the stored values)
   const [theme, setTheme] = useState(getStoredTheme);
   const [accent, setAccent] = useState(getStoredAccent);
+  const [demoMode, setDemoMode] = useState(() => {
+    try {
+      return localStorage.getItem('chronos_demo_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Keybindings state
   const [keyBindings, setKeyBindings] = useState(() => {
@@ -170,15 +177,10 @@ export default function AppShell() {
   const [timerRunning, setTimerRunning] = useState(() => {
     try { return localStorage.getItem('timer_running') === 'true'; } catch { return false; }
   });
-  const [timerSeconds, setTimerSeconds] = useState(() => {
+  const [timerStart, setTimerStart] = useState(() => {
     try {
-      const saved = localStorage.getItem('timer_seconds');
-      const savedAt = localStorage.getItem('timer_saved_at');
-      if (saved && savedAt && localStorage.getItem('timer_running') === 'true') {
-        const elapsed = Math.floor((Date.now() - Number(savedAt)) / 1000);
-        return Number(saved) + elapsed;
-      }
-      return Number(saved) || 0;
+      const saved = localStorage.getItem('timer_start');
+      return saved ? Number(saved) : 0;
     } catch { return 0; }
   });
   const [timerTaskLabel, setTimerTaskLabel] = useState(() => {
@@ -191,29 +193,25 @@ export default function AppShell() {
     try { return localStorage.getItem('timer_task_id') || ''; } catch { return ''; }
   });
 
-  useEffect(() => {
-    if (!timerRunning) return;
-    const id = setInterval(() => setTimerSeconds(s => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [timerRunning]);
+
 
   // Persist timer state to localStorage
   useEffect(() => {
     try {
       localStorage.setItem('timer_running', String(timerRunning));
-      localStorage.setItem('timer_seconds', String(timerSeconds));
+      localStorage.setItem('timer_start', String(timerStart));
       localStorage.setItem('timer_task', timerTaskLabel);
       localStorage.setItem('timer_project', timerProjectId);
       localStorage.setItem('timer_task_id', timerTaskId);
-      localStorage.setItem('timer_saved_at', String(Date.now()));
     } catch {}
-  }, [timerRunning, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId]);
+  }, [timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId]);
 
   const startTimer = useCallback((task = '', projectId = '', taskId = '') => {
     setTimerTaskLabel(task);
     setTimerProjectId(projectId);
     setTimerTaskId(taskId);
     setTimerRunning(true);
+    setTimerStart(Date.now());
   }, []);
 
   const updateTimer = useCallback(({ task, projectId, taskId }) => {
@@ -224,12 +222,12 @@ export default function AppShell() {
 
   const stopTimer = useCallback(async () => {
     setTimerRunning(false);
-    if (timerSeconds > 0) {
+    if (timerStart > 0) {
+      const elapsedMs = Date.now() - timerStart;
       const proj = projectList.find(p => p.id === timerProjectId) || projectList[0];
-      const startMs = Date.now() - timerSeconds * 1000;
-      const startStr = new Date(startMs).toTimeString().slice(0, 5);
+      const startStr = new Date(timerStart).toTimeString().slice(0, 5);
       const endStr = new Date().toTimeString().slice(0, 5);
-      const durationHours = Number((timerSeconds / 3600).toFixed(2)) || 0.01;
+      const durationHours = Number((elapsedMs / 3600000).toFixed(2)) || 0.01;
 
       // Optimistic local update — always visible immediately
       const newLog = {
@@ -273,40 +271,38 @@ export default function AppShell() {
         triggerToast('Timer saved', `Logged ${durationHours}h to ${proj?.name || 'project'}.`, 'success');
       }
     }
-    setTimerSeconds(0);
+    setTimerStart(0);
     setTimerTaskId('');
     try {
       localStorage.removeItem('timer_running');
-      localStorage.removeItem('timer_seconds');
+      localStorage.removeItem('timer_start');
       localStorage.removeItem('timer_task');
       localStorage.removeItem('timer_project');
       localStorage.removeItem('timer_task_id');
-      localStorage.removeItem('timer_saved_at');
     } catch {}
-  }, [timerSeconds, timerTaskLabel, timerProjectId, projectList, triggerToast, user, orgId]);
+  }, [timerStart, timerTaskLabel, timerProjectId, projectList, triggerToast, user, orgId]);
 
   // Guarded stop timer — shows in-app confirm if > 5 min
   const guardedStopTimer = useCallback(() => {
-    if (timerSeconds > 300) {
+    if (timerStart > 0 && (Date.now() - timerStart) / 1000 > 300) {
       setStopConfirmOpen(true);
       return;
     }
     stopTimer();
-  }, [timerSeconds, stopTimer]);
+  }, [timerStart, stopTimer]);
 
   const resetTimer = useCallback(() => {
     setTimerRunning(false);
-    setTimerSeconds(0);
+    setTimerStart(0);
     setTimerTaskLabel('');
     setTimerProjectId('');
     setTimerTaskId('');
     try {
       localStorage.removeItem('timer_running');
-      localStorage.removeItem('timer_seconds');
+      localStorage.removeItem('timer_start');
       localStorage.removeItem('timer_task');
       localStorage.removeItem('timer_project');
       localStorage.removeItem('timer_task_id');
-      localStorage.removeItem('timer_saved_at');
     } catch {}
   }, []);
 
@@ -408,7 +404,7 @@ export default function AppShell() {
 
   // ─── Outlet context ──────────────────────────────────
   const outletContext = {
-    timerRunning, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId,
+    timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId,
     startTimer, stopTimer: guardedStopTimer, resetTimer, updateTimer,
     triggerToast,
     activeRole,
@@ -423,6 +419,7 @@ export default function AppShell() {
     selectedDate, setSelectedDate,
     projectList, setProjectList, addProject,
     taskList, setTaskList, addTask,
+    demoMode, setDemoMode,
   };
 
   return (
@@ -456,7 +453,7 @@ export default function AppShell() {
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenDrawer={() => setDrawerOpen(true)}
             timerRunning={timerRunning}
-            timerSeconds={timerSeconds}
+            timerStart={timerStart}
             timerTaskLabel={timerTaskLabel}
             timerProjectId={timerProjectId}
             timerTaskId={timerTaskId}
@@ -789,8 +786,8 @@ export default function AppShell() {
             <p className="text-sm font-semibold text-[var(--text-primary)]">
               Stop timer?
             </p>
-            <p className="text-sm text-[var(--text-secondary)]">
-              You have {Math.floor(timerSeconds / 60)} minutes tracked. This entry will be saved to your log.
+            <p className="text-sm text-[var(--text-secondary)] mb-6">
+              You have {timerStart > 0 ? Math.floor((Date.now() - timerStart) / 60000) : 0} minutes tracked. This entry will be saved to your logs.
             </p>
             <div className="flex gap-2 justify-end">
               <Button variant="ghost" size="sm" onClick={() => setStopConfirmOpen(false)}>Keep running</Button>
@@ -824,6 +821,8 @@ export default function AppShell() {
               setTheme={setTheme}
               accent={accent}
               setAccent={setAccent}
+              demoMode={demoMode}
+              setDemoMode={setDemoMode}
               onClose={() => setSettingsOpen(false)}
             />
           </div>
