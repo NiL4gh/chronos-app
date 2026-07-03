@@ -112,6 +112,36 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
     }, 1000);
   };
 
+  const handleClearDemoData = () => {
+    try {
+      localStorage.setItem('chronos_demo_projects', JSON.stringify([]));
+      localStorage.setItem('chronos_demo_tasks', JSON.stringify([]));
+      localStorage.setItem('chronos_demo_logs', JSON.stringify([]));
+      localStorage.setItem('chronos_demo_invoices', JSON.stringify([]));
+      triggerToast('Demo Data Cleared', 'App reset to a clean slate.', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleLoadSampleData = () => {
+    try {
+      localStorage.removeItem('chronos_demo_projects');
+      localStorage.removeItem('chronos_demo_tasks');
+      localStorage.removeItem('chronos_demo_logs');
+      localStorage.removeItem('chronos_demo_invoices');
+      triggerToast('Sample Data Restored', 'Reloading app to apply changes...', 'success');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--bg-surface)' }}>
 
@@ -339,6 +369,35 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
                   onChange={handleToggleDemo}
                   disabled={!isSupabaseConfigured}
                 />
+
+                {demoMode && (
+                  <div className="mt-4 flex flex-wrap gap-2.5">
+                    <button
+                      type="button"
+                      onClick={handleClearDemoData}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:opacity-85 active:scale-[0.98]"
+                      style={{
+                        borderColor: 'rgba(239, 68, 68, 0.2)',
+                        background: 'rgba(239, 68, 68, 0.08)',
+                        color: '#ef4444'
+                      }}
+                    >
+                      Clear All Demo Data
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleLoadSampleData}
+                      className="px-3.5 py-1.5 rounded-xl text-xs font-semibold border transition-all hover:opacity-85 active:scale-[0.98]"
+                      style={{
+                        borderColor: 'var(--accent-border)',
+                        background: 'var(--accent-subtle)',
+                        color: 'var(--accent-text)'
+                      }}
+                    >
+                      Load Sample Data
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}

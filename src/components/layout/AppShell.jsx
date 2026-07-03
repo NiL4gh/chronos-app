@@ -63,15 +63,52 @@ export default function AppShell() {
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
 
   // Shared logs state
-  const [logs, setLogsState] = useState(timeLogs);
-  const setLogs = setLogsState;
+  const [logs, setLogsState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chronos_demo_logs');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return timeLogs;
+  });
+
+  const setLogs = useCallback((updater) => {
+    setLogsState((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : updater;
+      if (demoMode) {
+        try {
+          localStorage.setItem('chronos_demo_logs', JSON.stringify(next));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      return next;
+    });
+  }, [demoMode]);
 
   // Shared invoices state
-  const [invoiceList, setInvoiceListState] = useState(invoices);
+  const [invoiceList, setInvoiceListState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chronos_demo_invoices');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return invoices;
+  });
 
   // Shared projects / tasks state
-  const [projectList, setProjectListState] = useState(projects);
-  const [taskList, setTaskListState] = useState(tasks);
+  const [projectList, setProjectListState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chronos_demo_projects');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return projects;
+  });
+  const [taskList, setTaskListState] = useState(() => {
+    try {
+      const saved = localStorage.getItem('chronos_demo_tasks');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return tasks;
+  });
 
   // Custom setters to auto-persist to Supabase
   const setProjectList = useCallback((updater) => {
@@ -97,6 +134,12 @@ export default function AppShell() {
           });
           if (error) console.error('[AppShell] Supabase project insert error:', error.message);
         });
+      } else if (demoMode) {
+        try {
+          localStorage.setItem('chronos_demo_projects', JSON.stringify(next));
+        } catch (e) {
+          console.error(e);
+        }
       }
       return next;
     });
@@ -121,6 +164,12 @@ export default function AppShell() {
           });
           if (error) console.error('[AppShell] Supabase task insert error:', error.message);
         });
+      } else if (demoMode) {
+        try {
+          localStorage.setItem('chronos_demo_tasks', JSON.stringify(next));
+        } catch (e) {
+          console.error(e);
+        }
       }
       return next;
     });
@@ -152,6 +201,12 @@ export default function AppShell() {
           });
           if (error) console.error('[AppShell] Supabase invoice insert error:', error.message);
         });
+      } else if (demoMode) {
+        try {
+          localStorage.setItem('chronos_demo_invoices', JSON.stringify(next));
+        } catch (e) {
+          console.error(e);
+        }
       }
       return next;
     });
@@ -160,10 +215,6 @@ export default function AppShell() {
   // Load all live data from Supabase
   useEffect(() => {
     if (demoMode) {
-      setProjectListState(projects);
-      setTaskListState(tasks);
-      setInvoiceListState(invoices);
-      setLogsState(timeLogs);
       return;
     }
 
