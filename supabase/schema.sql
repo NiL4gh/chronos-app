@@ -160,14 +160,32 @@ alter table public.invoices      enable row level security;
 
 -- Helper: returns the org_id of the currently authenticated user
 create or replace function public.my_org_id()
-returns uuid language sql stable as $$
-  select org_id from public.profiles where id = auth.uid();
+returns uuid 
+language plpgsql 
+security definer 
+set search_path = public 
+stable as $$
+declare
+  _org_id uuid;
+begin
+  select org_id into _org_id from public.profiles where id = auth.uid();
+  return _org_id;
+end;
 $$;
 
 -- Helper: returns the role of the currently authenticated user
 create or replace function public.my_role()
-returns text language sql stable as $$
-  select role from public.profiles where id = auth.uid();
+returns text 
+language plpgsql 
+security definer 
+set search_path = public 
+stable as $$
+declare
+  _role text;
+begin
+  select role into _role from public.profiles where id = auth.uid();
+  return _role;
+end;
 $$;
 
 -- Organizations: only members of the org can see it

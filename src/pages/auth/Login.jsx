@@ -39,7 +39,7 @@ export default function Login() {
 
     const { error: err } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/my-time` },
+      options: { emailRedirectTo: window.location.origin + window.location.pathname },
     });
 
     if (err) {
@@ -56,7 +56,7 @@ export default function Login() {
     setError('');
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/my-time` },
+      options: { redirectTo: window.location.origin + window.location.pathname },
     });
     if (err) setError(err.message);
   };

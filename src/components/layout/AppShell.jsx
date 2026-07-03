@@ -13,7 +13,7 @@ import { projects, tasks, timeLogs, invoices } from '../../data/mockData.js';
 import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
-import { supabase } from '../../lib/supabase.js';
+import { supabase, isSupabaseConfigured } from '../../lib/supabase.js';
 import OnboardingWorkspace from './OnboardingWorkspace.jsx';
 
 // ─── Role ───────────────────────────────────────────────
@@ -334,6 +334,7 @@ export default function AppShell() {
   const [theme, setTheme] = useState(getStoredTheme);
   const [accent, setAccent] = useState(getStoredAccent);
   const [demoMode, setDemoMode] = useState(() => {
+    if (!isSupabaseConfigured) return true;
     try {
       return localStorage.getItem('chronos_demo_mode') === 'true';
     } catch {

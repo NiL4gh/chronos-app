@@ -29,7 +29,7 @@ export default function Signup() {
     setError('');
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/onboarding` },
+      options: { redirectTo: window.location.origin + window.location.pathname },
     });
     if (err) setError(err.message);
   };
@@ -66,7 +66,7 @@ export default function Signup() {
         password,
         options: {
           data: { full_name: fullName.trim() },
-          emailRedirectTo: `${window.location.origin}/my-time`,
+          emailRedirectTo: window.location.origin + window.location.pathname,
         },
       });
 
