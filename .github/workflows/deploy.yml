@@ -18,12 +18,11 @@ jobs:
 
       - name: Install and Build 🔧
         run: |
-          cd chronos-app
           npm ci
           npm run build
 
       - name: Deploy 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
-          folder: chronos-app/dist
+          folder: dist
           branch: gh-pages
