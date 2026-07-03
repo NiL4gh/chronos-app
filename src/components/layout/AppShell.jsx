@@ -35,6 +35,16 @@ export default function AppShell() {
   // Role is derived from real auth — no more client-side toggle
   const activeRole = isAdmin ? 'admin' : 'employee';
 
+  // Demo Mode state
+  const [demoMode, setDemoMode] = useState(() => {
+    if (!isSupabaseConfigured) return true;
+    try {
+      return localStorage.getItem('chronos_demo_mode') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Sidebar expand state (persisted to localStorage)
   const [sidebarExpanded, setSidebarExpanded] = useState(() => {
     try {
@@ -333,14 +343,6 @@ export default function AppShell() {
   // Theme + accent state (pre-paint script already applied the stored values)
   const [theme, setTheme] = useState(getStoredTheme);
   const [accent, setAccent] = useState(getStoredAccent);
-  const [demoMode, setDemoMode] = useState(() => {
-    if (!isSupabaseConfigured) return true;
-    try {
-      return localStorage.getItem('chronos_demo_mode') === 'true';
-    } catch {
-      return false;
-    }
-  });
 
   // Keybindings state
   const [keyBindings, setKeyBindings] = useState(() => {
