@@ -1449,8 +1449,20 @@ export default function MyTime() {
               </button>
               <button
                 onClick={() => {
+                  const deletedEntry = { ...selectedEntry };
                   setLogs(prev => prev.filter(l => l.id !== selectedEntry.log.id));
-                  triggerToast('Entry deleted', selectedEntry.log.task || '', 'success');
+                  triggerToast(
+                    'Entry deleted',
+                    selectedEntry.log.task || '',
+                    'success',
+                    {
+                      label: 'Undo',
+                      onClick: () => {
+                        setLogs(prev => [...prev, deletedEntry.log]);
+                        triggerToast('Entry restored', '', 'success');
+                      },
+                    }
+                  );
                   setSelectedEntry(null);
                 }}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"

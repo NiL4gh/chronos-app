@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar, X, FolderOpen, Tag, DollarSign, Check } from 'lucide-react';
 
 const PAGE_META = {
@@ -54,11 +54,14 @@ export default function Topbar({
   onUpdateTimer,
   projectList = [],
   taskList = [],
+  teamMembers = [],
+  logs = [],
   addProject,
   addTask,
   triggerToast = () => {},
 }) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [taskInput, setTaskInput] = useState('');
@@ -76,6 +79,11 @@ export default function Topbar({
   const taskPopupRef = useRef(null);
   const tagPopupRef = useRef(null);
   const recentTasksPopupRef = useRef(null);
+
+  // Global search state
+  const [globalQuery, setGlobalQuery] = useState('');
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
+  const globalSearchRef = useRef(null);
 
   useEffect(() => {
     if (!projectPopupOpen) return;
@@ -144,6 +152,18 @@ export default function Topbar({
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
+  // Global search outside-click handler
+  useEffect(() => {
+    if (!globalSearchOpen) return;
+    const handler = (e) => {
+      if (globalSearchRef.current && !globalSearchRef.current.contains(e.target)) {
+        setGlobalSearchOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [globalSearchOpen]);
+
   const [dateStr, setDateStr] = useState('');
   const [timeStr, setTimeStr] = useState('');
 
@@ -157,6 +177,42 @@ export default function Topbar({
     const id = setInterval(updateDateTime, 1000);
     return () => clearInterval(id);
   }, []);
+
+  // Global search results — searches across projects, tasks, team members, and time logs
+  const globalResults = (() => {
+    if (!globalQuery.trim() || globalQuery.length < 2) return [];
+    const q = globalQuery.toLowerCase();
+    const results = [];
+    // Projects: name, client, tags
+    projectList.forEach(p => {
+      if (p.name.toLowerCase().includes(q) || p.client.toLowerCase().includes(q) ||
+          (p.tags && p.tags.some(t => t.toLowerCase().includes(q)))) {
+        results.push({ type: 'Project', label: p.name, sub: p.client, route: '/projects', id: p.id });
+      }
+    });
+    // Tasks: title, project name, description
+    taskList.forEach(t => {
+      const proj = projectList.find(p => p.id === t.projectId);
+      if (t.title.toLowerCase().includes(q) || (proj && proj.name.toLowerCase().includes(q)) ||
+          (t.description && t.description.toLowerCase().includes(q))) {
+        results.push({ type: 'Task', label: t.title, sub: proj?.name || '', route: '/tasks', id: t.id });
+      }
+    });
+    // Team members: name, role, email
+    teamMembers.forEach(m => {
+      if (m.name.toLowerCase().includes(q) || (m.role || '').toLowerCase().includes(q) ||
+          (m.email || '').toLowerCase().includes(q)) {
+        results.push({ type: 'Member', label: m.name, sub: m.role || '', route: '/team', id: m.id });
+      }
+    });
+    // Time logs: task description, project name
+    logs.forEach(l => {
+      if (l.task.toLowerCase().includes(q) || (l.projectName || '').toLowerCase().includes(q)) {
+        results.push({ type: 'Log', label: l.task, sub: `${l.projectName || ''} — ${l.date}`, route: '/my-time', id: l.id });
+      }
+    });
+    return results.slice(0, 20);
+  })();
 
   const handleStartTimer = () => {
     onStartTimer(taskInput.trim(), projectInput || '', taskIdInput || '');
@@ -176,12 +232,78 @@ export default function Topbar({
         } : {})
       }}
     >
-      {/* LEFT ZONE — date/time */}
-      <div className="flex-shrink-0 flex flex-col items-start min-w-0">
+      {/* LEFT ZONE — date/time + global search */}
+      <div className="flex-shrink-0 flex items-center gap-3 min-w-0">
         <div className="hidden sm:flex items-center gap-1.5 text-xs">
           <Calendar size={12} className="text-[var(--text-secondary)]" />
           <span className="font-medium text-[var(--text-secondary)]">{dateStr}</span>
           <span className="text-[var(--text-muted)] font-normal ml-1">{timeStr}</span>
+        </div>
+        {/* Global search */}
+        <div className="relative hidden md:block" ref={globalSearchRef}>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all duration-150"
+            style={{
+              background: 'var(--bg-sunken)',
+              border: `1px solid ${globalSearchOpen ? 'var(--border-focus)' : 'var(--border-default)'}`,
+              width: globalSearchOpen ? '240px' : '160px',
+            }}>
+            <Search size={13} style={{ color: 'var(--text-muted)' }} className="shrink-0" />
+            <input
+              type="text"
+              value={globalQuery}
+              onChange={e => { setGlobalQuery(e.target.value); setGlobalSearchOpen(true); }}
+              onFocus={() => { if (globalQuery.length >= 2) setGlobalSearchOpen(true); }}
+              placeholder="Search…"
+              className="bg-transparent text-xs outline-none flex-1 min-w-0"
+              style={{ color: 'var(--text-primary)' }}
+              onKeyDown={e => {
+                if (e.key === 'Escape') { setGlobalSearchOpen(false); setGlobalQuery(''); }
+              }}
+            />
+          </div>
+          {/* Search results dropdown */}
+          {globalSearchOpen && globalResults.length > 0 && (
+            <div className="absolute top-full mt-1 left-0 right-0 rounded-xl shadow-xl overflow-hidden z-50"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <div className="max-h-[320px] overflow-y-auto p-1">
+                {globalResults.map((r, i) => {
+                  const typeColors = {
+                    Project: { bg: 'var(--accent-subtle)', text: 'var(--accent-text)' },
+                    Task: { bg: 'var(--info-bg)', text: 'var(--info-text)' },
+                    Member: { bg: 'var(--success-bg)', text: 'var(--success-text)' },
+                    Log: { bg: 'var(--warning-bg)', text: 'var(--warning-text)' },
+                  };
+                  const tc = typeColors[r.type] || typeColors.Project;
+                  return (
+                    <button
+                      key={`${r.type}-${r.id}-${i}`}
+                      onClick={() => {
+                        navigate(r.route);
+                        setGlobalSearchOpen(false);
+                        setGlobalQuery('');
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-left transition-colors hover:bg-[var(--bg-sunken)]"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[var(--text-primary)] truncate">{r.label}</p>
+                        <p className="text-xs text-[var(--text-muted)] truncate">{r.sub}</p>
+                      </div>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded shrink-0"
+                        style={{ background: tc.bg, color: tc.text }}>
+                        {r.type}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {globalSearchOpen && globalQuery.length >= 2 && globalResults.length === 0 && (
+            <div className="absolute top-full mt-1 left-0 right-0 rounded-xl shadow-xl z-50 px-4 py-6 text-center"
+              style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}>
+              <p className="text-xs text-[var(--text-muted)]">No results for "{globalQuery}"</p>
+            </div>
+          )}
         </div>
       </div>
 

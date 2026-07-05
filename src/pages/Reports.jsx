@@ -403,18 +403,36 @@ export default function Reports() {
                 placeholder="From date" 
                 showPresets={true}
                 onRangeChange={(start, end) => {
-                  const formatDate = (d) => {
-                    const pad = (n) => String(n).padStart(2, '0');
-                    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+                  const fmt = (d) => {
+                    const p = (n) => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
                   };
-                  setFilterStart(formatDate(start));
-                  setFilterEnd(formatDate(end));
+                  const s = fmt(start);
+                  const e = fmt(end);
+                  setFilterStart(s);
+                  setFilterEnd(e);
                 }}
               />
             </div>
+            <div className="flex items-center pb-2.5">
+              <span className="text-xs text-[var(--text-muted)]">→</span>
+            </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">To</label>
-              <DateTimePicker value={filterEnd} onChange={setFilterEnd} placeholder="To date" />
+              <DateTimePicker 
+                value={filterEnd} 
+                onChange={setFilterEnd} 
+                placeholder="To date"
+                showPresets={true}
+                onRangeChange={(start, end) => {
+                  const fmt = (d) => {
+                    const p = (n) => String(n).padStart(2, '0');
+                    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+                  };
+                  setFilterStart(fmt(start));
+                  setFilterEnd(fmt(end));
+                }}
+              />
             </div>
             
             <div className="w-px h-8 bg-[var(--border-default)] hidden md:block mb-1" />

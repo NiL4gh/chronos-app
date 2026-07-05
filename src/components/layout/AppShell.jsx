@@ -9,7 +9,7 @@ import { SettingsContent } from '../../pages/Settings.jsx';
 import Input, { Select } from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
-import { projects, tasks, timeLogs, invoices } from '../../data/mockData.js';
+import { projects, tasks, timeLogs, invoices, teamMembers } from '../../data/mockData.js';
 import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 import { useAuth } from '../../contexts/AuthContext.jsx';
@@ -61,6 +61,11 @@ export default function AppShell() {
   });
   const [pendingClose, setPendingClose] = useState(false);
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
+
+  // Returns true when the manual entry form has user-entered data worth confirming
+  const hasMeaningfulEntry = useCallback((entry) => {
+    return (entry.task && entry.task.trim().length >= 3) || (entry.startTime && entry.endTime);
+  }, []);
 
   // Shared logs state
   const [logs, setLogsState] = useState(() => {
@@ -435,8 +440,8 @@ export default function AppShell() {
 
   // Toast
   const [toast, setToast] = useState({ visible: false, title: '', message: '', variant: 'success' });
-  const triggerToast = useCallback((title, message = '', variant = 'success') => {
-    setToast({ visible: true, title, message, variant });
+  const triggerToast = useCallback((title, message = '', variant = 'success', action) => {
+    setToast({ visible: true, title, message, variant, action });
   }, []);
   const dismissToast = useCallback(() => {
     setToast(prev => ({ ...prev, visible: false }));
@@ -641,7 +646,12 @@ export default function AppShell() {
       } else if (key === keyBindings.openPalette.toLowerCase()) {
         setCommandPaletteOpen(true);
       } else if (e.key === 'Escape') {
-        setDrawerOpen(false);
+        if (drawerOpen && hasMeaningfulEntry(drawerEntry)) {
+          setPendingClose(true);
+        } else {
+          setDrawerOpen(false);
+          setPendingClose(false);
+        }
         setCommandPaletteOpen(false);
         setHelpOpen(false);
       }
@@ -738,6 +748,8 @@ export default function AppShell() {
             onUpdateTimer={updateTimer}
             projectList={projectList}
             taskList={taskList}
+            teamMembers={teamMembers}
+            logs={logs}
             addProject={addProject}
             addTask={addTask}
             triggerToast={triggerToast}
@@ -745,7 +757,7 @@ export default function AppShell() {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto px-6 py-5">
+        <main className="flex-1 overflow-y-auto px-6 py-5 animate-fade-in">
           <Outlet context={outletContext} />
         </main>
       </div>
@@ -753,11 +765,10 @@ export default function AppShell() {
       {/* Manual Time Entry Modal */}
       {drawerOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
           style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
           onClick={() => {
-            const { task, projectId, startTime, endTime } = drawerEntry;
-            if (task || projectId || startTime || endTime) {
+            if (hasMeaningfulEntry(drawerEntry)) {
               setPendingClose(true);
             } else {
               setDrawerOpen(false);
@@ -766,7 +777,7 @@ export default function AppShell() {
           }}
         >
           <div
-            className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+            className="w-full max-w-md rounded-2xl shadow-2xl flex flex-col animate-slide-up"
             style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-default)' }}
             onClick={e => e.stopPropagation()}
           >
@@ -775,8 +786,7 @@ export default function AppShell() {
               <span className="text-sm font-bold text-[var(--text-primary)]">Log Time Entry</span>
               <button
                 onClick={() => {
-                  const { task, projectId, startTime, endTime } = drawerEntry;
-                  if (task || projectId || startTime || endTime) {
+                  if (hasMeaningfulEntry(drawerEntry)) {
                     setPendingClose(true);
                   } else {
                     setDrawerOpen(false);
@@ -1076,12 +1086,12 @@ export default function AppShell() {
       {/* Settings Modal */}
       {settingsOpen && (
         <div
-          className="fixed inset-0 z-[200] flex items-center justify-center"
+          className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in"
           style={{ background: 'rgba(0,0,0,0.45)' }}
         >
           <div className="absolute inset-0 z-0" onClick={() => setSettingsOpen(false)} />
           <div
-            className="relative z-10 w-full max-w-4xl mx-4 rounded-2xl overflow-hidden shadow-2xl animate-fade-in"
+            className="relative z-10 w-full max-w-4xl mx-4 rounded-2xl overflow-hidden shadow-2xl animate-slide-up"
             style={{
               height: '90vh',
               maxHeight: '720px',
@@ -1111,6 +1121,7 @@ export default function AppShell() {
         title={toast.title}
         message={toast.message}
         variant={toast.variant}
+        action={toast.action}
         onDismiss={dismissToast}
       />
     </div>

@@ -42,6 +42,9 @@ export function applyTheme(theme) {
   const dark = resolveTheme(theme) === 'dark';
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+  // Sync the meta color-scheme so native UI (scrollbars, form controls) matches
+  const meta = document.querySelector('meta[name="color-scheme"]');
+  if (meta) meta.setAttribute('content', dark ? 'dark' : 'light');
   try { localStorage.setItem(THEME_KEY, theme); } catch {}
 }
 

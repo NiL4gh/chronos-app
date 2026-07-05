@@ -121,82 +121,76 @@ const DATE_PRESETS = [
   }
 ];
 
-// ─── TimeWheel ──────────────────────────────────────────
-function TimeWheel({ value, min, max, onChange, label }) {
-  const ref = useRef(null);
-  const items = [];
-  for (let i = min; i <= max; i++) items.push(i);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const idx = items.indexOf(value);
-    if (idx < 0) return;
-    const itemH = 32;
-    ref.current.scrollTop = idx * itemH;
-  }, [value]);
-
-  const handleScroll = useCallback(() => {
-    if (!ref.current) return;
-    const itemH = 32;
-    const idx = Math.round(ref.current.scrollTop / itemH);
-    const clamped = Math.max(0, Math.min(items.length - 1, idx));
-    if (items[clamped] !== value) onChange(items[clamped]);
-  }, [items, value, onChange]);
-
+// ─── TimeChipGrid ────────────────────────────────────────
+// Quick-select chip grid replacing the old scroll wheel for a faster UX.
+function TimeChipGrid({ hours, minutes, onPick }) {
+  const QUICK_MINUTES = [0, 15, 30, 45];
   return (
-    <div className="flex flex-col items-center gap-1">
-      <span className="text-[10px] font-semibold uppercase tracking-widest"
-        style={{ color: 'var(--text-disabled)' }}>{label}</span>
-      <div
-        className="relative w-12 overflow-hidden rounded-xl"
-        style={{
-          height: '96px',
-          background: 'var(--bg-sunken)',
-          border: '1px solid var(--border-default)',
-        }}
-      >
-        <div
-          className="absolute left-0 right-0 pointer-events-none z-10"
-          style={{
-            top: '32px',
-            height: '32px',
-            borderTop: '1px solid var(--accent-border)',
-            borderBottom: '1px solid var(--accent-border)',
-            pointerEvents: 'none',
-            zIndex: 1,
-          }}
-        />
-        <div
-          ref={ref}
-          onScroll={handleScroll}
-          className="h-full overflow-y-scroll"
-          style={{
-            scrollSnapType: 'y mandatory',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}
-        >
-          <div style={{ height: '32px', scrollSnapAlign: 'start', flexShrink: 0 }} />
-          {items.map((v) => (
-            <div
-              key={v}
-              onClick={() => onChange(v)}
-              className="flex items-center justify-center cursor-pointer transition-colors duration-100"
+    <div className="flex flex-col gap-2 w-full">
+      {/* Common presets */}
+      <div className="flex gap-1.5">
+        {[
+          { label: '9 AM', h: 9, m: 0 },
+          { label: '12 PM', h: 12, m: 0 },
+          { label: '5 PM', h: 17, m: 0 },
+        ].map(p => (
+          <button
+            key={p.label}
+            type="button"
+            onClick={() => onPick(p.h, p.m)}
+            className="flex-1 text-[10px] font-semibold py-1 rounded-md transition-all duration-100"
+            style={{
+              background: hours === p.h && minutes === p.m ? 'var(--accent)' : 'var(--bg-sunken)',
+              color: hours === p.h && minutes === p.m ? '#fff' : 'var(--text-secondary)',
+              border: `1px solid ${hours === p.h && minutes === p.m ? 'var(--accent)' : 'var(--border-default)'}`,
+            }}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+      {/* Hour grid: 4 columns */}
+      <div>
+        <span className="text-[10px] font-semibold uppercase tracking-widest block mb-1"
+          style={{ color: 'var(--text-disabled)' }}>Hour</span>
+        <div className="grid grid-cols-6 gap-1">
+          {Array.from({ length: 24 }, (_, i) => i).map(h => (
+            <button
+              key={h}
+              type="button"
+              onClick={() => onPick(h, minutes)}
+              className="h-7 rounded-md text-[11px] font-medium transition-all duration-100 flex items-center justify-center"
               style={{
-                height: '32px',
-                scrollSnapAlign: 'start',
-                fontFamily: 'ui-monospace, monospace',
-                fontSize: '14px',
-                fontWeight: v === value ? '700' : '400',
-                color: v === value ? 'var(--accent)' : 'var(--text-muted)',
-                position: 'relative',
-                zIndex: 2,
+                background: h === hours ? 'var(--accent)' : 'transparent',
+                color: h === hours ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${h === hours ? 'var(--accent)' : 'var(--border-default)'}`,
               }}
             >
-              {pad(v)}
-            </div>
+              {pad(h)}
+            </button>
           ))}
-          <div style={{ height: '32px', scrollSnapAlign: 'start', flexShrink: 0 }} />
+        </div>
+      </div>
+      {/* Minute chips: 4 common values */}
+      <div>
+        <span className="text-[10px] font-semibold uppercase tracking-widest block mb-1"
+          style={{ color: 'var(--text-disabled)' }}>Minute</span>
+        <div className="grid grid-cols-4 gap-1">
+          {QUICK_MINUTES.map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => onPick(hours, m)}
+              className="h-8 rounded-md text-xs font-medium transition-all duration-100 flex items-center justify-center"
+              style={{
+                background: m === minutes ? 'var(--accent)' : 'transparent',
+                color: m === minutes ? '#fff' : 'var(--text-secondary)',
+                border: `1px solid ${m === minutes ? 'var(--accent)' : 'var(--border-default)'}`,
+              }}
+            >
+              {pad(m)}
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -460,15 +454,22 @@ export default function DateTimePicker({
       {mode === 'time' && activePanel === 'time' && (
         <div
           className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-50 absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
-          style={{ width: '200px' }}
+          style={{ width: '240px' }}
         >
-          {/* Typed time input */}
+          {/* Typed time input with auto-colon */}
           <input
             type="text"
             value={typedTime}
             onChange={e => {
-              setTypedTime(e.target.value);
-              const parsed = parseTypedTime(e.target.value);
+              let val = e.target.value;
+              // Auto-insert colon after 2 digits if user types digits without colon
+              // e.g. "93" → "9:3", "1430" → "14:30"
+              const digits = val.replace(/[^0-9]/g, '');
+              if (!val.includes(':') && digits.length >= 2 && val.length <= 4) {
+                val = digits.slice(0, 2) + ':' + digits.slice(2, 4);
+              }
+              setTypedTime(val);
+              const parsed = parseTypedTime(val);
               if (parsed) { setHours(parsed.h); setMinutes(parsed.m); }
             }}
             onBlur={() => {
@@ -492,39 +493,17 @@ export default function DateTimePicker({
               color: 'var(--text-primary)',
             }}
           />
-          <div className="flex items-center justify-center gap-3">
-            <TimeWheel
-              value={hours}
-              min={0}
-              max={23}
-              onChange={h => { setHours(h); setTypedTime(''); }}
-              label="Hour"
-            />
-            <span className="text-xl font-mono font-bold mt-4"
-              style={{ color: 'var(--text-muted)' }}>:</span>
-            <TimeWheel
-              value={minutes}
-              min={0}
-              max={59}
-              onChange={m => { setMinutes(m); setTypedTime(''); }}
-              label="Min"
-            />
-          </div>
-          <button
-            type="button"
-            onClick={() => {
-              onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
+          <TimeChipGrid
+            hours={hours}
+            minutes={minutes}
+            onPick={(h, m) => {
+              setHours(h);
+              setMinutes(m);
               setTypedTime('');
+              onTimeChange?.(`${pad(h)}:${pad(m)}`);
               setActivePanel(null);
             }}
-            className="w-full text-xs font-semibold py-1.5 rounded-lg transition-all duration-150"
-            style={{
-              background: 'var(--accent)',
-              color: '#fff',
-            }}
-          >
-            Set Time
-          </button>
+          />
         </div>
       )}
 

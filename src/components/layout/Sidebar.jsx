@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Avatar from '../ui/Avatar.jsx';
 import { useAuth } from '../../contexts/AuthContext.jsx';
+import { resolveTheme } from '../../lib/theme.js';
 
 const NAV_ITEMS = [
   { to: '/my-time',   icon: Clock,           label: 'My Time',     adminOnly: false, shortcut: 'G M', section: 'General' },
@@ -193,52 +194,55 @@ export default function Sidebar({
         })}
 
         {/* Quick dark mode toggle */}
-        {!collapsed && setTheme && (
-          <button
-            onClick={() => {
-              const next = theme === 'dark' ? 'light' : 'dark';
-              setTheme(next);
-            }}
-            className="w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium transition-colors duration-150"
-            style={{
-              background: 'transparent',
-              color: 'var(--text-tertiary)',
-              borderLeft: '2px solid transparent',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-sunken)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--text-tertiary)';
-            }}
-          >
-            {theme === 'dark' ? <Sun size={16} className="shrink-0" /> : <Moon size={16} className="shrink-0" />}
-            <span className="truncate">{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-          </button>
-        )}
-        {collapsed && setTheme && (
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex items-center justify-center rounded-lg mx-2 px-3 py-2 transition-colors duration-150"
-            style={{
-              background: 'transparent',
-              color: 'var(--text-tertiary)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-sunken)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--text-tertiary)';
-            }}
-            title={theme === 'dark' ? 'Switch to Light' : 'Switch to Dark'}
-          >
-            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
-          </button>
-        )}
+        {!collapsed && setTheme && (() => {
+          const isDark = resolveTheme(theme) === 'dark';
+          return (
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="w-[calc(100%-16px)] flex items-center gap-3 rounded-lg mx-2 px-3 py-2 text-sm font-medium transition-colors duration-150"
+              style={{
+                background: 'transparent',
+                color: 'var(--text-tertiary)',
+                borderLeft: '2px solid transparent',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-sunken)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
+            >
+              {isDark ? <Sun size={16} className="shrink-0" /> : <Moon size={16} className="shrink-0" />}
+              <span className="truncate">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          );
+        })()}
+        {collapsed && setTheme && (() => {
+          const isDark = resolveTheme(theme) === 'dark';
+          return (
+            <button
+              onClick={() => setTheme(isDark ? 'light' : 'dark')}
+              className="flex items-center justify-center rounded-lg mx-2 px-3 py-2 transition-colors duration-150"
+              style={{
+                background: 'transparent',
+                color: 'var(--text-tertiary)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'var(--bg-sunken)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.color = 'var(--text-tertiary)';
+              }}
+              title={isDark ? 'Switch to Light' : 'Switch to Dark'}
+            >
+              {isDark ? <Sun size={16} /> : <Moon size={16} />}
+            </button>
+          );
+        })()}
 
         {/* User stub + Dropdown */}
         <div className="relative mx-2 mt-1">
@@ -290,9 +294,9 @@ export default function Sidebar({
           </button>
 
           {/* Dropdown panel */}
-          {profileOpen && !collapsed && (
+          {profileOpen && (
             <div 
-              className="absolute bottom-full left-0 right-0 mb-2 z-50 glass-elevated rounded-xl p-2 shadow-lg min-w-[180px]"
+              className={`glass-elevated rounded-xl p-2 shadow-lg min-w-[180px] z-50 ${collapsed ? 'absolute bottom-full left-full ml-2' : 'absolute bottom-full left-0 right-0 mb-2'}`}
               style={{
                 background: 'var(--bg-surface)',
                 border: '1px solid var(--border-default)',

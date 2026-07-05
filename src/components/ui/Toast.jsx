@@ -19,7 +19,7 @@ const VARIANTS = {
   },
 };
 
-export default function Toast({ visible, title, message, variant = 'success', onDismiss }) {
+export default function Toast({ visible, title, message, variant = 'success', action, onDismiss }) {
   const [hoverClose, setHoverClose] = useState(false);
 
   useEffect(() => {
@@ -50,6 +50,15 @@ export default function Toast({ visible, title, message, variant = 'success', on
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{title}</p>
           {message && <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{message}</p>}
+          {action && (
+            <button
+              onClick={() => { action.onClick?.(); onDismiss?.(); }}
+              className="text-xs font-semibold mt-1.5 px-2 py-0.5 rounded transition-colors hover:bg-[var(--bg-sunken)]"
+              style={{ color: 'var(--accent-text)' }}
+            >
+              {action.label}
+            </button>
+          )}
         </div>
         <button
           onClick={onDismiss}
