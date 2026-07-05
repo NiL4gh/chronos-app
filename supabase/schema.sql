@@ -127,6 +127,9 @@ begin
 end;
 $$;
 
+-- Revoke public execute on the trigger function (only fires internally)
+revoke execute on function public.handle_new_user() from public, anon;
+
 drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
@@ -134,7 +137,10 @@ create trigger on_auth_user_created
 
 -- Auto-update updated_at
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
 begin
   new.updated_at = now();
   return new;
@@ -188,9 +194,37 @@ begin
 end;
 $$;
 
--- Organizations: only members of the org can see it
-create policy "org_members_only" on public.organizations
-  for all using (id = public.my_org_id());
+-- Only authenticated users should call these helpers (RLS policies use them)
+revoke execute on function public.my_org_id() from public, anon;
+grant execute on function public.my_org_id() to authenticated;
+revoke execute on function public.my_role() from public, anon;
+grant execute on function public.my_role() to authenticated;
+
+-- Organizations:
+-- Simplified flow (for testing phase): email confirmation disabled,
+-- signUp returns immediate session. Client creates org + updates profile.
+-- INSERT: any authenticated user can create an org (used by Signup + OnboardingWorkspace).
+-- SELECT: authenticated org members can read their own org.
+-- UPDATE: org admins can update org name/settings.
+-- DELETE: none (handled manually via dashboard or future edge function).
+--
+-- For production hardening: disable INSERT policy, re-enable email confirmation,
+-- deploy signup-handler edge function to create orgs via service_role.
+create policy "org_insert" on public.organizations
+  for insert
+  to authenticated
+  with check (true);
+
+create policy "org_members_read" on public.organizations
+  for select
+  to authenticated
+  using (id = public.my_org_id());
+
+create policy "org_admin_update" on public.organizations
+  for update
+  to authenticated
+  using (id = public.my_org_id() and public.my_role() = 'admin')
+  with check (id = public.my_org_id() and public.my_role() = 'admin');
 
 -- Profiles: members see all profiles in their org
 create policy "org_members_see_profiles" on public.profiles

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import { Timer, Mail, Lock, User, Building2, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Timer, Mail, Lock, User, Building2, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 /**
  * Signup flow — creates the organization first, then the admin account.
@@ -23,7 +23,6 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [done, setDone] = useState(false);
 
   const handleGoogleSignup = async () => {
     setError('');
@@ -51,80 +50,53 @@ export default function Signup() {
     setLoading(true);
 
     try {
-      // 1. Create the organization row
-      const { data: org, error: orgErr } = await supabase
-        .from('organizations')
-        .insert({ name: orgName.trim() })
-        .select()
-        .single();
-
-      if (orgErr) throw orgErr;
-
-      // 2. Sign up the user
+      // 1. Sign up — session is immediate (email confirmation disabled in dashboard)
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { full_name: fullName.trim() },
-          emailRedirectTo: window.location.origin + window.location.pathname,
         },
       });
 
       if (authErr) throw authErr;
 
-      // 3. Update the auto-created profile row with org + admin role
-      if (authData.user) {
-        const { error: profileErr } = await supabase
-          .from('profiles')
-          .update({
-            org_id: org.id,
-            role: 'admin',
-            full_name: fullName.trim(),
-          })
-          .eq('id', authData.user.id);
-
-        if (profileErr) console.error('[Signup] profile update error:', profileErr.message);
+      if (!authData.user) {
+        throw new Error('Signup failed. Please try again.');
       }
 
-      setDone(true);
+      // 2. Create the organization
+      const { data: org, error: orgErr } = await supabase
+        .from('organizations')
+        .insert({ name: orgName.trim() })
+        .select('id, name')
+        .single();
+
+      if (orgErr) throw orgErr;
+
+      // 3. Link profile to org + set admin role
+      const { error: profileErr } = await supabase
+        .from('profiles')
+        .update({
+          org_id: org.id,
+          role: 'admin',
+          full_name: fullName.trim(),
+        })
+        .eq('id', authData.user.id);
+
+      if (profileErr) {
+        console.error('[Signup] Profile update failed:', profileErr.message);
+        throw new Error('Workspace created but profile update failed. Please log in to continue.');
+      }
+
+      // 4. Navigate straight to the app — user is already signed in
+      navigate('/my-time', { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
   };
-
-  if (done) {
-    return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{ background: 'var(--bg-base)' }}
-      >
-        <div className="text-center max-w-sm">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)' }}
-          >
-            <CheckCircle2 size={28} style={{ color: 'var(--accent)' }} />
-          </div>
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-            Check your email
-          </h2>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-secondary)' }}>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
-            workspace and sign in.
-          </p>
-          <Link
-            to="/login"
-            className="text-sm font-semibold transition-opacity hover:opacity-70"
-            style={{ color: 'var(--accent-text)' }}
-          >
-            Back to sign in
-          </Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div
