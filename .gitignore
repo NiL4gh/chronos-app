@@ -34,3 +34,6 @@ chrome_err.log
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*
