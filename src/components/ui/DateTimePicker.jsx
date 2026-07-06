@@ -198,7 +198,7 @@ function TimeChipGrid({ hours, minutes, onPick }) {
 }
 
 // ─── CalendarGrid ────────────────────────────────────────
-function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
+function CalendarGrid({ year, month, selectedDate, onSelect, slideDir, rangeStart, rangeEnd, rangePhase }) {
   const totalDays = daysInMonth(year, month);
   const firstDay = firstDayOfMonth(year, month);
   const cells = [];
@@ -209,6 +209,9 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
   const today = new Date();
   const todayStr = formatDate(today.getFullYear(), today.getMonth(), today.getDate());
   const selStr = selectedDate ? formatDate(selectedDate.year, selectedDate.month, selectedDate.day) : null;
+
+  const rangeStartStr = rangeStart ? formatDate(rangeStart.year, rangeStart.month, rangeStart.day) : null;
+  const rangeEndStr = rangeEnd ? formatDate(rangeEnd.year, rangeEnd.month, rangeEnd.day) : null;
 
   const animClass = slideDir === 'next'
     ? 'animate-calendar-next'
@@ -232,6 +235,9 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
           const thisStr = formatDate(year, month, day);
           const isSelected = thisStr === selStr;
           const isToday = thisStr === todayStr;
+          const isRangeStart = rangeStartStr && thisStr === rangeStartStr;
+          const isRangeEnd = rangeEndStr && thisStr === rangeEndStr;
+          const isInRange = !isRangeStart && !isRangeEnd && rangeStartStr && rangeEndStr && thisStr >= rangeStartStr && thisStr <= rangeEndStr;
 
           return (
             <button
@@ -240,22 +246,24 @@ function CalendarGrid({ year, month, selectedDate, onSelect, slideDir }) {
               onClick={() => onSelect(year, month, day)}
               className="h-8 w-full rounded-lg text-sm font-medium transition-all duration-100 flex items-center justify-center hover:bg-[var(--bg-sunken)]"
               style={{
-                background: isSelected
+                background: isSelected || isRangeStart || isRangeEnd
                   ? 'var(--accent)'
+                  : isInRange
+                  ? 'var(--accent-subtle)'
                   : isToday
                   ? 'var(--accent-subtle)'
                   : 'transparent',
-                color: isSelected
+                color: isSelected || isRangeStart || isRangeEnd
                   ? 'var(--accent-on)'
                   : isToday
                   ? 'var(--accent-text)'
                   : 'var(--text-secondary)',
-                border: isSelected
+                border: isSelected || isRangeStart || isRangeEnd
                   ? '1px solid var(--accent)'
                   : isToday
                   ? '1px solid var(--accent-border)'
                   : '1px solid transparent',
-                fontWeight: isSelected ? '700' : isToday ? '600' : '400',
+                fontWeight: isSelected || isRangeStart || isRangeEnd ? '700' : isToday ? '600' : '400',
               }}
             >
               {day}
@@ -287,10 +295,12 @@ export default function DateTimePicker({
   showTime = false,
   placeholder = 'Select date',
   label,
-  mode = 'date', // 'date' | 'datetime' | 'time'
+  mode = 'date',
   showPresets = false,
   onRangeChange,
   autoOpen = false,
+  range = false,
+  rangeValue = null,
 }) {
   const [activePanel, setActivePanel] = useState(autoOpen ? (mode === 'time' ? 'time' : 'date') : null); // null | 'date' | 'time'
   const [slideDir, setSlideDir] = useState(null);
@@ -300,11 +310,17 @@ export default function DateTimePicker({
   const [dateOpenUp, setDateOpenUp] = useState(false);
   const [timeOpenUp, setTimeOpenUp] = useState(false);
 
+  // Range mode state
+  const [rangePhase, setRangePhase] = useState('idle'); // 'idle' | 'selecting-start' | 'selecting-end'
+
   // Calendar view state
   const todayDate = new Date();
   const parsed = parseDate(value);
-  const [viewYear, setViewYear] = useState(parsed?.year || todayDate.getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsed?.month ?? todayDate.getMonth());
+  const rangeStartDate = range && rangeValue?.[0] ? parseDate(rangeValue[0]) : null;
+  const rangeEndDate = range && rangeValue?.[1] ? parseDate(rangeValue[1]) : null;
+  const viewAnchor = range ? rangeStartDate : parsed;
+  const [viewYear, setViewYear] = useState(viewAnchor?.year || todayDate.getFullYear());
+  const [viewMonth, setViewMonth] = useState(viewAnchor?.month ?? todayDate.getMonth());
 
   // Time state
   const [hours, setHours] = useState(() => {
@@ -326,14 +342,15 @@ export default function DateTimePicker({
     onTimeChange?.(`${pad(hours)}:${pad(minutes)}`);
   }, [hours, minutes]);
 
-  // Sync calendar view when value prop changes
+  // Sync calendar view when value or rangeValue changes
   useEffect(() => {
-    const p = parseDate(value);
+    const src = range ? (rangeValue?.[0] || '') : value;
+    const p = parseDate(src);
     if (p) {
       setViewYear(p.year);
       setViewMonth(p.month);
     }
-  }, [value]);
+  }, [range, rangeValue, value]);
 
   // When time panel closes in mode=time, commit current wheel value to parent
   const prevActivePanel = useRef(null);
@@ -375,13 +392,40 @@ export default function DateTimePicker({
   };
 
   const handleDaySelect = (year, month, day) => {
-    onChange?.(formatDate(year, month, day));
-    setActivePanel(null);
+    if (!range) {
+      onChange?.(formatDate(year, month, day));
+      setActivePanel(null);
+      return;
+    }
+
+    // Range mode: first click = start, second click = end
+    if (rangePhase === 'idle') {
+      const startStr = formatDate(year, month, day);
+      onRangeChange?.([startStr, '']);
+      setRangePhase('selecting-end');
+    } else {
+      let startStr = rangeValue?.[0] || '';
+      let endStr = formatDate(year, month, day);
+      if (endStr < startStr) [startStr, endStr] = [endStr, startStr];
+      onRangeChange?.([startStr, endStr]);
+      setRangePhase('idle');
+      setActivePanel(null);
+    }
   };
 
-  const displayValue = parsed
-    ? `${MONTHS[parsed.month].slice(0, 3)} ${parsed.day}, ${parsed.year}`
-    : placeholder;
+  const displayValue = (() => {
+    if (range && rangeStartDate) {
+      const startLabel = `${MONTHS[rangeStartDate.month].slice(0, 3)} ${rangeStartDate.day}, ${rangeStartDate.year}`;
+      if (rangeEndDate) {
+        const endLabel = `${MONTHS[rangeEndDate.month].slice(0, 3)} ${rangeEndDate.day}, ${rangeEndDate.year}`;
+        return `${startLabel} - ${endLabel}`;
+      }
+      return `${startLabel} — Selecting end…`;
+    }
+    return parsed
+      ? `${MONTHS[parsed.month].slice(0, 3)} ${parsed.day}, ${parsed.year}`
+      : placeholder;
+  })();
 
   const timeDisplay = (showTime || mode === 'time') ? `${pad(hours)}:${pad(minutes)}` : '';
 
@@ -407,6 +451,7 @@ export default function DateTimePicker({
                   const rect = dateTriggerRef.current.getBoundingClientRect();
                   setDateOpenUp(rect.bottom > window.innerHeight / 2);
                 }
+                if (range) setRangePhase('idle');
                 setActivePanel('date');
               }
             }}
@@ -453,7 +498,7 @@ export default function DateTimePicker({
       {/* Absolute time panel for mode=time */}
       {mode === 'time' && activePanel === 'time' && (
         <div
-          className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-50 absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
+          className={`animate-slide-up glass-elevated rounded-xl p-4 flex flex-col items-center gap-3 z-[60] absolute ${timeOpenUp ? 'bottom-full mb-2' : 'top-full mt-1'} left-0`}
           style={{ width: '240px' }}
         >
           {/* Typed time input with auto-colon */}
@@ -513,7 +558,7 @@ export default function DateTimePicker({
           {/* Calendar Panel */}
           {activePanel === 'date' && (
             <div
-              className={`animate-slide-up glass-elevated rounded-xl p-4 flex ${autoOpen ? '' : dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
+              className={`animate-slide-up glass-elevated rounded-xl p-4 flex ${autoOpen ? '' : dateOpenUp ? 'absolute bottom-full mb-2 left-0 z-[60]' : 'absolute top-full mt-2 left-0 z-[60]'}`}
               style={{ width: showPresets ? '440px' : '280px' }}
             >
               {/* Presets Sidebar List (showPresets=true) */}
@@ -523,14 +568,21 @@ export default function DateTimePicker({
                     {DATE_PRESETS.map((preset) => {
                       const [start, end] = preset.getRange();
                       const startStr = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
-                      const isActive = value === startStr;
+                      const endStr = `${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())}`;
+                      const isActive = range
+                        ? rangeValue?.[0] === startStr && rangeValue?.[1] === endStr
+                        : value === startStr;
                       return (
                         <button
                           key={preset.label}
                           type="button"
                           onClick={() => {
-                            onRangeChange?.(start, end);
-                            onChange?.(startStr);
+                            if (range) {
+                              onRangeChange?.([startStr, endStr]);
+                              setRangePhase('idle');
+                            } else {
+                              onChange?.(startStr);
+                            }
                             setActivePanel(null);
                           }}
                           className={`text-left text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--bg-sunken)] ${
@@ -578,6 +630,9 @@ export default function DateTimePicker({
                   selectedDate={parsed}
                   onSelect={handleDaySelect}
                   slideDir={slideDir}
+                  rangeStart={rangeStartDate}
+                  rangeEnd={rangeEndDate}
+                  rangePhase={rangePhase}
                 />
 
                 <div className="mt-3 flex justify-end">
@@ -602,7 +657,7 @@ export default function DateTimePicker({
           {/* Time Panel */}
           {activePanel === 'time' && (
             <div
-              className={`flex flex-col items-center gap-3 animate-slide-up glass-elevated rounded-xl p-4 ${timeOpenUp ? 'absolute bottom-full mb-2 left-0 z-50' : 'absolute top-full mt-2 left-0 z-50'}`}
+              className={`flex flex-col items-center gap-3 animate-slide-up glass-elevated rounded-xl p-4 ${timeOpenUp ? 'absolute bottom-full mb-2 left-0 z-[60]' : 'absolute top-full mt-2 left-0 z-[60]'}`}
               style={{ width: '220px' }}
             >
               <div className="flex items-center justify-center gap-3">

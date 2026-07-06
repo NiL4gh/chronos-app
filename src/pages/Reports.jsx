@@ -37,7 +37,7 @@ export default function Reports() {
   const filteredLogs = useMemo(() => {
     return logs.filter(log => {
       if (log.userId !== 'u1') return false;
-      if (log.date < filterStart || log.date > filterEnd) return false;
+      if ((filterStart && log.date < filterStart) || (filterEnd && log.date > filterEnd)) return false;
       if (filterProject !== 'all' && log.projectId !== filterProject) return false;
       return true;
     });
@@ -395,43 +395,16 @@ export default function Reports() {
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
           <div className="flex flex-col md:flex-row gap-4 items-end">
-            <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-              <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">From</label>
-              <DateTimePicker 
-                value={filterStart} 
-                onChange={setFilterStart} 
-                placeholder="From date" 
-                showPresets={true}
-                onRangeChange={(start, end) => {
-                  const fmt = (d) => {
-                    const p = (n) => String(n).padStart(2, '0');
-                    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-                  };
-                  const s = fmt(start);
-                  const e = fmt(end);
-                  setFilterStart(s);
-                  setFilterEnd(e);
+            <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+              <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Date Range</label>
+              <DateTimePicker
+                range={true}
+                rangeValue={[filterStart, filterEnd]}
+                onRangeChange={([start, end]) => {
+                  setFilterStart(start || '');
+                  setFilterEnd(end || '');
                 }}
-              />
-            </div>
-            <div className="flex items-center pb-2.5">
-              <span className="text-xs text-[var(--text-muted)]">→</span>
-            </div>
-            <div className="flex flex-col gap-1 flex-1 min-w-[140px]">
-              <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">To</label>
-              <DateTimePicker 
-                value={filterEnd} 
-                onChange={setFilterEnd} 
-                placeholder="To date"
                 showPresets={true}
-                onRangeChange={(start, end) => {
-                  const fmt = (d) => {
-                    const p = (n) => String(n).padStart(2, '0');
-                    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
-                  };
-                  setFilterStart(fmt(start));
-                  setFilterEnd(fmt(end));
-                }}
               />
             </div>
             

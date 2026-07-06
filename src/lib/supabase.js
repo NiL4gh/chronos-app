@@ -7,6 +7,56 @@ export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey);
 
 let supabaseClient = null;
 
+const mockUser = {
+  id: 'demo-user-id',
+  email: 'demo@chronos.app',
+  user_metadata: {
+    full_name: 'Demo Admin'
+  }
+};
+
+const mockSession = {
+  user: mockUser,
+  access_token: 'demo-token'
+};
+
+const mockProfile = {
+  id: 'demo-user-id',
+  role: 'admin',
+  org_id: 'demo-org-id',
+  full_name: 'Demo Admin'
+};
+
+const mockOrg = {
+  id: 'demo-org-id',
+  name: 'Demo Workspace'
+};
+
+/**
+ * Initialize mock localStorage tables (users, profiles, organizations, session).
+ * Safe to call multiple times — checks `chronos_mock_initialized` key.
+ * Only effective when Supabase env vars are NOT configured.
+ * Call from React lifecycle (not module-level).
+ * @returns {boolean} true if initialization succeeded or was already done
+ */
+export function initMockData() {
+  try {
+    if (!localStorage.getItem('chronos_mock_initialized')) {
+      localStorage.setItem('chronos_mock_initialized', 'true');
+      localStorage.setItem('chronos_mock_users', JSON.stringify([
+        { id: mockUser.id, email: mockUser.email, password: 'password', user_metadata: mockUser.user_metadata }
+      ]));
+      localStorage.setItem('chronos_mock_profiles', JSON.stringify([mockProfile]));
+      localStorage.setItem('chronos_mock_organizations', JSON.stringify([mockOrg]));
+      localStorage.setItem('chronos_mock_session', JSON.stringify(mockSession));
+    }
+    return true;
+  } catch (e) {
+    console.error('[Chronos] Failed to initialize mock databases:', e);
+    return false;
+  }
+}
+
 if (isSupabaseConfigured) {
   supabaseClient = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
@@ -20,46 +70,6 @@ if (isSupabaseConfigured) {
     '[Chronos] Supabase environment variables are missing (VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY). ' +
     'The app will run in Demo / Offline Mode using mock data.'
   );
-
-  const mockUser = {
-    id: 'demo-user-id',
-    email: 'demo@chronos.app',
-    user_metadata: {
-      full_name: 'Demo Admin'
-    }
-  };
-
-  const mockSession = {
-    user: mockUser,
-    access_token: 'demo-token'
-  };
-
-  const mockProfile = {
-    id: 'demo-user-id',
-    role: 'admin',
-    org_id: 'demo-org-id',
-    full_name: 'Demo Admin'
-  };
-
-  const mockOrg = {
-    id: 'demo-org-id',
-    name: 'Demo Workspace'
-  };
-
-  // Initialize mock localStorage database if empty/new
-  try {
-    if (!localStorage.getItem('chronos_mock_initialized')) {
-      localStorage.setItem('chronos_mock_initialized', 'true');
-      localStorage.setItem('chronos_mock_users', JSON.stringify([
-        { id: mockUser.id, email: mockUser.email, password: 'password', user_metadata: mockUser.user_metadata }
-      ]));
-      localStorage.setItem('chronos_mock_profiles', JSON.stringify([mockProfile]));
-      localStorage.setItem('chronos_mock_organizations', JSON.stringify([mockOrg]));
-      localStorage.setItem('chronos_mock_session', JSON.stringify(mockSession));
-    }
-  } catch (e) {
-    console.error('[Chronos] Failed to initialize mock databases:', e);
-  }
 
   // Active auth listeners
   const authListeners = new Set();

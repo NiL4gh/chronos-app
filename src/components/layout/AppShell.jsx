@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar.jsx';
 import Topbar from './Topbar.jsx';
+import ProjectTaskPicker from '../ProjectTaskPicker.jsx';
 import SlideOutDrawer from '../ui/SlideOutDrawer.jsx';
 import Toast from '../ui/Toast.jsx';
 import CommandPalette from './CommandPalette.jsx';
 import { SettingsContent } from '../../pages/Settings.jsx';
-import Input, { Select } from '../ui/Input.jsx';
+import Input from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import { projects, tasks, timeLogs, invoices, teamMembers } from '../../data/mockData.js';
@@ -57,7 +58,7 @@ export default function AppShell() {
   // Manual time drawer
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerEntry, setDrawerEntry] = useState({
-    task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
+    task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
   });
   const [pendingClose, setPendingClose] = useState(false);
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
@@ -525,7 +526,7 @@ export default function AppShell() {
 
       // Persist to Supabase if logged in
       if (user && orgId) {
-        const startedAt = new Date(startMs).toISOString();
+        const startedAt = new Date(timerStart).toISOString();
         const endedAt = new Date().toISOString();
         const { error } = await supabase.from('time_logs').insert({
           org_id: orgId,
@@ -772,7 +773,7 @@ export default function AppShell() {
               setPendingClose(true);
             } else {
               setDrawerOpen(false);
-              setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+              setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
             }
           }}
         >
@@ -790,7 +791,7 @@ export default function AppShell() {
                     setPendingClose(true);
                   } else {
                     setDrawerOpen(false);
-                    setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                    setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
                   }
                 }}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-all"
@@ -800,7 +801,7 @@ export default function AppShell() {
             </div>
 
             {/* Modal body */}
-            <div className="px-5 py-5 space-y-5 overflow-y-auto">
+            <div className="px-5 py-5 space-y-5">
               {/* Discard confirmation banner */}
               {pendingClose && (
                 <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
@@ -811,7 +812,7 @@ export default function AppShell() {
                     <Button variant="danger" size="sm" onClick={() => {
                       setPendingClose(false);
                       setDrawerOpen(false);
-                      setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                      setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
                     }}>Discard</Button>
                   </div>
                 </div>
@@ -829,21 +830,21 @@ export default function AppShell() {
                 />
               </div>
 
-              {/* Project */}
+              {/* Project & Task */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
-                  Project
+                  Project & Task
                 </label>
-                <Select
-                  className="w-full"
-                  value={drawerEntry.projectId}
-                  onChange={e => setDrawerEntry(prev => ({ ...prev, projectId: e.target.value }))}
-                >
-                  <option value="">— Select a project —</option>
-                  {projectList.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </Select>
+                <ProjectTaskPicker
+                  projectId={drawerEntry.projectId}
+                  taskId={drawerEntry.taskId}
+                  taskText={drawerEntry.task}
+                  onChange={(update) => setDrawerEntry(prev => ({ ...prev, ...update }))}
+                  projects={projectList}
+                  tasks={taskList}
+                  addProject={addProject}
+                  addTask={addTask}
+                />
               </div>
 
               {/* When */}
@@ -915,7 +916,7 @@ export default function AppShell() {
               <Button variant="ghost" size="sm" onClick={() => {
                 setPendingClose(false);
                 setDrawerOpen(false);
-                setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
               }}>
                 Cancel
               </Button>
@@ -923,7 +924,7 @@ export default function AppShell() {
                 variant="primary"
                 size="sm"
                 onClick={async () => {
-                  const { task, projectId, date, startTime, endTime } = drawerEntry;
+                  const { task, projectId, taskId, date, startTime, endTime } = drawerEntry;
                   if (!task || !projectId || !startTime || !endTime) {
                     triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
                     return;
@@ -944,6 +945,7 @@ export default function AppShell() {
                     userName: user?.email || 'You',
                     projectName: proj.name,
                     projectId: proj.id,
+                    taskId,
                     task,
                     date,
                     startTime,
@@ -954,7 +956,7 @@ export default function AppShell() {
                   };
                   setLogs(prev => [newLog, ...prev]);
                   setDrawerOpen(false);
-                  setDrawerEntry({ task: '', projectId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                  setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
 
                   // Persist to Supabase
                   if (user && orgId) {

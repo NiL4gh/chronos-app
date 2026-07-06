@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, initMockData, isSupabaseConfigured } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -26,7 +26,11 @@ export function AuthProvider({ children }) {
       .single();
 
     if (error) {
-      console.error('[AuthContext] fetchProfile error:', error.message);
+      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+        console.error('[Auth] Supabase tables missing. Run supabase/schema.sql to create them.');
+      } else {
+        console.error('[AuthContext] fetchProfile error:', error.message);
+      }
       return null;
     }
     return data;
@@ -34,6 +38,11 @@ export function AuthProvider({ children }) {
 
   // Bootstrap: get the current session on mount
   useEffect(() => {
+    // Lazy-init mock data in React lifecycle (not at module level)
+    if (!isSupabaseConfigured) {
+      initMockData();
+    }
+
     let mounted = true;
 
     supabase.auth.getSession().then(async ({ data: { session: s } }) => {
