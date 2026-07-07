@@ -52,6 +52,23 @@ export function parseTimeToMinutes(timeStr) {
 }
 
 /**
+ * Parse a time string (e.g. "9:30am", "14:00") to fractional hours since midnight.
+ * Used by CalendarView for absolute grid positioning (e.g. 14.5 for 2:30pm).
+ */
+export function parseHour(timeStr) {
+  if (!timeStr) return 7;
+  const str = String(timeStr);
+  const cleanStr = str.replace(/[^0-9:]/g, '');
+  const parts = cleanStr.split(':');
+  const h = Number(parts[0]) || 0;
+  const m = Number(parts[1]) || 0;
+  let finalH = h;
+  if (/pm/i.test(str) && h < 12) finalH += 12;
+  else if (/am/i.test(str) && h === 12) finalH = 0;
+  return finalH + m / 60;
+}
+
+/**
  * Format hour + minute numbers to a time string (e.g. "9:30").
  */
 export function formatTimeStr(h, m) {

@@ -14,7 +14,8 @@ import DateTimePicker from '../components/ui/DateTimePicker';
 import EmptyState from '../components/ui/EmptyState';
 import FocusWorkspace from '../components/mytime/FocusWorkspace';
 import EntryPopover from '../components/mytime/EntryPopover';
-import CurrentTimeIndicator from '../components/mytime/CurrentTimeIndicator';
+import TimeStream from '../components/mytime/TimeStream';
+import CalendarView from '../components/mytime/CalendarView';
 import MyTimeNavbar from '../components/mytime/MyTimeNavbar';
 import { getProjectColor, getMonday, addDays, getWeekNumber, parseTimeToMinutes, formatTimeStr, formatDayLabel } from '../lib/myTimeHelpers';
 
@@ -301,170 +302,7 @@ export default function MyTime() {
     />
   );
 
-  const renderTimeStream = () => {
-    if (listDaysWithLogs.length === 0) {
-      return (
-        <EmptyState
-          icon={Clock}
-          title="No entries this week"
-          description="Start the timer above or log time manually."
-        />
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        {listDaysWithLogs.map(({ dateStr, logs: dayLogs }) => {
-          const dayTotalHours = dayLogs.reduce(
-            (sum, log) => sum + (Number(log.duration) || 0), 0
-          );
-          const dateObj = new Date(dateStr + 'T00:00:00');
-          const isToday = dateObj.toDateString() === new Date().toDateString();
-          const dayName = dateObj.toLocaleDateString('en-US', { weekday: 'long' });
-          const dateLabel = dateObj.toLocaleDateString('en-US', {
-            month: 'short', day: 'numeric'
-          });
-
-          return (
-            <div key={dateStr}>
-              {/* Day header */}
-              <div className="flex items-baseline justify-between mb-3 select-none">
-                <div className="flex items-baseline gap-2">
-                  <h3 className={`text-sm font-bold ${
-                    isToday ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
-                  }`}>
-                    {isToday ? 'Today' : dayName}
-                  </h3>
-                  <span className="text-xs text-[var(--text-muted)] font-medium">
-                    {dateLabel}
-                  </span>
-                  {isToday && (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-amber-400/10 text-amber-700 border border-amber-400/20 select-none">
-                      Today
-                    </span>
-                  )}
-                </div>
-                <span className="text-sm font-black font-mono text-[var(--text-secondary)] tabular-nums">
-                  {dayTotalHours.toFixed(1)}h
-                </span>
-              </div>
-
-              {/* Entry rows & gaps allocator */}
-              <div className="space-y-2">
-                {(() => {
-                  const sortedLogs = [...dayLogs].sort((a, b) => {
-                    if (!a.startTime || !b.startTime) return 0;
-                    return a.startTime.localeCompare(b.startTime);
-                  });
-
-                  const parseTimeToMinutes = (timeStr) => {
-    if (!timeStr) return 0;
-    const cleanStr = String(timeStr).replace(/[^0-9:]/g, '');
-    let [h, m] = cleanStr.split(':').map(Number);
-    if (/pm/i.test(timeStr) && h < 12) h += 12;
-    if (/am/i.test(timeStr) && h === 12) h = 0;
-    return (h || 0) * 60 + (m || 0);
-  };
-
-                  return sortedLogs.map((log, idx) => {
-                    const projectColor = getProjectColor(log.projectId);
-
-                    // Check if there is an unlogged gap between this entry and the next
-                    const currentEnd = parseTimeToMinutes(log.endTime);
-                    const nextStart = sortedLogs[idx + 1] ? parseTimeToMinutes(sortedLogs[idx + 1].startTime) : 0;
-                    const gapMinutes = nextStart - currentEnd;
-                    const hasGap = sortedLogs[idx + 1] && gapMinutes > 15;
-
-                    return (
-                      <React.Fragment key={log.id}>
-                        {/* Interactive Timeline Card */}
-                        <div className="glass-card rounded-xl overflow-hidden shadow-sm transition-all duration-200 border-l-[3px]" style={{ borderLeftColor: projectColor }}>
-                          <div
-                            className="flex items-center gap-4 px-4 py-3 select-none"
-                          >
-                            {/* Task + project */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-[var(--text-primary)] truncate leading-tight">
-                                {log.task || '(No description)'}
-                              </p>
-                              <div className="flex items-center gap-1.5 mt-0.5">
-                                <span className="text-xs text-[var(--text-muted)] truncate">
-                                  {log.projectName}
-                                </span>
-                                {log.startTime && log.endTime && (
-                                  <>
-                                    <span className="text-[var(--text-muted)] text-xs">·</span>
-                                    <span className="text-xs text-[var(--text-muted)] font-mono tabular-nums">
-                                      {log.startTime} – {log.endTime}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* CTAs: Resume & Verify screenshot */}
-                            <div className="flex items-center gap-1.5 shrink-0">
-                              {/* Resume past log */}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  startTimer(log.task || 'Focus session', log.projectId);
-                                  triggerToast('Timer started', log.task || 'Focus session', 'success');
-                                }}
-                                className="p-1 rounded bg-[var(--bg-sunken)] hover:bg-[var(--border-default)] text-[var(--text-muted)] hover:text-amber-600 transition-colors flex items-center justify-center shrink-0 w-7 h-7 cursor-pointer"
-                                title="Resume this task"
-                              >
-                                <Play size={12} fill="currentColor" />
-                              </button>
-
-                            </div>
-
-                            {/* Source badge */}
-                            <TrackingSourceBadge source={log.source} />
-
-                            {/* Duration */}
-                            <span className="text-base font-black font-mono tabular-nums text-[var(--text-primary)] shrink-0 w-12 text-right">
-                              {(Number(log.duration) || 0).toFixed(1)}h
-                            </span>
-                          </div>
-
-                        </div>
-
-                        {/* Unlogged Gaps allocator block */}
-                        {hasGap && (
-                          <div className="my-2.5 px-4 py-2.5 rounded-xl border border-dashed border-[var(--border-default)] bg-[var(--bg-sunken)]/30 hover:border-[var(--border-strong)] flex items-center justify-between text-xs select-none transition-colors">
-                            <span className="text-[var(--text-muted)] font-mono">
-                              {log.endTime} – {sortedLogs[idx + 1].startTime} · Unlogged Gap ({(gapMinutes / 60).toFixed(1)}h)
-                            </span>
-                            <button
-                              onClick={() => {
-                                setDrawerEntry({
-                                  task: '',
-                                  projectId: projects[0]?.id || '',
-                                  date: dateStr,
-                                  startTime: log.endTime,
-                                  endTime: sortedLogs[idx + 1].startTime,
-                                  billable: false,
-                                });
-                                setDrawerOpen(true);
-                              }}
-                              className="text-[10px] font-bold text-amber-600 hover:text-amber-700 transition-colors cursor-pointer"
-                            >
-                              + Quick Allocate
-                            </button>
-                          </div>
-                        )}
-                      </React.Fragment>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  };
+  // renderTimeStream → extracted to TimeStream.jsx
 
   const renderGoalCadenceDashboard = () => {
     const dailyTarget = parseFloat(localStorage.getItem('ws_dailyTarget') || '8');
@@ -547,7 +385,14 @@ export default function MyTime() {
         {/* ── Left: Journal column ───────────────────────── */}
         <div className="flex-1 min-w-0 overflow-y-auto px-6 py-5 space-y-5">
           {renderActiveFocusWorkspace()}
-          {renderTimeStream()}
+          <TimeStream
+            listDaysWithLogs={listDaysWithLogs}
+            startTimer={startTimer}
+            triggerToast={triggerToast}
+            projects={projects}
+            setDrawerEntry={setDrawerEntry}
+            setDrawerOpen={setDrawerOpen}
+          />
         </div>
 
         {/* ── Right: Collapsible stats sidebar ───────────── */}
@@ -611,256 +456,7 @@ export default function MyTime() {
     );
   };
 
-  // Sub-renderer for Calendar View
-  const renderCalendarView = () => {
-    const ROW_HEIGHT = 60; // 60px per hour
-    const CALENDAR_START = 0; // midnight
-    const CALENDAR_HOURS = 24;
-    const visibleDays = weekDays;
-    return (
-      <div className="h-full w-full flex flex-col min-h-0 bg-[var(--bg-surface)] overflow-hidden">
-        {/* Header row */}
-        <div
-          className="border-b border-[var(--border-default)] bg-[var(--bg-elevated)] shrink-0 select-none"
-          style={{ display: 'grid', gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)` }}
-        >
-          <div className="w-16 h-12" /> {/* Empty corner */}
-          {visibleDays.map((day, idx) => {
-            const dateStr = day.toISOString().split('T')[0];
-            const isSelected = selectedDate === dateStr;
-            const isToday = day.toDateString() === new Date().toDateString();
-            const dayLetter = day.toLocaleDateString('en-US', { weekday: 'short' });
-            const dayNum = day.getDate();
-            return (
-              <div key={idx} className={`flex flex-col items-center justify-center h-12 border-l border-[var(--border-default)] transition-colors ${
-                isSelected ? 'bg-amber-500/10 dark:bg-amber-500/5 font-extrabold' : ''
-              }`}>
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${isSelected ? 'text-amber-600' : 'text-[var(--text-muted)]'}`}>{dayLetter}</span>
-                <span className={`text-sm font-bold flex items-center justify-center w-6 h-6 rounded-full mt-0.5 ${
-                  isToday ? 'bg-amber-500 text-white shadow-sm' : isSelected ? 'text-amber-600' : 'text-[var(--text-primary)]'
-                }`}>
-                  {dayNum}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Scrollable Time Grid */}
-        <div className="flex-1 overflow-y-auto min-h-0 relative bg-[var(--bg-surface)]">
-          <div
-            className="relative"
-            style={{ display: 'grid', gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)`, height: `${CALENDAR_HOURS * ROW_HEIGHT}px` }}
-          >
-            {/* Left side hour labels */}
-            <div className="relative h-full w-16 select-none border-r border-[var(--border-default)]">
-              {Array.from({ length: CALENDAR_HOURS }).map((_, i) => {
-                const h = CALENDAR_START + i;
-                const displayHour = h === 0 ? '12 AM' : h === 12 ? '12 PM' : h > 12 ? `${h - 12} PM` : `${h} AM`;
-                return (
-                  <div
-                    key={h}
-                    className="absolute right-0 pr-3 text-[10px] font-mono text-[var(--text-muted)] flex items-center justify-end"
-                    style={{ top: `${i * ROW_HEIGHT}px`, height: `${ROW_HEIGHT}px` }}
-                  >
-                    {displayHour}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Sub-grid of horizontal hour lines */}
-            <div className="absolute left-16 right-0 top-0 bottom-0 pointer-events-none">
-              {Array.from({ length: CALENDAR_HOURS }).map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute left-0 right-0 border-b border-[var(--border-default)]/40"
-                  style={{ top: `${(i + 1) * ROW_HEIGHT}px` }}
-                />
-              ))}
-            </div>
-
-            {/* Columns for the visible days */}
-            {visibleDays.map((day, colIdx) => {
-              const dateStr = day.toISOString().split('T')[0];
-              const isSelected = selectedDate === dateStr;
-              const isToday = day.toDateString() === new Date().toDateString();
-              const dayLogs = filteredLogs.filter(log => log.date === dateStr);
-
-              return (
-                <div
-                  key={dateStr}
-                  onClick={(e) => {
-                    // Calculate click Y relative to day column container
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const clickY = e.clientY - rect.top;
-                    const hourFraction = clickY / ROW_HEIGHT;
-                    const clickHour = Math.floor(hourFraction) + CALENDAR_START;
-                    const clickMin = Math.floor((hourFraction % 1) * 60);
-
-                    // Round to nearest 15 minute interval
-                    const snappedMin = Math.round(clickMin / 15) * 15;
-                    let finalHour = clickHour;
-                    let finalMin = snappedMin;
-                    if (finalMin === 60) {
-                      finalHour += 1;
-                      finalMin = 0;
-                    }
-
-                    const formatTimeStr = (h, m) => {
-                      const hh = String(Math.min(23, Math.max(0, h))).padStart(2, '0');
-                      const mm = String(Math.min(59, Math.max(0, m))).padStart(2, '0');
-                      return `${hh}:${mm}`;
-                    };
-
-                    const startTimeStr = formatTimeStr(finalHour, finalMin);
-                    const endTimeStr = formatTimeStr(finalHour + 1, finalMin); // default 1 hour block
-
-                    setDrawerEntry({
-                      task: '',
-                      projectId: projects[0]?.id || '',
-                      date: dateStr,
-                      startTime: startTimeStr,
-                      endTime: endTimeStr,
-                      billable: true,
-                    });
-                    setDrawerOpen(true);
-                  }}
-                  className={`relative h-full border-l border-[var(--border-default)]/40 transition-colors cursor-crosshair hover:bg-[var(--bg-sunken)]/20 ${
-                    isSelected ? 'bg-amber-500/[0.04] dark:bg-amber-500/[0.02]' : ''
-                  }`}
-                >
-                  {/* Render time blocks for this day — with overlap column layout */}
-                  {(() => {
-                    const parseHour = (timeStr) => {
-                      if (!timeStr) return 7;
-                      const str = String(timeStr);
-                      const cleanStr = str.replace(/[^0-9:]/g, '');
-                      const parts = cleanStr.split(':');
-                      const h = Number(parts[0]) || 0;
-                      const m = Number(parts[1]) || 0;
-                      let finalH = h;
-                      if (/pm/i.test(str) && h < 12) finalH += 12;
-                      else if (/am/i.test(str) && h === 12) finalH = 0;
-                      return finalH + m / 60;
-                    };
-
-                    // Compute start/end/duration for each visible log
-                    const laid = dayLogs.map(log => {
-                      const startH = parseHour(log.startTime);
-                      const endH = parseHour(log.endTime);
-                      const duration = Number(log.duration) || Math.max(0.25, endH - startH);
-                      return { log, startH, endH: startH + duration, duration };
-                    }).filter(e => e.startH < CALENDAR_START + CALENDAR_HOURS && e.endH > CALENDAR_START);
-
-                    // Cluster overlapping entries and assign column indices
-                    const withCols = [];
-                    let clusterEnd = 0;
-                    let clusterCols = 0;
-                    let clusterStart = 0;
-
-                    // Sort by start time
-                    const sorted = [...laid].sort((a, b) => a.startH - b.startH);
-
-                    // Greedy column assignment
-                    const colAssigned = sorted.map(() => -1);
-                    const colEnds = [];
-
-                    sorted.forEach((entry, i) => {
-                      let col = colEnds.findIndex(end => end <= entry.startH);
-                      if (col === -1) { col = colEnds.length; colEnds.push(entry.endH); }
-                      else colEnds[col] = entry.endH;
-                      colAssigned[i] = col;
-                    });
-
-                    // For each entry, count how many columns are active during its span
-                    const totalCols = sorted.map((entry, i) => {
-                      return colEnds.filter((_, ci) => {
-                        const sameCluster = sorted.findIndex((e, ei) => colAssigned[ei] === ci);
-                        return ci <= colAssigned[i] || (sameCluster !== -1 && sorted[sameCluster].startH < entry.endH && sorted[sameCluster].endH > entry.startH);
-                      }).length;
-                    });
-
-                    // Simpler: just count max column index within overlapping group
-                    const groupMaxCol = sorted.map((entry, i) => {
-                      let max = colAssigned[i];
-                      sorted.forEach((other, j) => {
-                        if (other.startH < entry.endH && other.endH > entry.startH) {
-                          max = Math.max(max, colAssigned[j]);
-                        }
-                      });
-                      return max + 1; // total columns in overlap group
-                    });
-
-                    return sorted.map((entry, i) => {
-                      const { log, startH, endH } = entry;
-                      const visibleStartH = Math.max(startH, CALENDAR_START);
-                      const visibleEndH = Math.min(endH, CALENDAR_START + CALENDAR_HOURS);
-                      const topOffset = (visibleStartH - CALENDAR_START) * ROW_HEIGHT;
-                      const blockHeight = (visibleEndH - visibleStartH) * ROW_HEIGHT;
-                      const projectColor = getProjectColor(log.projectId);
-                      const col = colAssigned[i];
-                      const numCols = groupMaxCol[i];
-                      const colW = 100 / numCols;
-                      const gap = numCols > 1 ? 1 : 0; // px gap between columns
-
-                      return (
-                        <div
-                          key={log.id}
-                          className="absolute rounded-md px-1.5 py-1 select-none cursor-pointer transition-all hover:brightness-95 hover:shadow-md"
-                          style={{
-                            top: `${Math.max(0, topOffset)}px`,
-                            height: `${Math.max(24, blockHeight - 2)}px`,
-                            left: `calc(${col * colW}% + ${gap}px)`,
-                            width: `calc(${colW}% - ${gap * 2}px)`,
-                            backgroundColor: `${projectColor}20`,
-                            borderLeft: `3px solid ${projectColor}`,
-                            backgroundImage: log.source === 'manual'
-                              ? 'repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(0,0,0,0.06) 4px, rgba(0,0,0,0.06) 8px)'
-                              : undefined,
-                            zIndex: 10,
-                            overflow: 'hidden',
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const rect = e.currentTarget.getBoundingClientRect();
-                            setSelectedEntry({
-                              log,
-                              x: Math.min(rect.right + 8, window.innerWidth - 296),
-                              y: Math.max(8, rect.top),
-                            });
-                          }}
-                        >
-                          <div className="font-semibold text-[10px] leading-tight truncate" style={{ color: projectColor }}>
-                            {log.task || '(No task description)'}
-                          </div>
-                          {blockHeight >= 36 && (
-                            <div className="text-[9px] opacity-80 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
-                              {log.startTime} – {log.endTime}
-                            </div>
-                          )}
-                          {blockHeight > 54 && (
-                            <div className="text-[9px] font-medium opacity-70 leading-tight truncate mt-0.5" style={{ color: projectColor }}>
-                              {log.projectName}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    });
-                  })()}
-
-                  {/* Today's red/amber time line indicator */}
-                  {isToday && (
-                    <CurrentTimeIndicator rowHeight={ROW_HEIGHT} calendarStart={CALENDAR_START} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // renderCalendarView → extracted to CalendarView.jsx
 
   // Sub-renderer for Timesheet View
   const renderTimesheetView = () => {
@@ -1089,7 +685,17 @@ export default function MyTime() {
       {/* ── View Content Area ─────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden">
         {activeView === 'list' && renderListView()}
-        {activeView === 'calendar' && renderCalendarView()}
+        {activeView === 'calendar' && (
+          <CalendarView
+            weekDays={weekDays}
+            selectedDate={selectedDate}
+            filteredLogs={filteredLogs}
+            projects={projects}
+            setDrawerEntry={setDrawerEntry}
+            setDrawerOpen={setDrawerOpen}
+            setSelectedEntry={setSelectedEntry}
+          />
+        )}
         {activeView === 'timesheet' && renderTimesheetView()}
         {activeView === 'table' && renderTableView()}
       </div>
