@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import {
   ChevronLeft, ChevronRight, CalendarDays, List,
-  LayoutGrid, Table2, Play, Square, Plus, Clock, Settings2, CalendarCheck,
+  LayoutGrid, Table2, Plus, Clock, Settings2, CalendarCheck,
   Activity, Check, X
 } from 'lucide-react';
 import Badge from '../components/ui/Badge';
@@ -11,44 +11,12 @@ import Avatar from '../components/ui/Avatar';
 import Button from '../components/ui/Button';
 import Toggle from '../components/ui/Toggle';
 import DateTimePicker from '../components/ui/DateTimePicker';
-import { projects } from '../data/mockData';
 import EmptyState from '../components/ui/EmptyState';
-
-// Approved project hex colors fallback
-const PROJECT_COLORS = [
-  '#f59e0b', '#10b981', '#0ea5e9', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
-];
-
-function getProjectColor(projectId) {
-  const proj = projects.find(p => p.id === projectId);
-  return proj?.color || PROJECT_COLORS[0];
-}
-
-// Helper date functions
-function getMonday(d) {
-  const date = new Date(d);
-  const day = date.getDay();
-  // 0 = Sunday, 1 = Monday, 2 = Tuesday, etc.
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-  const monday = new Date(date.setDate(diff));
-  monday.setHours(0, 0, 0, 0);
-  return monday;
-}
-
-function addDays(date, days) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + days);
-  return result;
-}
-
-function getWeekNumber(d) {
-  const date = new Date(d.getTime());
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
-  const week1 = new Date(date.getFullYear(), 0, 4);
-  return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
-                        - 3 + (week1.getDay() + 6) % 7) / 7);
-}
+import FocusWorkspace from '../components/mytime/FocusWorkspace';
+import EntryPopover from '../components/mytime/EntryPopover';
+import CurrentTimeIndicator from '../components/mytime/CurrentTimeIndicator';
+import MyTimeNavbar from '../components/mytime/MyTimeNavbar';
+import { getProjectColor, getMonday, addDays, getWeekNumber, parseTimeToMinutes, formatTimeStr, formatDayLabel } from '../lib/myTimeHelpers';
 
 export default function MyTime() {
   const {
@@ -319,136 +287,19 @@ export default function MyTime() {
 
   // ─── CHRONOS BENTO WIDGETS SUB-RENDERERS ────────────────
 
-  const renderActiveFocusWorkspace = () => {
-    if (timerRunning) {
-      // ── HERO RUNNING STATE: Premium B2B Cockpit HUD ──────────────────
-      return (
-        <div className="glass-elevated rounded-2xl border border-emerald-500/20 overflow-hidden shadow-lg p-5 flex flex-col items-center">
-          {/* Row 1: Massive Hero Monospace Ticker */}
-          <div className="text-center select-none mb-5">
-            <span className="text-5xl font-bold font-mono tracking-tight text-[var(--text-primary)] leading-none timer-glow-emerald">
-              {String(Math.floor(timerSeconds / 3600)).padStart(2, '0')}:
-              {String(Math.floor((timerSeconds % 3600) / 60)).padStart(2, '0')}:
-              {String(timerSeconds % 60).padStart(2, '0')}
-            </span>
-          </div>
-
-          {/* Row 2: Interactive Wings Grid */}
-          <div className="w-full grid grid-cols-3 items-center gap-4 pt-3 border-t border-[var(--border-default)]/30">
-            {/* Left Wing: Project color & Auto badge */}
-            <div className="flex items-center gap-2 select-none justify-start">
-              <span
-                className="w-2.5 h-2.5 rounded-full shrink-0"
-                style={{ backgroundColor: getProjectColor(timerProjectId) }}
-              />
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs font-bold text-[var(--text-primary)] truncate">
-                  {projects.find(p => p.id === timerProjectId)?.name || 'No project'}
-                </span>
-              </div>
-            </div>
-
-            {/* Center Stage: Physics-based Stop Trigger */}
-            <div className="flex justify-center">
-              <button
-                onClick={stopTimer}
-                className="shrink-0 flex items-center justify-center transition-all duration-200 press-on-click p-3"
-                style={{
-                  width: '42px',
-                  height: '42px',
-                  borderRadius: '50%',
-                  background: 'var(--danger-text)',
-                  color: 'var(--accent-on)',
-                  boxShadow: '0 4px 12px color-mix(in srgb, var(--danger-text) 30%, transparent)',
-                }}
-                title="Stop Focus session"
-              >
-                <Square size={13} fill="currentColor" />
-              </button>
-            </div>
-
-            {/* Right Wing: Live Task Context */}
-            <div className="flex flex-col min-w-0 items-end text-right justify-end">
-              <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-wider mb-0.5 select-none">
-                Active Session
-              </span>
-              <span className="text-xs font-semibold text-[var(--text-primary)] truncate max-w-full">
-                {timerTaskLabel || 'Focus Session'}
-              </span>
-            </div>
-          </div>
-
-          {/* Subtle bottom progress shimmering meter */}
-          <div className="w-full h-0.5 bg-gradient-to-r from-emerald-400/20 via-emerald-400/60 to-emerald-400/20 mt-4 rounded-full animate-pulse" />
-        </div>
-      );
-    }
-
-    // ── HERO STOPPED STATE ─────────────────────────────────
-    return (
-      <div className="glass-elevated rounded-2xl border border-[var(--border-default)] overflow-hidden shadow-md p-5 flex flex-col items-center">
-        {/* Timer display */}
-        <div className="text-center select-none mb-5">
-          <span className="text-5xl font-bold font-mono tracking-tight text-[var(--text-muted)] leading-none">
-            00:00:00
-          </span>
-        </div>
-
-        {/* Start button */}
-        <div className="w-full grid grid-cols-3 items-center pt-3 border-t border-[var(--border-default)]/30">
-          <div />
-          <div className="flex justify-center select-none">
-            <button
-              onClick={() => {
-                startTimer('Focus session', projects[0]?.id || '');
-                triggerToast('Timer started', 'Focus session', 'success');
-              }}
-              className="shrink-0 flex items-center justify-center timer-cta-pulse press-on-click transition-all duration-200"
-              style={{
-                width: '42px',
-                height: '42px',
-                borderRadius: '50%',
-                background: 'var(--accent)',
-                color: 'var(--accent-on)',
-                border: 'none',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.opacity = '0.85'; }}
-              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
-              aria-label="Start timer"
-            >
-              <Play size={14} fill="currentColor" className="ml-0.5" />
-            </button>
-          </div>
-          <div />
-        </div>
-
-        {/* Quick re-use chips */}
-        {filteredLogs.length > 0 && (
-          <div className="w-full mt-4 pt-3 border-t border-[var(--border-default)]/20 flex items-center gap-2 overflow-x-auto scrollbar-none select-none">
-            <span className="text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)] shrink-0">
-              Quick Log
-            </span>
-            {filteredLogs.slice(0, 4).map(log => (
-              <button
-                key={log.id}
-                onClick={() => {
-                  startTimer(log.task || 'Focus session', log.projectId);
-                  triggerToast('Timer started', log.task || 'Focus session', 'success');
-                }}
-                className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)]/60 hover:bg-[var(--bg-sunken)] text-[10px] text-[var(--text-secondary)] font-bold transition-all press-on-click"
-              >
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: getProjectColor(log.projectId) }}
-                />
-                <span className="truncate max-w-[85px]">{log.task || 'Session'}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const renderActiveFocusWorkspace = () => (
+    <FocusWorkspace
+      timerRunning={timerRunning}
+      timerSeconds={timerSeconds}
+      timerProjectId={timerProjectId}
+      timerTaskLabel={timerTaskLabel}
+      projects={projects}
+      filteredLogs={filteredLogs}
+      startTimer={startTimer}
+      stopTimer={stopTimer}
+      triggerToast={triggerToast}
+    />
+  );
 
   const renderTimeStream = () => {
     if (listDaysWithLogs.length === 0) {
@@ -1213,137 +1064,27 @@ export default function MyTime() {
     <div className="flex flex-col h-full min-h-0 animate-fade-in relative -mx-6 -my-5">
 
       {/* ── Navigation Bar ───────────────────────────── */}
-      <div className="h-12 border-b border-[var(--border-default)] px-5 flex items-center gap-4 bg-[var(--bg-surface)] shrink-0 select-none">
-
-        {/* Left cluster: ← [Week|Month] → */}
-        <div className="flex items-center rounded-lg border border-[var(--border-default)] bg-[var(--bg-sunken)] p-0.5 gap-0.5 shrink-0">
-          <button
-            onClick={goToPrev}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
-          >
-            <ChevronLeft size={13} strokeWidth={2.5} />
-          </button>
-          {['week', 'month'].map(scale => (
-            <button
-              key={scale}
-              onClick={() => {
-                setNavigationScale(scale);
-                if (scale === 'month') {
-                  setCurrentWeekStart(new Date(currentWeekStart.getFullYear(), currentWeekStart.getMonth(), 1));
-                } else {
-                  setCurrentWeekStart(getMonday(currentWeekStart));
-                }
-              }}
-              className={`px-2.5 h-7 text-[10px] font-semibold rounded-md transition-all capitalize ${
-                navigationScale === scale
-                  ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
-                  : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-              }`}
-            >
-              {scale}
-            </button>
-          ))}
-          <button
-            onClick={goToNext}
-            className="w-7 h-7 flex items-center justify-center rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-all press-on-click"
-          >
-            <ChevronRight size={13} strokeWidth={2.5} />
-          </button>
-        </div>
-
-        {/* Center: date range label + jump + This Week/Month */}
-        <div ref={dateJumpRef} className="relative flex items-center gap-2 flex-1 min-w-0">
-          <button
-            type="button"
-            onClick={() => setDateJumpOpen(v => !v)}
-            className="text-sm font-bold text-[var(--text-primary)] tracking-tight hover:text-[var(--accent-text)] transition-colors truncate"
-            title="Jump to date"
-          >
-            {formatRangeLabel()}
-          </button>
-          {navigationScale === 'week' && (
-            <span className="text-[10px] font-semibold text-[var(--text-muted)] bg-[var(--bg-sunken)] px-1.5 py-0.5 rounded-md border border-[var(--border-default)] shrink-0">
-              W{weekNumber}
-            </span>
-          )}
-          {!isCurrentPeriod && (
-            <button
-              onClick={goToToday}
-              className="shrink-0 px-2 h-6 text-[10px] font-semibold rounded-md transition-all press-on-click"
-              style={{
-                color: 'var(--accent-text)',
-                background: 'var(--accent-subtle)',
-                border: '1px solid var(--accent-border)',
-              }}
-            >
-              {navigationScale === 'week' ? '↩ This Week' : '↩ This Month'}
-            </button>
-          )}
-          {dateJumpOpen && (
-            <div className="absolute top-full mt-2 left-0 z-50">
-              <DateTimePicker
-                autoOpen
-                value={currentWeekStart.toISOString().split('T')[0]}
-                onChange={val => {
-                  const picked = new Date(val + 'T00:00:00');
-                  setCurrentWeekStart(navigationScale === 'month'
-                    ? new Date(picked.getFullYear(), picked.getMonth(), 1)
-                    : getMonday(picked)
-                  );
-                  setDateJumpOpen(false);
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Right: view switcher + stats toggle + Log time */}
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center bg-[var(--bg-sunken)] border border-[var(--border-default)] rounded-lg p-0.5">
-            {[
-              { key: 'list', icon: List, label: 'List' },
-              { key: 'calendar', icon: CalendarDays, label: 'Calendar' },
-              { key: 'timesheet', icon: LayoutGrid, label: 'Timesheet' },
-              { key: 'table', icon: Table2, label: 'Table' },
-            ].map(({ key, icon: Icon, label }) => (
-              <button
-                key={key}
-                onClick={() => setActiveView(key)}
-                className={`w-8 h-8 rounded-md flex items-center justify-center transition-all ${
-                  activeView === key
-                    ? 'bg-[var(--bg-surface)] shadow-sm text-[var(--text-primary)]'
-                    : 'text-[var(--text-muted)] hover:bg-[var(--bg-surface)]/50 hover:text-[var(--text-secondary)]'
-                }`}
-                title={label}
-              >
-                <Icon size={14} />
-              </button>
-            ))}
-          </div>
-
-          {activeView === 'list' && (
-            <button
-              onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className={`w-8 h-8 rounded-lg flex items-center justify-center transition-all press-on-click select-none border ${
-                sidebarExpanded
-                  ? 'bg-[var(--bg-sunken)] border-[var(--border-strong)] text-[var(--text-primary)]'
-                  : 'bg-[var(--bg-surface)] border-[var(--border-default)] text-[var(--text-secondary)] hover:bg-[var(--bg-sunken)] hover:text-[var(--text-primary)]'
-              }`}
-              title={sidebarExpanded ? 'Hide Stats' : 'Show Stats'}
-            >
-              <Activity size={14} />
-            </button>
-          )}
-
-          <button
-            onClick={() => setDrawerOpen(true)}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] hover:bg-[var(--bg-sunken)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-xs font-semibold transition-all press-on-click select-none"
-          >
-            <Plus size={13} />
-            Log time
-          </button>
-        </div>
-      </div>
+      <MyTimeNavbar
+        navigationScale={navigationScale}
+        setNavigationScale={setNavigationScale}
+        currentWeekStart={currentWeekStart}
+        setCurrentWeekStart={setCurrentWeekStart}
+        goToPrev={goToPrev}
+        goToNext={goToNext}
+        goToToday={goToToday}
+        isCurrentPeriod={isCurrentPeriod}
+        weekNumber={weekNumber}
+        formatRangeLabel={formatRangeLabel}
+        dateJumpRef={dateJumpRef}
+        dateJumpOpen={dateJumpOpen}
+        setDateJumpOpen={setDateJumpOpen}
+        DateTimePicker={DateTimePicker}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        sidebarExpanded={sidebarExpanded}
+        setSidebarExpanded={setSidebarExpanded}
+        setDrawerOpen={setDrawerOpen}
+      />
 
       {/* ── View Content Area ─────────────────────────────── */}
       <div className="flex-1 min-h-0 overflow-hidden">
@@ -1354,128 +1095,15 @@ export default function MyTime() {
       </div>
 
       {/* Calendar entry popover */}
-      {selectedEntry && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setSelectedEntry(null)} />
-          <div
-            className="fixed z-50 w-72 rounded-xl shadow-2xl animate-fade-in"
-            style={{
-              top: `${selectedEntry.y}px`,
-              left: `${selectedEntry.x}px`,
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-default)',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* Popover header */}
-            <div
-              className="flex items-center justify-between px-4 py-3"
-              style={{ borderBottom: '1px solid var(--border-default)' }}
-            >
-              <div className="flex items-center gap-2 min-w-0">
-                <div
-                  className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                  style={{ background: getProjectColor(selectedEntry.log.projectId) }}
-                />
-                <span className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>
-                  {selectedEntry.log.task || '(No description)'}
-                </span>
-              </div>
-              <button
-                onClick={() => setSelectedEntry(null)}
-                className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors ml-2 flex-shrink-0"
-                style={{ color: 'var(--text-muted)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-sunken)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                aria-label="Close"
-              >
-                <X size={13} />
-              </button>
-            </div>
-
-            {/* Popover body */}
-            <div className="px-4 py-3 space-y-2">
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Project</span>
-                <span>{selectedEntry.log.projectName || '—'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Date</span>
-                <span>{selectedEntry.log.date}</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Time</span>
-                <span>
-                  {selectedEntry.log.startTime || '?'} – {selectedEntry.log.endTime || '?'}
-                  {' '}
-                  <span className="font-mono">({selectedEntry.log.duration?.toFixed(2)}h)</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span className="font-medium w-14 shrink-0" style={{ color: 'var(--text-muted)' }}>Source</span>
-                <span className="capitalize">{selectedEntry.log.source || 'manual'}</span>
-              </div>
-              {selectedEntry.log.billable && (
-                <div className="flex items-center gap-1 text-xs" style={{ color: 'rgb(5,150,105)' }}>
-                  <span>● Billable</span>
-                </div>
-              )}
-            </div>
-
-            {/* Popover footer */}
-            <div
-              className="px-4 py-3 flex items-center justify-between"
-              style={{ borderTop: '1px solid var(--border-default)' }}
-            >
-              <button
-                onClick={() => {
-                  setDrawerEntry({
-                    ...selectedEntry.log,
-                    task: selectedEntry.log.task,
-                    projectId: selectedEntry.log.projectId,
-                    date: selectedEntry.log.date,
-                    startTime: selectedEntry.log.startTime || '',
-                    endTime: selectedEntry.log.endTime || '',
-                    billable: selectedEntry.log.billable ?? true,
-                    editId: selectedEntry.log.id,
-                  });
-                  setDrawerOpen(true);
-                  setSelectedEntry(null);
-                }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                style={{ background: 'var(--accent)', color: 'var(--accent-on)' }}
-              >
-                Edit entry
-              </button>
-              <button
-                onClick={() => {
-                  const deletedEntry = { ...selectedEntry };
-                  setLogs(prev => prev.filter(l => l.id !== selectedEntry.log.id));
-                  triggerToast(
-                    'Entry deleted',
-                    selectedEntry.log.task || '',
-                    'success',
-                    {
-                      label: 'Undo',
-                      onClick: () => {
-                        setLogs(prev => [...prev, deletedEntry.log]);
-                        triggerToast('Entry restored', '', 'success');
-                      },
-                    }
-                  );
-                  setSelectedEntry(null);
-                }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg transition-colors"
-                style={{ color: 'rgb(220,38,38)' }}
-                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(220,38,38,0.08)'}
-                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </>
-      )}
+      <EntryPopover
+        selectedEntry={selectedEntry}
+        setSelectedEntry={setSelectedEntry}
+        setDrawerEntry={setDrawerEntry}
+        setDrawerOpen={setDrawerOpen}
+        deleteEntry={deleteEntry}
+        logsToRender={logsToRender}
+        setLogsToRender={setLogsToRender}
+      />
 
       {/* Calendar sync panel (unchanged) */}
       {showCalendarPanel && (
@@ -1540,37 +1168,4 @@ export default function MyTime() {
   );
 }
 
-// CurrentTimeIndicator component
-function CurrentTimeIndicator({ rowHeight, calendarStart = 0 }) {
-  const [offset, setOffset] = useState(-10);
 
-  useEffect(() => {
-    const calcOffset = () => {
-      const now = new Date();
-      const h = now.getHours();
-      const m = now.getMinutes();
-      const currentH = h + m / 60;
-      if (currentH >= calendarStart && currentH <= calendarStart + 24) {
-        setOffset((currentH - calendarStart) * rowHeight);
-      } else {
-        setOffset(-10);
-      }
-    };
-
-    calcOffset();
-    const interval = setInterval(calcOffset, 60000);
-    return () => clearInterval(interval);
-  }, [rowHeight, calendarStart]);
-
-  if (offset < 0) return null;
-
-  return (
-    <div
-      className="absolute left-0 right-0 z-20 pointer-events-none flex items-center"
-      style={{ top: `${offset}px` }}
-    >
-      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 -ml-[4px]" />
-      <div className="flex-1 h-[1px] bg-amber-500" />
-    </div>
-  );
-}
