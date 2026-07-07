@@ -26,7 +26,7 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
           'fixed inset-0 z-40 transition-opacity duration-300',
           isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none',
         ].join(' ')}
-        style={{ background: 'rgba(0, 0, 0, 0.45)' }}
+        style={{ background: 'rgba(0, 0, 0, 0.4)' }}
         onClick={onClose}
       />
 

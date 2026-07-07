@@ -84,13 +84,11 @@ export default function CommandPalette({ onClose }) {
       className="fixed inset-0 z-[200] flex items-start justify-center pt-24 px-4"
       onClick={onClose}
     >
-      <div className="fixed inset-0" style={{ background: 'var(--bg-base)', opacity: 0.6, backdropFilter: 'blur(6px)' }} />
+      <div className="fixed inset-0" style={{ background: 'rgba(0,0,0,0.4)' }} />
       <div
         className="w-full max-w-lg overflow-hidden animate-fade-in relative z-10"
         style={{
           background: 'var(--bg-surface)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
           border: '1px solid var(--border-default)',
           borderRadius: '16px',
           boxShadow: '0 8px 40px rgba(0,0,0,0.15)',

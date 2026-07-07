@@ -767,7 +767,7 @@ export default function AppShell() {
       {drawerOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
-          style={{ background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(4px)' }}
+          style={{ background: 'rgba(0,0,0,0.4)' }}
           onClick={() => {
             if (hasMeaningfulEntry(drawerEntry)) {
               setPendingClose(true);
@@ -1089,7 +1089,7 @@ export default function AppShell() {
       {settingsOpen && (
         <div
           className="fixed inset-0 z-[200] flex items-center justify-center animate-fade-in"
-          style={{ background: 'rgba(0,0,0,0.45)' }}
+          style={{ background: 'rgba(0,0,0,0.4)' }}
         >
           <div className="absolute inset-0 z-0" onClick={() => setSettingsOpen(false)} />
           <div
