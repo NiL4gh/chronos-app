@@ -402,45 +402,91 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
             </div>
           )}
 
-          {/* Calendar & Integrations — new stub */}
+          {/* Calendar & Integrations */}
           {activeSection === 'calendar' && (
             <div className="space-y-6 animate-fade-in">
               <div>
                 <h3 className="text-lg font-bold mb-1" style={{ color: 'var(--text-primary)' }}>Calendar & Integrations</h3>
-                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Connect external calendars to sync your time entries.</p>
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Connect external calendars to sync your time entries automatically.</p>
               </div>
+
+              {/* Google Calendar */}
               <div
                 className="rounded-xl p-5"
                 style={{ border: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}
               >
-                <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Google Calendar</p>
-                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Sync meetings from Google Calendar as time entries.</p>
-                <button
-                  onClick={() => triggerToast('Coming soon', 'Calendar sync is in development.', 'info')}
-                  className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
-                  style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
-                >
-                  Connect Google Calendar
-                </button>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Google Calendar</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Sync meetings from Google Calendar as time entries. Events are imported as draft entries you can review before saving.</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>Not connected</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => triggerToast('Coming soon', 'Google Calendar sync requires a Supabase Edge Function. It will be available in a future release.', 'info')}
+                    className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
+                    style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+                  >
+                    Connect Google Calendar
+                  </button>
+                  <button
+                    onClick={() => triggerToast('Learn more', 'Calendar sync imports events as time entry drafts. You review and approve them before they count toward your hours.', 'info')}
+                    className="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors"
+                    style={{ color: 'var(--accent-text)' }}
+                  >
+                    How it works
+                  </button>
+                </div>
               </div>
+
+              {/* Outlook Calendar */}
               <div
                 className="rounded-xl p-5"
                 style={{ border: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}
               >
-                <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Outlook Calendar</p>
-                <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>Sync meetings from Outlook to Chronos.</p>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Outlook Calendar</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Sync meetings from Microsoft Outlook / Microsoft 365 to Chronos.</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>Not connected</span>
+                </div>
                 <button
-                  onClick={() => triggerToast('Coming soon', 'Calendar sync is in development.', 'info')}
+                  onClick={() => triggerToast('Coming soon', 'Outlook Calendar sync is planned for a future release.', 'info')}
                   className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
                   style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
                 >
                   Connect Outlook
                 </button>
               </div>
+
+              {/* Webhook / Zapier */}
+              <div
+                className="rounded-xl p-5"
+                style={{ border: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Zapier / Webhooks</p>
+                    <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Connect Chronos to 5,000+ apps via Zapier. Create time entries from Slack messages, GitHub issues, or any webhook.</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'var(--bg-elevated)', color: 'var(--text-muted)', border: '1px solid var(--border-default)' }}>Not configured</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => triggerToast('Coming soon', 'Webhook integration will be available when the API is public.', 'info')}
+                    className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
+                    style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+                  >
+                    Set up webhook
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Tracking & Desktop — was 'notifications' + desktop stub */}
+          {/* Tracking & Desktop */}
           {activeSection === 'tracking' && (
             <div className="space-y-6 animate-fade-in">
               <div>
@@ -464,16 +510,47 @@ export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, the
                   <Toggle label="Daily digest" description="End-of-day summary of team activity" checked={notifState.dailyDigest} onChange={() => toggleNotif('dailyDigest')} />
                 </div>
               </div>
-              <div
-                className="rounded-xl p-5 border-t pt-4"
-                style={{ borderTop: '1px solid var(--border-default)' }}
-              >
+
+              {/* Desktop App */}
+              <div className="pt-6 border-t" style={{ borderColor: 'var(--border-default)' }}>
+                <h4 className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--text-muted)' }}>Desktop App</h4>
                 <div
                   className="rounded-xl p-5"
                   style={{ border: '1px solid var(--border-default)', background: 'var(--bg-sunken)' }}
                 >
-                  <p className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>Desktop Agent</p>
-                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Automatic idle detection and app tracking — coming soon.</p>
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>Chronos Desktop</p>
+                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>Native desktop app with idle detection, app tracking, and always-on timer. Runs in the system tray.</p>
+                    </div>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981', border: '1px solid rgba(16,185,129,0.2)' }}>Available</span>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => triggerToast('Download', 'Download the Windows installer from the GitHub releases page.', 'info')}
+                      className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
+                      style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+                    >
+                      Windows (x64)
+                    </button>
+                    <button
+                      onClick={() => triggerToast('Download', 'macOS build coming soon.', 'info')}
+                      className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
+                      style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+                    >
+                      macOS
+                    </button>
+                    <button
+                      onClick={() => triggerToast('Download', 'Linux build coming soon.', 'info')}
+                      className="text-xs px-3 py-1.5 rounded-lg border font-medium transition-colors"
+                      style={{ border: '1px solid var(--border-default)', color: 'var(--text-secondary)' }}
+                    >
+                      Linux
+                    </button>
+                  </div>
+                  <p className="text-[10px] mt-3" style={{ color: 'var(--text-muted)' }}>
+                    Requires Electron. Run <code className="px-1 py-0.5 rounded" style={{ background: 'var(--bg-elevated)' }}>npm run electron:build</code> to build locally.
+                  </p>
                 </div>
               </div>
             </div>

@@ -50,6 +50,39 @@ export default function Reports() {
   const revenue = billableHours * (billingRates?.default || 95);
   const myEntriesCount = filteredLogs.length;
 
+  // Tag Aggregation — hours per tag from filtered logs
+  const tagData = useMemo(() => {
+    const tagMap = {};
+    filteredLogs.forEach(log => {
+      const proj = projects.find(p => p.id === log.projectId);
+      const tags = proj?.tags || [];
+      if (tags.length === 0) {
+        // Untagged
+        if (!tagMap['untagged']) tagMap['untagged'] = { hours: 0, entries: 0, projects: new Set() };
+        tagMap['untagged'].hours += log.duration;
+        tagMap['untagged'].entries += 1;
+        tagMap['untagged'].projects.add(log.projectId);
+      } else {
+        tags.forEach(tag => {
+          if (!tagMap[tag]) tagMap[tag] = { hours: 0, entries: 0, projects: new Set() };
+          tagMap[tag].hours += log.duration;
+          tagMap[tag].entries += 1;
+          tagMap[tag].projects.add(log.projectId);
+        });
+      }
+    });
+    return Object.entries(tagMap)
+      .map(([tag, data]) => ({
+        tag,
+        hours: Math.round(data.hours * 10) / 10,
+        entries: data.entries,
+        projectCount: data.projects.size,
+      }))
+      .sort((a, b) => b.hours - a.hours);
+  }, [filteredLogs]);
+
+  const maxTagHours = Math.max(...tagData.map(t => t.hours), 1);
+
   // Bar Chart Data (Daily Hours)
   const dailyData = useMemo(() => {
     const map = {};
@@ -691,9 +724,111 @@ export default function Reports() {
         </>}
 
         {activeTab === 'Time tags' && (
-          <div className="glass-card p-10 text-center animate-fade-in mt-6">
-            <p className="text-sm font-medium mb-2" style={{ color: 'var(--text-primary)' }}>Time tags</p>
-            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Tag-based reporting is coming soon.</p>
+          <div className="space-y-6 animate-fade-in mt-6">
+            {/* Filter bar (same as Overview) */}
+            <div className="glass-card p-4 relative z-30">
+              <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
+                  <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Date Range</label>
+                  <DateTimePicker
+                    range={true}
+                    rangeValue={[filterStart, filterEnd]}
+                    onRangeChange={([start, end]) => {
+                      setFilterStart(start || '');
+                      setFilterEnd(end || '');
+                    }}
+                    showPresets={true}
+                  />
+                </div>
+                <div className="w-px h-8 bg-[var(--border-default)] hidden md:block mb-1" />
+                <div className="flex flex-col gap-1 flex-1 min-w-[180px]">
+                  <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Project</label>
+                  <Select value={filterProject} onChange={e => setFilterProject(e.target.value)}>
+                    {projectOptions.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  </Select>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary stats */}
+            <div className="grid grid-cols-3 gap-4">
+              {[
+                { label: 'Total Tags', value: tagData.length },
+                { label: 'Total Hours', value: totalHours.toFixed(1) },
+                { label: 'Entries', value: myEntriesCount },
+              ].map((stat, i) => (
+                <div key={i} className="glass-card p-4 text-center">
+                  <p className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{stat.value}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{stat.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Bar chart */}
+            <div className="glass-card p-6">
+              <h3 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Hours by Tag</h3>
+              {tagData.length === 0 ? (
+                <p className="text-sm text-center py-8" style={{ color: 'var(--text-muted)' }}>No data for the selected filters.</p>
+              ) : (
+                <div className="space-y-3">
+                  {tagData.map(({ tag, hours, entries, projectCount }) => (
+                    <div key={tag} className="flex items-center gap-3">
+                      <span className="text-xs font-medium w-20 text-right truncate" style={{ color: 'var(--text-secondary)' }}>
+                        {tag === 'untagged' ? 'Untagged' : tag}
+                      </span>
+                      <div className="flex-1 h-6 rounded-lg overflow-hidden" style={{ background: 'var(--bg-sunken)' }}>
+                        <div
+                          className="h-full rounded-lg transition-all duration-500"
+                          style={{
+                            width: `${(hours / maxTagHours) * 100}%`,
+                            minWidth: hours > 0 ? '8px' : '0',
+                            background: 'var(--accent)',
+                          }}
+                        />
+                      </div>
+                      <span className="text-xs font-mono w-12 text-right" style={{ color: 'var(--text-primary)' }}>
+                        {hours}h
+                      </span>
+                      <span className="text-[10px] w-16 text-right" style={{ color: 'var(--text-muted)' }}>
+                        {entries} entries · {projectCount} proj{projectCount !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tag details table */}
+            {tagData.length > 0 && (
+              <div className="glass-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b" style={{ borderColor: 'var(--border-default)' }}>
+                      <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Tag</th>
+                      <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Hours</th>
+                      <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Entries</th>
+                      <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>Projects</th>
+                      <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--text-secondary)' }}>% of Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tagData.map(({ tag, hours, entries, projectCount }) => (
+                      <tr key={tag} className="border-b last:border-0 hover:bg-[var(--bg-sunken)] transition-colors">
+                        <td className="px-4 py-3 font-medium" style={{ color: 'var(--text-primary)' }}>
+                          {tag === 'untagged' ? 'Untagged' : tag}
+                        </td>
+                        <td className="px-4 py-3 text-right font-mono" style={{ color: 'var(--text-primary)' }}>{hours}h</td>
+                        <td className="px-4 py-3 text-right" style={{ color: 'var(--text-secondary)' }}>{entries}</td>
+                        <td className="px-4 py-3 text-right" style={{ color: 'var(--text-secondary)' }}>{projectCount}</td>
+                        <td className="px-4 py-3 text-right font-mono" style={{ color: 'var(--text-secondary)' }}>
+                          {totalHours > 0 ? Math.round((hours / totalHours) * 100) : 0}%
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 

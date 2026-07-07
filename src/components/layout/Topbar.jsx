@@ -127,20 +127,103 @@ export default function Topbar({
     return () => document.removeEventListener('mousedown', handler);
   }, [recentTasksPopupOpen]);
 
-  const mockNotifications = [
-    {
-      id: 'n2',
-      type: 'info',
-      icon: 'clock',
-      title: 'Timer reminder',
-      body: "You haven't logged any time today. Don't forget to track!",
-      time: '4h ago',
-      read: false,
-    },
-  ];
+  // Generate notifications from real app data
+  const generateNotifications = useMemo(() => {
+    const notifs = [];
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const hour = now.getHours();
 
-  const [notifications, setNotifications] = useState(mockNotifications);
+    // 1. Timer reminder — if no logs today and no timer running and it's past 9am
+    const todayLogs = logs.filter(l => l.date === today);
+    if (todayLogs.length === 0 && !timerRunning && hour >= 9) {
+      notifs.push({
+        id: 'timer-reminder',
+        type: 'info',
+        icon: 'clock',
+        title: 'Timer reminder',
+        body: "You haven't logged any time today. Don't forget to track!",
+        time: 'Today',
+        read: false,
+      });
+    }
+
+    // 2. Budget alerts — projects over 80% spent
+    projectList.forEach(proj => {
+      if (proj.budget > 0 && proj.spent / proj.budget >= 0.8) {
+        const pct = Math.round((proj.spent / proj.budget) * 100);
+        notifs.push({
+          id: `budget-${proj.id}`,
+          type: 'warning',
+          icon: 'alert',
+          title: 'Budget alert',
+          body: `${proj.name} is at ${pct}% of its $${proj.budget.toLocaleString()} budget.`,
+          time: 'Active',
+          read: false,
+        });
+      }
+    });
+
+    // 3. Overdue tasks
+    taskList.forEach(task => {
+      if (task.dueDate && task.status !== 'done') {
+        const due = new Date(task.dueDate + 'T00:00:00');
+        if (due < now) {
+          const daysPast = Math.floor((now - due) / 86400000);
+          notifs.push({
+            id: `overdue-${task.id}`,
+            type: 'warning',
+            icon: 'alert',
+            title: 'Overdue task',
+            body: `"${task.title}" was due ${daysPast === 1 ? 'yesterday' : `${daysPast} days ago`}.`,
+            time: `${daysPast}d overdue`,
+            read: false,
+          });
+        }
+      }
+    });
+
+    // 4. Weekly hours summary (if it's Sunday evening or Monday morning)
+    if (hour >= 18 || (now.getDay() === 0 && hour >= 10)) {
+      const weekStart = new Date(now);
+      weekStart.setDate(now.getDate() - now.getDay());
+      weekStart.setHours(0, 0, 0, 0);
+      const weekLogs = logs.filter(l => {
+        const d = new Date(l.date + 'T00:00:00');
+        return d >= weekStart;
+      });
+      const weekHours = weekLogs.reduce((sum, l) => sum + (l.duration || 0), 0);
+      if (weekHours > 0) {
+        notifs.push({
+          id: 'weekly-summary',
+          type: 'success',
+          icon: 'check',
+          title: 'Weekly summary',
+          body: `You logged ${weekHours.toFixed(1)} hours this week across ${weekLogs.length} entries.`,
+          time: 'This week',
+          read: false,
+        });
+      }
+    }
+
+    return notifs;
+  }, [logs, projectList, taskList, timerRunning]);
+
+  const [notifications, setNotifications] = useState([]);
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Sync generated notifications into state
+  useEffect(() => {
+    setNotifications(prev => {
+      // Merge: keep user-dismissed IDs, add new ones
+      const prevIds = new Set(prev.map(n => n.id));
+      const merged = [...prev];
+      generateNotifications.forEach(n => {
+        if (!prevIds.has(n.id)) merged.push(n);
+      });
+      return merged;
+    });
+  }, [generateNotifications]);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setNotifOpen(false); };
