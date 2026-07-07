@@ -38,7 +38,8 @@ export default function MyTime() {
     selectedDate,
     setSelectedDate,
     drawerEntry,
-    setDrawerEntry
+    setDrawerEntry,
+    projectList: projects,
   } = useOutletContext();
 
   const currentRole = activeRole || role || 'admin';
@@ -285,6 +286,13 @@ export default function MyTime() {
     const grandTotal = totals.reduce((a, b) => a + b, 0);
     return { daily: totals, grandTotal };
   }, [timesheetRows]);
+
+  // Log deletion handler — persists to parent state
+  const deleteEntry = (id) => {
+    if (Array.isArray(logs)) {
+      setLogs(logs.filter(l => l.id !== id));
+    }
+  };
 
   // ─── CHRONOS BENTO WIDGETS SUB-RENDERERS ────────────────
 
