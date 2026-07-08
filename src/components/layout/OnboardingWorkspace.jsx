@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Timer, Building2, ArrowRight } from 'lucide-react';
 import Input, { Select } from '../ui/Input';
 import Button from '../ui/Button';
+import friendlyAuthError from '../../lib/errors';
 
 export default function OnboardingWorkspace({ onWorkspaceCreated }) {
   const { user } = useAuth();
@@ -52,8 +53,8 @@ export default function OnboardingWorkspace({ onWorkspaceCreated }) {
         await onWorkspaceCreated();
       }
     } catch (err) {
-      console.error('[OnboardingWorkspace] Error:', err.message);
-      setError(err.message);
+      console.error('[OnboardingWorkspace] Error:', err);
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }

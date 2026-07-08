@@ -49,3 +49,12 @@ Project docs live in the parent workspace folder:
 - `../ARCHITECTURE.md` — verified current state of the code
 - `../DESIGN.md` — design system and tokens
 - `../PRODUCT.md` — product vision
+
+## Authentication Model
+
+- Email confirmation is **disabled** in the Supabase Auth dashboard for project `obmwiurcttgjchybvlpt`. New signups are auto-confirmed and can sign in immediately.
+- Google OAuth is enabled at the same Supabase project. First-time Google signups auto-create a profile via the `handle_new_user` trigger.
+- After sign-in, new users (or users without an org) hit the **OnboardingWorkspace** page to create a workspace. The flow uses an RLS-safe insert + profile update.
+- Demo mode (no Supabase env vars configured) auto-logs a user in as `demo@chronos.app` (password: `password`) using a localStorage-mocked Supabase client in `src/lib/supabase.js`.
+
+Raw errors from Supabase are translated in `src/lib/errors.js` (`friendlyAuthError`) — server-side codes and SQLSTATE never reach the end user. The full error object is logged via `console.error(err)` for developer debugging.

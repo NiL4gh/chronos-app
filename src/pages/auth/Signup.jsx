@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
 import { Timer, Mail, Lock, User, Building2, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
+import friendlyAuthError from '../../lib/errors';
 
 /**
  * Signup flow — creates the organization first, then the admin account.
@@ -92,7 +93,8 @@ export default function Signup() {
       // 4. Navigate straight to the app — user is already signed in
       navigate('/my-time', { replace: true });
     } catch (err) {
-      setError(err.message);
+      console.error('[Signup] Error:', err);
+      setError(friendlyAuthError(err));
     } finally {
       setLoading(false);
     }
