@@ -26,14 +26,16 @@ export default function OnboardingWorkspace({ onWorkspaceCreated }) {
 
     try {
       // 1. Create the organization row
-      const { data: org, error: orgErr } = await supabase
+      // Generate UUID client-side to avoid INSERT...RETURNING which would trip
+      // the org_members_read SELECT policy (my_org_id() is still null at this point).
+      const orgId = crypto.randomUUID();
+      const { error: orgErr } = await supabase
         .from('organizations')
         .insert({
+          id: orgId,
           name: orgName.trim(),
           industry: industry,
-        })
-        .select()
-        .single();
+        });
 
       if (orgErr) throw orgErr;
 
@@ -41,7 +43,7 @@ export default function OnboardingWorkspace({ onWorkspaceCreated }) {
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({
-          org_id: org.id,
+          org_id: orgId,
           role: 'admin',
         })
         .eq('id', user.id);

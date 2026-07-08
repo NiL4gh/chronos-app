@@ -67,11 +67,12 @@ export default function Signup() {
       }
 
       // 2. Create the organization
-      const { data: org, error: orgErr } = await supabase
+      // Generate UUID client-side (same reason as OnboardingWorkspace —
+      // avoid INSERT...RETURNING RLS policy evaluation on org_members_read).
+      const orgId = crypto.randomUUID();
+      const { error: orgErr } = await supabase
         .from('organizations')
-        .insert({ name: orgName.trim() })
-        .select('id, name')
-        .single();
+        .insert({ id: orgId, name: orgName.trim() });
 
       if (orgErr) throw orgErr;
 
@@ -79,7 +80,7 @@ export default function Signup() {
       const { error: profileErr } = await supabase
         .from('profiles')
         .update({
-          org_id: org.id,
+          org_id: orgId,
           role: 'admin',
           full_name: fullName.trim(),
         })
