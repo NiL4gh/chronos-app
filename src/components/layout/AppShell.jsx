@@ -15,7 +15,7 @@ import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 import { useAuth } from '../../auth/AuthContext.jsx';
 import { supabase, isSupabaseConfigured } from '../../auth/supabase.js';
-import OnboardingWorkspace from './OnboardingWorkspace.jsx';
+import OnboardingWorkspace from '../../auth/OnboardingWorkspace.jsx';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -470,8 +470,16 @@ export default function AppShell() {
   const [timerTaskId, setTimerTaskId] = useState(() => {
     try { return localStorage.getItem('timer_task_id') || ''; } catch { return ''; }
   });
+  const [timerSeconds, setTimerSeconds] = useState(0);
 
-
+  // Tick timerSeconds every second while timer runs
+  useEffect(() => {
+    if (!timerRunning || !timerStart) return;
+    const id = setInterval(() => {
+      setTimerSeconds(Math.floor((Date.now() - timerStart) / 1000));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [timerRunning, timerStart]);
 
   // Persist timer state to localStorage
   useEffect(() => {
@@ -687,7 +695,7 @@ export default function AppShell() {
 
   // ─── Outlet context ──────────────────────────────────
   const outletContext = {
-    timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId,
+    timerRunning, timerStart, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId,
     startTimer, stopTimer: guardedStopTimer, resetTimer, updateTimer,
     triggerToast,
     activeRole,
