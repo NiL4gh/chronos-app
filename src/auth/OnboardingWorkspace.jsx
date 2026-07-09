@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from './supabase';
+import { useAuth } from './AuthContext';
 import { Timer, Building2, ArrowRight } from 'lucide-react';
 import Input, { Select } from '../ui/Input';
 import Button from '../ui/Button';
-import friendlyAuthError from '../../lib/errors';
+import friendlyAuthError from './errors';
 
 export default function OnboardingWorkspace({ onWorkspaceCreated }) {
   const { user } = useAuth();

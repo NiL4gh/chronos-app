@@ -1,8 +1,8 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AppShell from './components/layout/AppShell';
-import ProtectedRoute from './components/layout/ProtectedRoute';
-import Login from './pages/auth/Login';
-import Signup from './pages/auth/Signup';
+import ProtectedRoute from './auth/ProtectedRoute';
+import Login from './auth/Login';
+import Signup from './auth/Signup';
 import Dashboard from './pages/Dashboard';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';

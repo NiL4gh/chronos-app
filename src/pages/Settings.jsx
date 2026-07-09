@@ -8,7 +8,7 @@ import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Avatar from '../components/ui/Avatar';
 import { ACCENTS, THEME_OPTIONS } from '../lib/theme';
-import { isSupabaseConfigured } from '../lib/supabase';
+import { isSupabaseConfigured } from '../auth/supabase';
 
 export function SettingsContent({ keyBindings, setKeyBindings, triggerToast, theme, setTheme, accent, setAccent, demoMode, setDemoMode, onClose }) {
   const [activeSection, setActiveSection] = useState('personal');

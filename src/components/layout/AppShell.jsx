@@ -13,8 +13,8 @@ import Button from '../ui/Button.jsx';
 import { projects, tasks, timeLogs, invoices, teamMembers } from '../../data/mockData.js';
 import { Clock, X } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
-import { useAuth } from '../../contexts/AuthContext.jsx';
-import { supabase, isSupabaseConfigured } from '../../lib/supabase.js';
+import { useAuth } from '../../auth/AuthContext.jsx';
+import { supabase, isSupabaseConfigured } from '../../auth/supabase.js';
 import OnboardingWorkspace from './OnboardingWorkspace.jsx';
 
 // ─── Role ───────────────────────────────────────────────

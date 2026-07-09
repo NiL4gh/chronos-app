@@ -7,7 +7,7 @@ import {
   Sun, Moon, CheckSquare, LogOut
 } from 'lucide-react';
 import Avatar from '../ui/Avatar.jsx';
-import { useAuth } from '../../contexts/AuthContext.jsx';
+import { useAuth } from '../../auth/AuthContext.jsx';
 import { resolveTheme } from '../../lib/theme.js';
 
 const NAV_ITEMS = [

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase } from './supabase';
 import { Timer, Mail, Lock, User, Building2, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
-import friendlyAuthError from '../../lib/errors';
+import friendlyAuthError from './errors';
 
 /**
  * Signup flow — creates the organization first, then the admin account.

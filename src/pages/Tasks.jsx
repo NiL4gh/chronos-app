@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { tasks as initialTasks, projects, teamMembers } from '../data/mockData';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../auth/supabase';
 import { Play, Check, X, Clock, Circle, AlertCircle, CheckCircle2, Loader, Plus, ArrowUpDown } from 'lucide-react';
 import Avatar from '../components/ui/Avatar.jsx';
 import Badge from '../components/ui/Badge.jsx';

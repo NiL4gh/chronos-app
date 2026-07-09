@@ -1,4 +1,4 @@
-// src/lib/errors.js
+// src/auth/errors.js
 // Translates raw Supabase / Postgres errors into user-friendly strings.
 // Never leaks SQLSTATE codes, table names, or stack traces to the UI.
 // Use: setError(friendlyAuthError(err)) instead of setError(err.message)

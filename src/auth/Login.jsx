@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase } from './supabase';
 import { Timer, Mail, Lock, Chrome, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
 export default function Login() {
