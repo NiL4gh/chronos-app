@@ -1,17 +1,14 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { supabase, initMockData, isSupabaseConfigured } from './supabase';
+import { supabase, initMockData, isSupabaseConfigured } from '../auth/supabase';
 
-const AuthContext = createContext(null);
+const AppAuthContext = createContext(null);
 
 /**
- * Wraps the entire app. Provides:
- *   user       — raw Supabase auth.User (or null)
- *   profile    — row from public.profiles (includes role, org_id, full_name)
- *   session    — Supabase Session (or null)
- *   loading    — true while the initial session check is running
- *   signOut    — signs out and clears state
+ * Full app authentication provider.
+ * Fetches profile, org, role — everything the main app needs.
+ * Separate from the lightweight Gateway provider (no profile fetch).
  */
-export function AuthProvider({ children }) {
+export function AuthProviderApp({ children }) {
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -27,9 +24,9 @@ export function AuthProvider({ children }) {
 
     if (error) {
       if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        console.error('[Auth] Supabase tables missing. Run supabase/schema.sql to create them.');
+        console.error('[AuthApp] Supabase tables missing. Run supabase/schema.sql to create them.');
       } else {
-        console.error('[AuthContext] fetchProfile error:', error.message);
+        console.error('[AuthProviderApp] fetchProfile error:', error.message);
       }
       return null;
     }
@@ -110,14 +107,14 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AppAuthContext.Provider value={value}>
       {children}
-    </AuthContext.Provider>
+    </AppAuthContext.Provider>
   );
 }
 
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');
+export function useAuthApp() {
+  const ctx = useContext(AppAuthContext);
+  if (!ctx) throw new Error('useAuthApp must be used inside <AuthProviderApp>');
   return ctx;
 }

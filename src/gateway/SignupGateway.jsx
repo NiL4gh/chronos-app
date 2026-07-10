@@ -1,21 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { supabase } from './supabase';
+import { Link } from 'react-router-dom';
+import { supabase } from '../auth/supabase';
 import { Timer, Mail, Lock, User, Building2, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
-import friendlyAuthError from './errors';
+import friendlyAuthError from '../auth/errors';
 
 /**
- * Signup flow — creates the organization first, then the admin account.
- * Step 1: Workspace name (org)
- * Step 2: Admin credentials (name, email, password)
- *
- * After signup, Supabase sends a confirmation email. The trigger
- * automatically creates the profiles row. We then update it with
- * org_id + role = 'admin' + full_name.
+ * Signup page for the auth gateway.
+ * Two-step flow: workspace name → admin credentials.
+ * After successful signup (org created + profile linked),
+ * calls onAuthSuccess() so the gateway can transition to
+ * the main app.
  */
-export default function Signup() {
-  const navigate = useNavigate();
-
+export default function SignupGateway({ onAuthSuccess }) {
   const [step, setStep] = useState(1);
   const [orgName, setOrgName] = useState('');
   const [fullName, setFullName] = useState('');
@@ -67,8 +63,6 @@ export default function Signup() {
       }
 
       // 2. Create the organization
-      // Generate UUID client-side (same reason as OnboardingWorkspace —
-      // avoid INSERT...RETURNING RLS policy evaluation on org_members_read).
       const orgId = crypto.randomUUID();
       const { error: orgErr } = await supabase
         .from('organizations')
@@ -87,14 +81,14 @@ export default function Signup() {
         .eq('id', authData.user.id);
 
       if (profileErr) {
-        console.error('[Signup] Profile update failed:', profileErr.message);
+        console.error('[SignupGateway] Profile update failed:', profileErr.message);
         throw new Error('Workspace created but profile update failed. Please log in to continue.');
       }
 
-      // 4. Navigate straight to the app — user is already signed in
-      navigate('/my-time', { replace: true });
+      // 4. Signal gateway to transition to main app
+      onAuthSuccess();
     } catch (err) {
-      console.error('[Signup] Error:', err);
+      console.error('[SignupGateway] Error:', err);
       setError(friendlyAuthError(err));
     } finally {
       setLoading(false);

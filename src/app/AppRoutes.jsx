@@ -1,34 +1,37 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import AppShell from './components/layout/AppShell';
-import ProtectedRoute from './auth/ProtectedRoute';
-import Login from './auth/Login';
-import Signup from './auth/Signup';
-import Dashboard from './pages/Dashboard';
-import Tasks from './pages/Tasks';
-import Team from './pages/Team';
-import Projects from './pages/Projects';
-import Reports from './pages/Reports';
-import Invoices from './pages/Invoices';
-import MyTime from './pages/MyTime';
-import Settings from './pages/Settings';
-import DesktopHelper from './pages/DesktopHelper';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import ProtectedRoute from '../auth/ProtectedRoute';
+import MyTime from '../pages/MyTime';
+import Projects from '../pages/Projects';
+import Tasks from '../pages/Tasks';
+import Settings from '../pages/Settings';
+import Team from '../pages/Team';
+import Reports from '../pages/Reports';
+import Dashboard from '../pages/Dashboard';
+import Invoices from '../pages/Invoices';
+import DesktopHelper from '../pages/DesktopHelper';
 
-export default function App() {
+/**
+ * Route definitions for the main authenticated app.
+ * Extracted from App.jsx to separate routing from app bootstrap.
+ * 
+ * Notes:
+ * - /login and /signup are handled by the Auth Gateway (not here)
+ * - /desktop-helper is standalone, no auth required
+ * - All other routes require authentication via ProtectedRoute
+ * - Admin-only routes use ProtectedRoute with adminOnly prop
+ */
+export default function AppRoutes() {
   return (
     <Routes>
-      {/* Public auth routes */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-
       {/* Standalone desktop helper — no shell, no auth */}
       <Route path="/desktop-helper" element={<DesktopHelper />} />
 
-      {/* Protected app shell */}
+      {/* Protected app shell — all nested routes require auth */}
       <Route
         path="/"
         element={
           <ProtectedRoute>
-            <AppShell />
+            <Outlet />
           </ProtectedRoute>
         }
       >
@@ -78,5 +81,5 @@ export default function App() {
       {/* Catch-all */}
       <Route path="*" element={<Navigate to="/my-time" replace />} />
     </Routes>
-  );
+  )
 }

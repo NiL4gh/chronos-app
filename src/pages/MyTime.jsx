@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import { useTimer } from '../components/layout/TimerContext.jsx';
 import {
   ChevronLeft, ChevronRight, CalendarDays, List,
   LayoutGrid, Table2, Plus, Clock, Settings2, CalendarCheck,
@@ -22,7 +23,6 @@ import { getProjectColor, getMonday, addDays, getWeekNumber, parseTimeToMinutes,
 export default function MyTime() {
   const {
     timerRunning,
-    timerSeconds,
     timerTaskLabel,
     timerProjectId,
     startTimer,
@@ -41,6 +41,8 @@ export default function MyTime() {
     setDrawerEntry,
     projectList: projects,
   } = useOutletContext();
+
+  const { timerSeconds } = useTimer();
 
   const currentRole = activeRole || role || 'admin';
 

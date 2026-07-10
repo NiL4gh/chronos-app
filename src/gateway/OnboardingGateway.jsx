@@ -1,13 +1,19 @@
 import React, { useState } from 'react';
-import { supabase } from './supabase';
-import { useAuth } from './AuthContext';
+import { supabase } from '../auth/supabase';
+import { useGatewayAuth } from './AuthProviderGateway';
 import { Timer, Building2, ArrowRight } from 'lucide-react';
 import Input, { Select } from '../components/ui/Input';
 import Button from '../components/ui/Button';
-import friendlyAuthError from './errors';
+import friendlyAuthError from '../auth/errors';
 
-export default function OnboardingWorkspace({ onWorkspaceCreated }) {
-  const { user } = useAuth();
+/**
+ * Onboarding page for the auth gateway.
+ * Shown when a user authenticates but has no org_id in their profile.
+ * After creating the workspace, calls onAuthSuccess() to transition
+ * to the main app (via the Root component in main.jsx).
+ */
+export default function OnboardingGateway({ onAuthSuccess }) {
+  const { user } = useGatewayAuth();
   const [orgName, setOrgName] = useState('');
   const [industry, setIndustry] = useState('Technology');
   const [loading, setLoading] = useState(false);
@@ -50,12 +56,12 @@ export default function OnboardingWorkspace({ onWorkspaceCreated }) {
 
       if (profileErr) throw profileErr;
 
-      // 3. Callback to trigger profile refetch
-      if (onWorkspaceCreated) {
-        await onWorkspaceCreated();
+      // 3. Callback to trigger gateway → app transition
+      if (onAuthSuccess) {
+        await onAuthSuccess();
       }
     } catch (err) {
-      console.error('[OnboardingWorkspace] Error:', err);
+      console.error('[OnboardingGateway] Error:', err);
       setError(friendlyAuthError(err));
     } finally {
       setLoading(false);

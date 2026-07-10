@@ -7,7 +7,7 @@ import {
   Sun, Moon, CheckSquare, LogOut
 } from 'lucide-react';
 import Avatar from '../ui/Avatar.jsx';
-import { useAuth } from '../../auth/AuthContext.jsx';
+import { useAuthApp } from '../../app/AuthProviderApp.jsx';
 import { resolveTheme } from '../../lib/theme.js';
 
 const NAV_ITEMS = [
@@ -48,7 +48,7 @@ export default function Sidebar({
   const [hoverToggle, setHoverToggle] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const navigate = useNavigate();
-  const { displayName, user, signOut } = useAuth();
+  const { displayName, user, signOut } = useAuthApp();
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') setProfileOpen(false); };

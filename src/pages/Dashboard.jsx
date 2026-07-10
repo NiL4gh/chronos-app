@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useOutletContext, useNavigate } from 'react-router-dom';
+import { useTimer } from '../components/layout/TimerContext.jsx';
 import {
   Clock, BarChart3, TrendingUp, CheckCircle2, Users,
   MoreHorizontal, Paperclip, Wrench, Mic, ArrowRight,
@@ -70,7 +71,6 @@ export default function Dashboard() {
     role,
     triggerToast,
     timerRunning,
-    timerSeconds,
     timerTaskLabel,
     timerProjectId,
     startTimer,
@@ -81,6 +81,8 @@ export default function Dashboard() {
     selectedDate,
     setSelectedDate,
   } = useOutletContext();
+
+  const { timerSeconds } = useTimer();
 
   const currentRole = activeRole || role || 'admin';
   const navigate = useNavigate();

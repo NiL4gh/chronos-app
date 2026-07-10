@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { supabase } from './supabase';
+import { Link } from 'react-router-dom';
+import { supabase } from '../auth/supabase';
 import { Timer, Mail, Lock, Chrome, Eye, EyeOff, ArrowRight, AlertCircle } from 'lucide-react';
 
-export default function Login() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const from = location.state?.from?.pathname || '/my-time';
-
-  const [mode, setMode] = useState('password'); // 'password' | 'magic'
+/**
+ * Login page for the auth gateway.
+ * Handles password login, magic link, and Google OAuth.
+ * Does NOT call onAuthSuccess() — the gateway routing logic
+ * will check for org_id and call onAuthSuccess() or redirect
+ * to onboarding automatically.
+ */
+export default function LoginGateway({ onAuthSuccess }) {
+  const [mode, setMode] = useState('password');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -29,7 +32,10 @@ export default function Login() {
       return;
     }
 
-    navigate(from, { replace: true });
+    // Do NOT call onAuthSuccess() here.
+    // The auth state listener in AuthProviderGateway will fire SIGNED_IN,
+    // fetch the profile, and GatewayRoutes will call onAuthSuccess()
+    // if the user has an org_id, or redirect to /onboarding if not.
   };
 
   const handleMagicLink = async (e) => {
@@ -110,7 +116,6 @@ export default function Login() {
               color: 'var(--text-primary)',
             }}
           >
-            {/* Google SVG */}
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />

@@ -11,11 +11,11 @@ import Input from '../ui/Input.jsx';
 import DateTimePicker from '../ui/DateTimePicker.jsx';
 import Button from '../ui/Button.jsx';
 import { projects, tasks, timeLogs, invoices, teamMembers } from '../../data/mockData.js';
-import { Clock, X } from 'lucide-react';
+import { Clock, X, DollarSign } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
-import { useAuth } from '../../auth/AuthContext.jsx';
+import { useAuthApp } from '../../app/AuthProviderApp';
 import { supabase, isSupabaseConfigured } from '../../auth/supabase.js';
-import OnboardingWorkspace from '../../auth/OnboardingWorkspace.jsx';
+import { TimerProvider } from './TimerContext.jsx';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -31,7 +31,7 @@ function getMonday(d) {
 
 export default function AppShell() {
   const navigate = useNavigate();
-  const { isAdmin, orgId, user, refreshProfile } = useAuth();
+  const { isAdmin, orgId, user, refreshProfile } = useAuthApp();
 
   // Role is derived from real auth — no more client-side toggle
   const activeRole = isAdmin ? 'admin' : 'employee';
@@ -451,146 +451,8 @@ export default function AppShell() {
   // Command palette
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Live timer — persisted to localStorage
-  const [timerRunning, setTimerRunning] = useState(() => {
-    try { return localStorage.getItem('timer_running') === 'true'; } catch { return false; }
-  });
-  const [timerStart, setTimerStart] = useState(() => {
-    try {
-      const saved = localStorage.getItem('timer_start');
-      return saved ? Number(saved) : 0;
-    } catch { return 0; }
-  });
-  const [timerTaskLabel, setTimerTaskLabel] = useState(() => {
-    try { return localStorage.getItem('timer_task') || ''; } catch { return ''; }
-  });
-  const [timerProjectId, setTimerProjectId] = useState(() => {
-    try { return localStorage.getItem('timer_project') || ''; } catch { return ''; }
-  });
-  const [timerTaskId, setTimerTaskId] = useState(() => {
-    try { return localStorage.getItem('timer_task_id') || ''; } catch { return ''; }
-  });
-  const [timerSeconds, setTimerSeconds] = useState(0);
-
-  // Tick timerSeconds every second while timer runs
-  useEffect(() => {
-    if (!timerRunning || !timerStart) return;
-    const id = setInterval(() => {
-      setTimerSeconds(Math.floor((Date.now() - timerStart) / 1000));
-    }, 1000);
-    return () => clearInterval(id);
-  }, [timerRunning, timerStart]);
-
-  // Persist timer state to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('timer_running', String(timerRunning));
-      localStorage.setItem('timer_start', String(timerStart));
-      localStorage.setItem('timer_task', timerTaskLabel);
-      localStorage.setItem('timer_project', timerProjectId);
-      localStorage.setItem('timer_task_id', timerTaskId);
-    } catch {}
-  }, [timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId]);
-
-  const startTimer = useCallback((task = '', projectId = '', taskId = '') => {
-    setTimerTaskLabel(task);
-    setTimerProjectId(projectId);
-    setTimerTaskId(taskId);
-    setTimerRunning(true);
-    setTimerStart(Date.now());
-  }, []);
-
-  const updateTimer = useCallback(({ task, projectId, taskId }) => {
-    if (task !== undefined) setTimerTaskLabel(task);
-    if (projectId !== undefined) setTimerProjectId(projectId);
-    if (taskId !== undefined) setTimerTaskId(taskId);
-  }, []);
-
-  const stopTimer = useCallback(async () => {
-    setTimerRunning(false);
-    if (timerStart > 0) {
-      const elapsedMs = Date.now() - timerStart;
-      const proj = projectList.find(p => p.id === timerProjectId) || projectList[0];
-      const startStr = new Date(timerStart).toTimeString().slice(0, 5);
-      const endStr = new Date().toTimeString().slice(0, 5);
-      const durationHours = Number((elapsedMs / 3600000).toFixed(2)) || 0.01;
-
-      // Optimistic local update — always visible immediately
-      const newLog = {
-        id: `log-${Date.now()}`,
-        userId: user?.id || 'u1',
-        userName: user?.email || 'You',
-        projectName: proj?.name || '',
-        projectId: proj?.id || '',
-        task: timerTaskLabel || 'Auto Tracked Task',
-        date: new Date().toISOString().slice(0, 10),
-        startTime: startStr,
-        endTime: endStr,
-        duration: durationHours,
-        source: 'auto',
-        billable: true,
-      };
-      setLogs(prev => [newLog, ...prev]);
-
-      // Persist to Supabase if logged in
-      if (user && orgId) {
-        const startedAt = new Date(timerStart).toISOString();
-        const endedAt = new Date().toISOString();
-        const { error } = await supabase.from('time_logs').insert({
-          org_id: orgId,
-          user_id: user.id,
-          project_id: proj?.id || null,
-          description: timerTaskLabel || 'Auto Tracked Task',
-          started_at: startedAt,
-          ended_at: endedAt,
-          duration_hours: durationHours,
-          source: 'auto',
-          billable: true,
-        });
-        if (error) {
-          console.error('[AppShell] stopTimer Supabase error:', error.message);
-          triggerToast('Sync warning', 'Entry saved locally but not synced. Check your connection.', 'warning');
-        } else {
-          triggerToast('Timer saved', `Logged ${durationHours}h to ${proj?.name || 'project'}.`, 'success');
-        }
-      } else {
-        triggerToast('Timer saved', `Logged ${durationHours}h to ${proj?.name || 'project'}.`, 'success');
-      }
-    }
-    setTimerStart(0);
-    setTimerTaskId('');
-    try {
-      localStorage.removeItem('timer_running');
-      localStorage.removeItem('timer_start');
-      localStorage.removeItem('timer_task');
-      localStorage.removeItem('timer_project');
-      localStorage.removeItem('timer_task_id');
-    } catch {}
-  }, [timerStart, timerTaskLabel, timerProjectId, projectList, triggerToast, user, orgId]);
-
-  // Guarded stop timer — shows in-app confirm if > 5 min
-  const guardedStopTimer = useCallback(() => {
-    if (timerStart > 0 && (Date.now() - timerStart) / 1000 > 300) {
-      setStopConfirmOpen(true);
-      return;
-    }
-    stopTimer();
-  }, [timerStart, stopTimer]);
-
-  const resetTimer = useCallback(() => {
-    setTimerRunning(false);
-    setTimerStart(0);
-    setTimerTaskLabel('');
-    setTimerProjectId('');
-    setTimerTaskId('');
-    try {
-      localStorage.removeItem('timer_running');
-      localStorage.removeItem('timer_start');
-      localStorage.removeItem('timer_task');
-      localStorage.removeItem('timer_project');
-      localStorage.removeItem('timer_task_id');
-    } catch {}
-  }, []);
+  // Timer functions are now provided by TimerProvider via TimerContext
+  // AppShell only needs to provide the dependencies to TimerProvider
 
   // ─── Global keyboard shortcuts ───────────────────────
   useEffect(() => {
@@ -694,8 +556,10 @@ export default function AppShell() {
   }, [timerRunning, startTimer, stopTimer]);
 
   // ─── Outlet context ──────────────────────────────────
+  // Note: timerSeconds is intentionally excluded to prevent app-wide re-renders.
+  // Components needing live seconds should use TimerContext via useTimer() hook.
   const outletContext = {
-    timerRunning, timerStart, timerSeconds, timerTaskLabel, timerProjectId, timerTaskId,
+    timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId,
     startTimer, stopTimer: guardedStopTimer, resetTimer, updateTimer,
     triggerToast,
     activeRole,
@@ -713,15 +577,19 @@ export default function AppShell() {
     demoMode, setDemoMode,
   };
 
-  if (user && !orgId) {
-    return <OnboardingWorkspace onWorkspaceCreated={refreshProfile} />;
-  }
-
   return (
-    <div
-      className="flex min-h-screen h-screen overflow-hidden relative"
-      style={{ minHeight: '100vh' }}
+    <TimerProvider
+      projectList={projectList}
+      user={user}
+      orgId={orgId}
+      supabase={supabase}
+      setLogs={setLogs}
+      triggerToast={triggerToast}
     >
+      <div
+        className="flex min-h-screen h-screen overflow-hidden relative"
+        style={{ minHeight: '100vh' }}
+      >
       {/* Sidebar */}
       <Sidebar
         activeRole={activeRole}
@@ -747,14 +615,6 @@ export default function AppShell() {
           <Topbar
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenDrawer={() => setDrawerOpen(true)}
-            timerRunning={timerRunning}
-            timerStart={timerStart}
-            timerTaskLabel={timerTaskLabel}
-            timerProjectId={timerProjectId}
-            timerTaskId={timerTaskId}
-            onStopTimer={guardedStopTimer}
-            onStartTimer={startTimer}
-            onUpdateTimer={updateTimer}
             projectList={projectList}
             taskList={taskList}
             teamMembers={teamMembers}
@@ -889,34 +749,50 @@ export default function AppShell() {
                       />
                     </div>
                   </div>
-                  {(() => {
+{(() => {
                     const { startTime, endTime } = drawerEntry;
                     if (!startTime || !endTime) return null;
-                    const [sH, sM] = startTime.split(':').map(Number);
-                    const [eH, eM] = endTime.split(':').map(Number);
-                    const sMin = sH * 60 + sM;
-                    const eMin = eH * 60 + eM;
-                    if (eMin > sMin) {
-                      const diff = eMin - sMin;
-                      const durationString = Math.floor(diff / 60) > 0 ? `${Math.floor(diff / 60)}h ${diff % 60}m` : `${diff % 60}m`;
-                      return (
-                        <div style={{ paddingLeft: '4.5rem' }}>
-                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
-                            style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent-text)' }}>
-                            <Clock size={11} className="shrink-0" />
-                            <span>{durationString}</span>
-                          </div>
-                        </div>
-                      );
-                    }
+                    // Use Date objects for robust time math (handles midnight crossing)
+                    const baseDate = new Date(drawerEntry.date + 'T00:00:00');
+                    const start = new Date(baseDate.getTime());
+                    start.setHours(...startTime.split(':').map(Number));
+                    const end = new Date(baseDate.getTime());
+                    end.setHours(...endTime.split(':').map(Number));
+                    // If end <= start, assume next day (midnight crossing)
+                    if (end <= start) end.setDate(end.getDate() + 1);
+                    const diffMs = end.getTime() - start.getTime();
+                    const diffMin = Math.round(diffMs / 60000);
+                    const durationString = diffMin >= 60 ? `${Math.floor(diffMin / 60)}h ${diffMin % 60}m` : `${diffMin}m`;
                     return (
                       <div style={{ paddingLeft: '4.5rem' }}>
-                        <p className="text-xs text-red-500 mt-1">End time must be after start time</p>
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+                          style={{ background: 'var(--accent-subtle)', border: '1px solid var(--accent-border)', color: 'var(--accent-text)' }}>
+                          <Clock size={11} className="shrink-0" />
+                          <span>{durationString}</span>
+                        </div>
                       </div>
                     );
                   })()}
+                
+                {/* Billable toggle */}
+                <div className="flex items-center gap-2">
+                  <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">Billable</label>
+                  <button
+                    onClick={() => setDrawerEntry(prev => ({ ...prev, billable: !prev.billable }))}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+                    style={{
+                      background: drawerEntry.billable ? 'var(--accent-subtle)' : 'var(--bg-sunken)',
+                      border: drawerEntry.billable ? '1px solid var(--accent-border)' : '1px solid var(--border-default)',
+                      color: drawerEntry.billable ? 'var(--accent-text)' : 'var(--text-secondary)',
+                    }}
+                    title={drawerEntry.billable ? 'Billable — click to set non-billable' : 'Non-billable — click to set billable'}
+                  >
+                    <DollarSign size={12} />
+                    <span>{drawerEntry.billable ? 'Billable' : 'Non-billable'}</span>
+                  </button>
                 </div>
               </div>
+            </div>
             </div>
 
             {/* Modal footer */}
@@ -931,56 +807,59 @@ export default function AppShell() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={async () => {
-                  const { task, projectId, taskId, date, startTime, endTime } = drawerEntry;
-                  if (!task || !projectId || !startTime || !endTime) {
-                    triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
-                    return;
-                  }
-                  const proj = projectList.find(p => p.id === projectId) || projectList[0];
-                  const [startH, startM] = startTime.split(':').map(Number);
-                  const [endH, endM] = endTime.split(':').map(Number);
-                  const startMin = startH * 60 + startM;
-                  const endMin = endH * 60 + endM;
-                  let diffMin = endMin - startMin;
-                  if (diffMin < 0) diffMin += 1440;
-                  const duration = Number((diffMin / 60).toFixed(2));
+onClick={async () => {
+                    const { task, projectId, taskId, date, startTime, endTime } = drawerEntry;
+                    if (!task || !projectId || !startTime || !endTime) {
+                      triggerToast('Validation Error', 'Please fill in all fields.', 'warning');
+                      return;
+                    }
+                    const proj = projectList.find(p => p.id === projectId) || projectList[0];
+                    // Use Date objects for robust time math (handles midnight crossing)
+                    const baseDate = new Date(date + 'T00:00:00');
+                    const start = new Date(baseDate.getTime());
+                    start.setHours(...startTime.split(':').map(Number));
+                    const end = new Date(baseDate.getTime());
+                    end.setHours(...endTime.split(':').map(Number));
+                    if (end <= start) end.setDate(end.getDate() + 1);
+const diffMin = Math.round((end.getTime() - start.getTime()) / 60000);
+                    const duration = Number((diffMin / 60).toFixed(2));
+                    const billable = drawerEntry.billable;
 
-                  // Optimistic local update
-                  const newLog = {
-                    id: `log-${Date.now()}`,
-                    userId: user?.id || 'u1',
-                    userName: user?.email || 'You',
-                    projectName: proj.name,
-                    projectId: proj.id,
-                    taskId,
-                    task,
-                    date,
-                    startTime,
-                    endTime,
-                    duration,
-                    source: 'manual',
-                    billable: true,
-                  };
-                  setLogs(prev => [newLog, ...prev]);
-                  setDrawerOpen(false);
-                  setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-
-                  // Persist to Supabase
-                  if (user && orgId) {
-                    const startedAt = new Date(`${date}T${startTime}:00`).toISOString();
-                    const endedAt   = new Date(`${date}T${endTime}:00`).toISOString();
-                    const { error } = await supabase.from('time_logs').insert({
-                      org_id: orgId,
-                      user_id: user.id,
-                      project_id: proj.id,
-                      description: task,
-                      started_at: startedAt,
-                      ended_at: endedAt,
-                      duration_hours: duration,
+                    // Optimistic local update
+                    const newLog = {
+                      id: `log-${Date.now()}`,
+                      userId: user?.id || 'u1',
+                      userName: user?.email || 'You',
+                      projectName: proj.name,
+                      projectId: proj.id,
+                      taskId,
+                      task,
+                      date,
+                      startTime,
+                      endTime,
+                      duration,
                       source: 'manual',
-                      billable: true,
-                    });
+                      billable,
+                    };
+                    setLogs(prev => [newLog, ...prev]);
+                    setDrawerOpen(false);
+                    setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+
+                    // Persist to Supabase
+                    if (user && orgId) {
+                      const startedAt = new Date(`${date}T${startTime}:00`).toISOString();
+                      const endedAt   = new Date(`${date}T${endTime}:00`).toISOString();
+                      const { error } = await supabase.from('time_logs').insert({
+                        org_id: orgId,
+                        user_id: user.id,
+                        project_id: proj.id,
+                        description: task,
+                        started_at: startedAt,
+                        ended_at: endedAt,
+                        duration_hours: duration,
+                        source: 'manual',
+                        billable,
+                      });
                     if (error) {
                       console.error('[AppShell] manual entry Supabase error:', error.message);
                       triggerToast('Sync warning', 'Saved locally but not synced.', 'warning');
@@ -1135,5 +1014,6 @@ export default function AppShell() {
         onDismiss={dismissToast}
       />
     </div>
+    </TimerProvider>
   );
 }

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuthApp } from '../app/AuthProviderApp';
 
 /**
  * Wraps any route that requires a logged-in user.
@@ -9,7 +9,7 @@ import { useAuth } from './AuthContext';
  * - If `adminOnly` is true and the user is an employee → redirect to /my-time.
  */
 export default function ProtectedRoute({ children, adminOnly = false }) {
-  const { session, loading, isAdmin } = useAuth();
+  const { session, loading, isAdmin } = useAuthApp();
   const location = useLocation();
 
   if (loading) {

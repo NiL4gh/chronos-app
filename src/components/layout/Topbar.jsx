@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, Play, Square, Plus, AlertCircle, CheckCircle2, Clock, Calendar, X, FolderOpen, Tag, DollarSign, Check } from 'lucide-react';
+import { useTimer } from './TimerContext.jsx';
 
 const PAGE_META = {
   '/dashboard': { title: 'Dashboard',   subtitle: 'Team overview & activity' },
@@ -44,14 +45,6 @@ const MOCK_RECENT_TASKS = [
 export default function Topbar({
   onOpenCommandPalette,
   onOpenDrawer,
-  timerRunning,
-  timerStart,
-  timerTaskLabel,
-  timerProjectId,
-  timerTaskId,
-  onStopTimer,
-  onStartTimer,
-  onUpdateTimer,
   projectList = [],
   taskList = [],
   teamMembers = [],
@@ -62,6 +55,17 @@ export default function Topbar({
 }) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  
+  const {
+    timerRunning,
+    timerStart,
+    timerTaskLabel,
+    timerProjectId,
+    timerTaskId,
+    stopTimer,
+    startTimer,
+    updateTimer,
+  } = useTimer();
 
   const [notifOpen, setNotifOpen] = useState(false);
   const [taskInput, setTaskInput] = useState('');
@@ -248,7 +252,7 @@ export default function Topbar({
 
 
   const handleStartTimer = () => {
-    onStartTimer(taskInput.trim(), projectInput || '', taskIdInput || '');
+    startTimer(taskInput.trim(), projectInput || '', taskIdInput || '');
     setTaskInput('');
     setProjectInput('');
     setTaskIdInput('');
@@ -295,7 +299,7 @@ export default function Topbar({
               value={timerRunning ? timerTaskLabel : taskInput}
               onChange={e => {
                 if (timerRunning) {
-                  onUpdateTimer({ task: e.target.value });
+                  updateTimer({ task: e.target.value });
                 } else {
                   setTaskInput(e.target.value);
                   setRecentTasksPopupOpen(false);
@@ -331,7 +335,7 @@ export default function Topbar({
                       key={task.id}
                       onClick={() => {
                         if (timerRunning) {
-                          onUpdateTimer({ task: task.title, projectId: task.projectId, taskId: task.id });
+                          updateTimer({ task: task.title, projectId: task.projectId, taskId: task.id });
                         } else {
                           setTaskInput(task.title);
                           setProjectInput(task.projectId);
@@ -408,12 +412,12 @@ export default function Topbar({
                 </div>
                 <div className="max-h-48 overflow-y-auto pb-1">
                   <button
-                    onClick={() => {
-                      if (timerRunning) onUpdateTimer({ projectId: '', taskId: '' });
-                      else { setProjectInput(''); setTaskIdInput(''); }
-                      setProjectPopupOpen(false);
-                      setProjectSearch('');
-                    }}
+onClick={() => {
+                        if (timerRunning) updateTimer({ projectId: '', taskId: '' });
+                        else { setProjectInput(''); setTaskIdInput(''); }
+                        setProjectPopupOpen(false);
+                        setProjectSearch('');
+                      }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-sunken)] transition-colors text-left"
                     style={{ color: 'var(--text-muted)' }}
                   >
@@ -426,12 +430,12 @@ export default function Topbar({
                     .map(p => (
                       <button
                         key={p.id}
-                        onClick={() => {
-                          if (timerRunning) onUpdateTimer({ projectId: p.id });
-                          else { setProjectInput(p.id); setTaskIdInput(''); }
-                          setProjectPopupOpen(false);
-                          setProjectSearch('');
-                        }}
+onClick={() => {
+                            if (timerRunning) updateTimer({ projectId: p.id });
+                            else { setProjectInput(p.id); setTaskIdInput(''); }
+                            setProjectPopupOpen(false);
+                            setProjectSearch('');
+                          }}
                         className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-sunken)] transition-colors text-left"
                         style={{ color: 'var(--text-primary)' }}
                       >
@@ -506,7 +510,7 @@ export default function Topbar({
                                 taskSearch.trim(),
                                 activeProjectId || projectList[0]?.id || ''
                               );
-                              if (timerRunning) onUpdateTimer({ taskId: newTask.id, task: newTask.title });
+                              if (timerRunning) updateTimer({ taskId: newTask.id, task: newTask.title });
                               else { setTaskIdInput(newTask.id); setTaskInput(newTask.title); }
                               setTaskPopupOpen(false);
                               setTaskSearch('');
@@ -517,12 +521,12 @@ export default function Topbar({
                       <div className="max-h-48 overflow-y-auto pb-1">
                         {activeTaskId && (
                           <button
-                            onClick={() => {
-                              if (timerRunning) onUpdateTimer({ taskId: '' });
-                              else setTaskIdInput('');
-                              setTaskPopupOpen(false);
-                              setTaskSearch('');
-                            }}
+onClick={() => {
+                                if (timerRunning) updateTimer({ taskId: '' });
+                                else setTaskIdInput('');
+                                setTaskPopupOpen(false);
+                                setTaskSearch('');
+                              }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-sunken)] transition-colors text-left"
                             style={{ color: 'var(--text-muted)' }}
                           >
@@ -532,12 +536,12 @@ export default function Topbar({
                         {filteredTasks.map(t => (
                           <button
                             key={t.id}
-                            onClick={() => {
-                              if (timerRunning) onUpdateTimer({ taskId: t.id, task: t.title });
-                              else { setTaskIdInput(t.id); setTaskInput(t.title); }
-                              setTaskPopupOpen(false);
-                              setTaskSearch('');
-                            }}
+onClick={() => {
+                                if (timerRunning) updateTimer({ taskId: t.id, task: t.title });
+                                else { setTaskIdInput(t.id); setTaskInput(t.title); }
+                                setTaskPopupOpen(false);
+                                setTaskSearch('');
+                              }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-sunken)] transition-colors text-left"
                             style={{ color: 'var(--text-primary)' }}
                           >
@@ -546,16 +550,16 @@ export default function Topbar({
                         ))}
                         {canCreate && (
                           <button
-                            onClick={() => {
-                              const newTask = addTask(
-                                taskSearch.trim(),
-                                activeProjectId || projectList[0]?.id || ''
-                              );
-                              if (timerRunning) onUpdateTimer({ taskId: newTask.id, task: newTask.title });
-                              else { setTaskIdInput(newTask.id); setTaskInput(newTask.title); }
-                              setTaskPopupOpen(false);
-                              setTaskSearch('');
-                            }}
+onClick={() => {
+                                const newTask = addTask(
+                                  taskSearch.trim(),
+                                  activeProjectId || projectList[0]?.id || ''
+                                );
+                                if (timerRunning) updateTimer({ taskId: newTask.id, task: newTask.title });
+                                else { setTaskIdInput(newTask.id); setTaskInput(newTask.title); }
+                                setTaskPopupOpen(false);
+                                setTaskSearch('');
+                              }}
                             className="w-full flex items-center gap-2 px-3 py-2 text-xs hover:bg-[var(--bg-sunken)] transition-colors text-left"
                             style={{ color: 'var(--accent-text)' }}
                           >
@@ -659,7 +663,7 @@ export default function Topbar({
         {/* Play / Stop button */}
         {timerRunning ? (
           <button
-            onClick={() => onStopTimer?.()}
+            onClick={() => stopTimer?.()}
             className="flex items-center justify-center transition-all duration-200 press-on-click"
             style={{
               width: '32px',
