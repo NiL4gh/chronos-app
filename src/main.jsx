@@ -5,6 +5,50 @@ import { supabase } from './auth/supabase'
 import './index.css'
 
 /**
+ * Error boundary so a runtime error renders a visible message
+ * instead of a blank page during development.
+ */
+class RootErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  componentDidCatch(error, info) {
+    console.error('[Chronos] Runtime error:', error, info)
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div
+          className="min-h-screen flex items-center justify-center p-6"
+          style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+        >
+          <div
+            className="max-w-md w-full rounded-2xl p-6 shadow-xl"
+            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
+          >
+            <h2 className="text-lg font-semibold mb-2">Something went wrong.</h2>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+              Open DevTools (F12) → Console for full error details.
+            </p>
+            <pre
+              className="text-xs p-3 rounded-lg overflow-auto max-h-64 whitespace-pre-wrap break-all"
+              style={{ background: 'var(--bg-sunken)', color: 'var(--text-secondary)' }}
+            >
+              {String(this.state.error?.stack ?? this.state.error?.message ?? this.state.error)}
+            </pre>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
+/**
  * Lightweight session check — no AuthProvider, no profile fetch.
  * Returns true if a valid Supabase session exists (including demo mode).
  */
@@ -124,7 +168,8 @@ function Root() {
     return <LoadingFallback />
   }
 
-  // No session OR session exists but no org → load Auth Gateway (lazy)
+  // No session OR session exists but no org → load Auth Gateway (lazy).
+  // Gateway depends on the parent's HashRouter.
   if (state === 'gateway') {
     return (
       <HashRouter>
@@ -135,18 +180,19 @@ function Root() {
     )
   }
 
-  // Session exists + has org → load Main App (AuthProviderApp + AppShell + AppRoutes)
+  // Session exists + has org → load Main App.
+  // MainApp provides its own HashRouter internally — DO NOT wrap here.
   return (
-    <HashRouter>
-      <Suspense fallback={<LoadingFallback />}>
-        <MainApp />
-      </Suspense>
-    </HashRouter>
+    <Suspense fallback={<LoadingFallback />}>
+      <MainApp />
+    </Suspense>
   )
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Root />
+    <RootErrorBoundary>
+      <Root />
+    </RootErrorBoundary>
   </React.StrictMode>
 )
