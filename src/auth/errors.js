@@ -12,6 +12,8 @@ const AUTH_ERROR_MAP = [
   // string patterns
   { match: (e) => /permission denied/i.test(e?.message ?? ''), message: "We couldn't save your changes. Please try again." },
   { match: (e) => /relation .* does not exist/i.test(e?.message ?? ''), message: 'Setup incomplete. Please contact support.' },
+  { match: (e) => /failed to fetch/i.test(e?.message ?? ''), message: 'Network error — check your connection and try again.' },
+  { match: (e) => /typeerror/i.test(e?.constructor?.name ?? ''), message: 'Network error — check your connection and try again.' },
   { match: (e) => /network/i.test(e?.message ?? ''), message: 'Network error — check your connection and try again.' },
   // fallbacks
   { match: (e) => e instanceof Error, message: 'Something went wrong. Please try again.' },
