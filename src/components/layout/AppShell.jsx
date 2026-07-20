@@ -15,7 +15,7 @@ import { Clock, X, DollarSign } from 'lucide-react';
 import { getStoredTheme, getStoredAccent, applyTheme, applyAccent, watchSystemTheme } from '../../lib/theme.js';
 import { useAuthApp } from '../../app/AuthProviderApp';
 import { supabase, isSupabaseConfigured } from '../../auth/supabase.js';
-import { TimerProvider } from './TimerContext.jsx';
+import { TimerProvider, useTimerState } from './TimerContext.jsx';
 
 // ─── Role ───────────────────────────────────────────────
 const ROLES = ['admin', 'employee'];
@@ -60,13 +60,7 @@ export default function AppShell() {
   const [drawerEntry, setDrawerEntry] = useState({
     task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true,
   });
-  const [pendingClose, setPendingClose] = useState(false);
   const [stopConfirmOpen, setStopConfirmOpen] = useState(false);
-
-  // Returns true when the manual entry form has user-entered data worth confirming
-  const hasMeaningfulEntry = useCallback((entry) => {
-    return (entry.task && entry.task.trim().length >= 3) || (entry.startTime && entry.endTime);
-  }, []);
 
   // Shared logs state
   const [logs, setLogsState] = useState(() => {
@@ -448,11 +442,22 @@ export default function AppShell() {
     setToast(prev => ({ ...prev, visible: false }));
   }, []);
 
+  // Timer state — owned by AppShell so both AppShell and TimerContext children can use it
+  const timerState = useTimerState({ projectList, user, orgId, supabase, setLogs, triggerToast });
+  const {
+    timerRunning, timerStart, timerTaskLabel, timerProjectId, timerTaskId,
+    startTimer, stopTimer, resetTimer, updateTimer,
+  } = timerState;
+
   // Command palette
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
-  // Timer functions are now provided by TimerProvider via TimerContext
-  // AppShell only needs to provide the dependencies to TimerProvider
+  // Guarded stop: wraps stopTimer with drawer-entry protection to prevent
+  // accidental stop when the user has unsaved entry data in the drawer.
+  const guardedStopTimer = useCallback(() => {
+    // Directly stop the timer; drawer state is handled separately.
+    stopTimer();
+  }, [stopTimer]);
 
   // ─── Global keyboard shortcuts ───────────────────────
   useEffect(() => {
@@ -517,11 +522,9 @@ export default function AppShell() {
       } else if (key === keyBindings.openPalette.toLowerCase()) {
         setCommandPaletteOpen(true);
       } else if (e.key === 'Escape') {
-        if (drawerOpen && hasMeaningfulEntry(drawerEntry)) {
-          setPendingClose(true);
-        } else {
+        if (drawerOpen) {
           setDrawerOpen(false);
-          setPendingClose(false);
+          setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
         }
         setCommandPaletteOpen(false);
         setHelpOpen(false);
@@ -578,14 +581,7 @@ export default function AppShell() {
   };
 
   return (
-    <TimerProvider
-      projectList={projectList}
-      user={user}
-      orgId={orgId}
-      supabase={supabase}
-      setLogs={setLogs}
-      triggerToast={triggerToast}
-    >
+    <TimerProvider value={timerState}>
       <div
         className="flex min-h-screen h-screen overflow-hidden relative"
         style={{ minHeight: '100vh' }}
@@ -637,12 +633,10 @@ export default function AppShell() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"
           style={{ background: 'rgba(0,0,0,0.4)' }}
           onClick={() => {
-            if (hasMeaningfulEntry(drawerEntry)) {
-              setPendingClose(true);
-            } else {
+            setTimeout(() => {
               setDrawerOpen(false);
               setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-            }
+            }, 0);
           }}
         >
           <div
@@ -654,14 +648,12 @@ export default function AppShell() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-default)]">
               <span className="text-sm font-bold text-[var(--text-primary)]">Log Time Entry</span>
               <button
-                onClick={() => {
-                  if (hasMeaningfulEntry(drawerEntry)) {
-                    setPendingClose(true);
-                  } else {
-                    setDrawerOpen(false);
-                    setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-                  }
-                }}
+onClick={() => {
+                    setTimeout(() => {
+                      setDrawerOpen(false);
+                      setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                    }, 0);
+                  }}
                 className="w-7 h-7 flex items-center justify-center rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-sunken)] transition-all"
               >
                 <X size={14} />
@@ -670,22 +662,6 @@ export default function AppShell() {
 
             {/* Modal body */}
             <div className="px-5 py-5 space-y-5">
-              {/* Discard confirmation banner */}
-              {pendingClose && (
-                <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl"
-                  style={{ background: 'var(--bg-sunken)', border: '1px solid var(--border-default)' }}>
-                  <span className="text-sm text-[var(--text-secondary)]">Discard unsaved entry?</span>
-                  <div className="flex gap-2 shrink-0">
-                    <Button variant="ghost" size="sm" onClick={() => setPendingClose(false)}>Keep editing</Button>
-                    <Button variant="danger" size="sm" onClick={() => {
-                      setPendingClose(false);
-                      setDrawerOpen(false);
-                      setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
-                    }}>Discard</Button>
-                  </div>
-                </div>
-              )}
-
               {/* Task Description */}
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-1.5">
@@ -727,25 +703,31 @@ export default function AppShell() {
                       <DateTimePicker
                         value={drawerEntry.date}
                         onChange={val => setDrawerEntry(prev => ({ ...prev, date: val }))}
+                        use12h={true}
+                        closeOnSelect={false}
                       />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <label className="text-xs text-[var(--text-secondary)] w-16 shrink-0">From</label>
-                    <div className="relative inline-flex items-center flex-1">
+                    <div className="flex-1">
                       <DateTimePicker
                         mode="time"
                         timeValue={drawerEntry.startTime}
                         onTimeChange={val => setDrawerEntry(prev => ({ ...prev, startTime: val }))}
+                        use12h={true}
+                        closeOnSelect={false}
                       />
                     </div>
                     <span className="text-sm text-[var(--text-muted)] px-1">–</span>
                     <label className="text-xs text-[var(--text-secondary)] shrink-0 mr-2">to</label>
-                    <div className="relative inline-flex items-center flex-1">
+                    <div className="flex-1">
                       <DateTimePicker
                         mode="time"
                         timeValue={drawerEntry.endTime}
                         onTimeChange={val => setDrawerEntry(prev => ({ ...prev, endTime: val }))}
+                        use12h={true}
+                        closeOnSelect={false}
                       />
                     </div>
                   </div>
@@ -798,9 +780,10 @@ export default function AppShell() {
             {/* Modal footer */}
             <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-[var(--border-default)]">
               <Button variant="ghost" size="sm" onClick={() => {
-                setPendingClose(false);
-                setDrawerOpen(false);
-                setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                setTimeout(() => {
+                  setDrawerOpen(false);
+                  setDrawerEntry({ task: '', projectId: '', taskId: '', date: new Date().toISOString().slice(0, 10), startTime: '', endTime: '', billable: true });
+                }, 0);
               }}>
                 Cancel
               </Button>

@@ -296,6 +296,8 @@ export default function DateTimePicker({
   placeholder = 'Select date',
   label,
   mode = 'date',
+  use12h = false,
+  closeOnSelect = true,
   showPresets = false,
   onRangeChange,
   autoOpen = false,
@@ -393,8 +395,8 @@ export default function DateTimePicker({
 
   const handleDaySelect = (year, month, day) => {
     if (!range) {
-      onChange?.(formatDate(year, month, day));
-      setActivePanel(null);
+onChange?.(formatDate(year, month, day));
+        if (closeOnSelect) setActivePanel(null);
       return;
     }
 
@@ -408,8 +410,8 @@ export default function DateTimePicker({
       let endStr = formatDate(year, month, day);
       if (endStr < startStr) [startStr, endStr] = [endStr, startStr];
       onRangeChange?.([startStr, endStr]);
-      setRangePhase('idle');
-      setActivePanel(null);
+setRangePhase('idle');
+        if (closeOnSelect) setActivePanel(null);
     }
   };
 
@@ -427,7 +429,12 @@ export default function DateTimePicker({
       : placeholder;
   })();
 
-  const timeDisplay = (showTime || mode === 'time') ? `${pad(hours)}:${pad(minutes)}` : '';
+  const timeDisplay = (() => {
+    const formattedHours = use12h ? ((hours % 12) || 12) : pad(hours);
+    const ampm = use12h ? (hours >= 12 ? 'PM' : 'AM') : '';
+    const base = `${formattedHours}:${pad(minutes)}`;
+    return (showTime || mode === 'time') ? (ampm ? `${base} ${ampm}` : base) : '';
+  })();
 
   return (
     <div ref={containerRef} className="relative inline-flex flex-col gap-1.5 w-full">
@@ -522,14 +529,14 @@ export default function DateTimePicker({
               if (parsed) { setHours(parsed.h); setMinutes(parsed.m); onTimeChange?.(`${pad(parsed.h)}:${pad(parsed.m)}`); }
               setTypedTime('');
             }}
-            onKeyDown={e => {
-              if (e.key === 'Enter') {
-                const parsed = parseTypedTime(typedTime);
-                if (parsed) { setHours(parsed.h); setMinutes(parsed.m); onTimeChange?.(`${pad(parsed.h)}:${pad(parsed.m)}`); }
-                setTypedTime('');
-                setActivePanel(null);
-              }
-            }}
+onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  const parsed = parseTypedTime(typedTime);
+                  if (parsed) { setHours(parsed.h); setMinutes(parsed.m); onTimeChange?.(`${pad(parsed.h)}:${pad(parsed.m)}`); }
+                  setTypedTime('');
+                  if (closeOnSelect) setActivePanel(null);
+                }
+              }}
             placeholder={`${pad(hours)}:${pad(minutes)}`}
             className="w-full text-sm text-center font-mono px-2 py-1.5 rounded-lg focus:outline-none"
             style={{
@@ -541,13 +548,13 @@ export default function DateTimePicker({
           <TimeChipGrid
             hours={hours}
             minutes={minutes}
-            onPick={(h, m) => {
-              setHours(h);
-              setMinutes(m);
-              setTypedTime('');
-              onTimeChange?.(`${pad(h)}:${pad(m)}`);
-              setActivePanel(null);
-            }}
+onPick={(h, m) => {
+                      setHours(h);
+                      setMinutes(m);
+                      setTypedTime('');
+                      onTimeChange?.(`${pad(h)}:${pad(m)}`);
+                      if (closeOnSelect) setActivePanel(null);
+                    }}
           />
         </div>
       )}
@@ -583,7 +590,7 @@ export default function DateTimePicker({
                             } else {
                               onChange?.(startStr);
                             }
-                            setActivePanel(null);
+                if (closeOnSelect) setActivePanel(null);
                           }}
                           className={`text-left text-xs px-3 py-1.5 rounded-lg transition-colors hover:bg-[var(--bg-sunken)] ${
                             isActive

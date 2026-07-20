@@ -3,10 +3,11 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 const TimerContext = createContext(null);
 
 /**
- * TimerProvider - Isolates timer state to prevent app-wide re-renders every second.
- * Only components that explicitly consume TimerContext will re-render on timer tick.
+ * useTimerState - Encapsulates all timer state management logic.
+ * Handles timer tick, localStorage persistence, and Supabase logging on stop.
+ * Can be called by AppShell (to own the state) or used internally by TimerProvider.
  */
-export function TimerProvider({ children, projectList, user, orgId, supabase, setLogs, triggerToast }) {
+export function useTimerState({ projectList, user, orgId, supabase, setLogs, triggerToast }) {
   const [timerRunning, setTimerRunning] = useState(() => {
     try { return localStorage.getItem('timer_running') === 'true'; } catch { return false; }
   });
@@ -141,7 +142,7 @@ export function TimerProvider({ children, projectList, user, orgId, supabase, se
     } catch {}
   }, []);
 
-  const value = {
+  return {
     timerRunning,
     timerStart,
     timerSeconds,
@@ -153,7 +154,14 @@ export function TimerProvider({ children, projectList, user, orgId, supabase, se
     resetTimer,
     updateTimer,
   };
+}
 
+/**
+ * TimerProvider - Provides timer context to children.
+ * Accepts a pre-built `value` object (from useTimerState) so the parent
+ * can both consume and provide timer state without a context ordering issue.
+ */
+export function TimerProvider({ children, value }) {
   return (
     <TimerContext.Provider value={value}>
       {children}

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '../auth/supabase';
 
 /**
@@ -13,6 +13,26 @@ export function AuthProviderGateway({ children, onAuthSuccess }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const fetchProfile = useCallback(async (userId) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('org_id, full_name, avatar_url')
+      .eq('id', userId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+        console.error('[AuthGateway] Supabase tables missing. Run supabase/schema.sql to create them.');
+      } else {
+        console.error('[AuthGateway] fetchProfile error:', error.message);
+      }
+      setProfile(null);
+      return null;
+    }
+    setProfile(data);
+    return data;
+  }, []);
 
   useEffect(() => {
     let mounted = true;

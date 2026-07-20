@@ -24,8 +24,3 @@ function GatewayApp() {
   )
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <GatewayApp />
-  </React.StrictMode>
-)
