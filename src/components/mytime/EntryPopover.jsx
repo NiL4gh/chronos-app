@@ -2,7 +2,7 @@ import React from 'react';
 import { X, Trash2, ExternalLink } from 'lucide-react';
 import { getProjectColor } from '../../lib/myTimeHelpers';
 
-export default function EntryPopover({ selectedEntry, setSelectedEntry, setDrawerEntry, setDrawerOpen, deleteEntry, logsToRender, setLogsToRender }) {
+export default function EntryPopover({ selectedEntry, setSelectedEntry, setDrawerEntry, setDrawerOpen, deleteEntry }) {
   if (!selectedEntry) return null;
 
   return (
@@ -115,14 +115,12 @@ export default function EntryPopover({ selectedEntry, setSelectedEntry, setDrawe
               </a>
             )}
             <button
-              onClick={() => {
-                if (window.confirm('Delete this time entry?')) {
-                  const newLogs = logsToRender.filter(log => log.id !== selectedEntry.log.id);
-                  setLogsToRender(newLogs);
-                  deleteEntry(selectedEntry.log.id);
-                  setSelectedEntry(null);
-                }
-              }}
+                onClick={() => {
+                  if (window.confirm('Delete this time entry?')) {
+                    deleteEntry(selectedEntry.log.id);
+                    setSelectedEntry(null);
+                  }
+                }}
               className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
               style={{ color: 'var(--danger-text)' }}
               onMouseEnter={(e) => e.currentTarget.style.background = 'color-mix(in srgb, var(--danger-text) 10%, transparent)'}

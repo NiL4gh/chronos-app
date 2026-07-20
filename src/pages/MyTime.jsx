@@ -711,15 +711,13 @@ export default function MyTime() {
       </div>
 
       {/* Calendar entry popover */}
-      <EntryPopover
-        selectedEntry={selectedEntry}
-        setSelectedEntry={setSelectedEntry}
-        setDrawerEntry={setDrawerEntry}
-        setDrawerOpen={setDrawerOpen}
-        deleteEntry={deleteEntry}
-        logsToRender={logsToRender}
-        setLogsToRender={setLogsToRender}
-      />
+        <EntryPopover
+          selectedEntry={selectedEntry}
+          setSelectedEntry={setSelectedEntry}
+          setDrawerEntry={setDrawerEntry}
+          setDrawerOpen={setDrawerOpen}
+          deleteEntry={deleteEntry}
+        />
 
       {/* Calendar sync panel (unchanged) */}
       {showCalendarPanel && (
