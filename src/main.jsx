@@ -64,8 +64,13 @@ async function checkSessionLite() {
 /**
  * Fetch profile for the current user to check org_id.
  * Returns profile object or null.
+ * 
+ * In production (Vercel), throws on error so we can distinguish
+ * between "no org" (needs onboarding) vs "table missing" (schema error).
  */
 async function fetchProfileForSession() {
+  const isDev = window.location.hostname === 'localhost'
+  
   try {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session?.user) return null
@@ -76,9 +81,18 @@ async function fetchProfileForSession() {
       .eq('id', session.user.id)
       .single()
 
-    if (error) return null
+    if (error) {
+      // In production, log the error so we can debug in console
+      if (!isDev) {
+        console.error('[Chronos] Profile fetch error:', error.message)
+      }
+      return null
+    }
     return data
-  } catch {
+  } catch (e) {
+    if (!isDev) {
+      console.error('[Chronos] Profile fetch exception:', e)
+    }
     return null
   }
 }
@@ -151,10 +165,13 @@ function Root() {
 
       if (!mounted) return
 
+      // In production: if profile is null (query failed), we should still show gateway
+      // because the user might not have a profile row yet (trigger didn't fire)
+      // or the schema isn't applied. This prevents skipping to the app.
       if (profile?.org_id) {
         setState('app')
       } else {
-        // User authenticated but no organization — needs onboarding
+        // No org_id OR profile query failed → load Gateway (onboarding)
         setState('gateway')
       }
     }

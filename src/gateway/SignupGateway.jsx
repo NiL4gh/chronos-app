@@ -23,9 +23,13 @@ export default function SignupGateway({ onAuthSuccess }) {
 
   const handleGoogleSignup = async () => {
     setError('');
+    // Use a fixed redirect path instead of current pathname
+    // This ensures OAuth callback works consistently across environments
+    const redirectPath = window.location.origin + '/signup';
+    
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin + window.location.pathname },
+      options: { redirectTo: redirectPath },
     });
     if (err) setError(err.message);
   };
