@@ -9,7 +9,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: path.resolve(__dirname, 'index.html'),
-        gateway: path.resolve(__dirname, 'gateway.html'),
       },
     },
   },
