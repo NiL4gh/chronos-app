@@ -55,8 +55,11 @@ class RootErrorBoundary extends React.Component {
 async function checkSessionLite() {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    return !!session?.user
-  } catch {
+    const hasSession = !!session?.user
+    console.log('[Chronos] checkSessionLite:', { hasSession, userId: session?.user?.id })
+    return hasSession
+  } catch (e) {
+    console.error('[Chronos] checkSessionLite error:', e)
     return false
   }
 }
@@ -73,7 +76,10 @@ async function fetchProfileForSession() {
   
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) return null
+    if (!session?.user) {
+      if (!isDev) console.warn('[Chronos] No session found')
+      return null
+    }
 
     const { data, error } = await supabase
       .from('profiles')
@@ -84,7 +90,12 @@ async function fetchProfileForSession() {
     if (error) {
       // In production, log the error so we can debug in console
       if (!isDev) {
-        console.error('[Chronos] Profile fetch error:', error.message)
+        console.error('[Chronos] Profile fetch error:', error.message, 'Code:', error.code, 'Details:', error.details)
+        console.error('[Chronos] User ID:', session.user.id)
+        console.error('[Chronos] Supabase config:', { 
+          url: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING',
+          key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
+        })
       }
       return null
     }
@@ -151,17 +162,22 @@ function Root() {
     let mounted = true
 
     async function initialize() {
+      console.log('[Chronos] Initializing auth check...')
       const hasSession = await checkSessionLite()
+      console.log('[Chronos] Session check result:', hasSession)
 
       if (!mounted) return
 
       if (!hasSession) {
+        console.log('[Chronos] No session → loading Gateway')
         setState('gateway')
         return
       }
 
       // Session exists — check if user has organization
+      console.log('[Chronos] Session exists → fetching profile...')
       const profile = await fetchProfileForSession()
+      console.log('[Chronos] Profile result:', profile)
 
       if (!mounted) return
 
@@ -169,9 +185,11 @@ function Root() {
       // because the user might not have a profile row yet (trigger didn't fire)
       // or the schema isn't applied. This prevents skipping to the app.
       if (profile?.org_id) {
+        console.log('[Chronos] Has org_id → loading App')
         setState('app')
       } else {
         // No org_id OR profile query failed → load Gateway (onboarding)
+        console.log('[Chronos] No org_id or profile missing → loading Gateway')
         setState('gateway')
       }
     }
