@@ -1,123 +1,112 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react'
-import ReactDOM from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './auth/supabase'
 import './index.css'
 
-/**
- * Error boundary so a runtime error renders a visible message
- * instead of a blank page during development.
- */
-class RootErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props)
-    this.state = { error: null }
-  }
-  static getDerivedStateFromError(error) {
-    return { error }
-  }
-  componentDidCatch(error, info) {
-    console.error('[Chronos] Runtime error:', error, info)
-  }
-  render() {
-    if (this.state.error) {
-      return (
-        <div
-          className="min-h-screen flex items-center justify-center p-6"
-          style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
-        >
-          <div
-            className="max-w-md w-full rounded-2xl p-6 shadow-xl"
-            style={{ background: 'var(--bg-surface)', border: '1px solid var(--border-default)' }}
-          >
-            <h2 className="text-lg font-semibold mb-2">Something went wrong.</h2>
-            <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
-              Open DevTools (F12) → Console for full error details.
-            </p>
-            <pre
-              className="text-xs p-3 rounded-lg overflow-auto max-h-64 whitespace-pre-wrap break-all"
-              style={{ background: 'var(--bg-sunken)', color: 'var(--text-secondary)' }}
-            >
-              {String(this.state.error?.stack ?? this.state.error?.message ?? this.state.error)}
-            </pre>
-          </div>
-        </div>
-      )
-    }
-    return this.props.children
-  }
-}
+// Lazy-load pages
+const Login = lazy(() => import('./pages/Login'))
+const Signup = lazy(() => import('./pages/Signup'))
+const AuthCallback = lazy(() => import('./pages/AuthCallback'))
+const Onboarding = lazy(() => import('./gateway/OnboardingGateway'))
+const MainApp = lazy(() => import('./app/mainApp'))
 
 /**
- * Lightweight session check — no AuthProvider, no profile fetch.
- * Returns true if a valid Supabase session exists (including demo mode).
+ * Check if user has an active session
  */
-async function checkSessionLite() {
+async function checkSession() {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    const hasSession = !!session?.user
-    console.log('[Chronos] checkSessionLite:', { hasSession, userId: session?.user?.id })
-    return hasSession
-  } catch (e) {
-    console.error('[Chronos] checkSessionLite error:', e)
+    return !!session?.user
+  } catch {
     return false
   }
 }
 
 /**
- * Fetch profile for the current user to check org_id.
- * Returns profile object or null.
- * 
- * In production (Vercel), throws on error so we can distinguish
- * between "no org" (needs onboarding) vs "table missing" (schema error).
+ * Get user's profile to check if they have an organization
  */
-async function fetchProfileForSession() {
-  const isDev = window.location.hostname === 'localhost'
-  
+async function getProfile(userId) {
   try {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session?.user) {
-      if (!isDev) console.warn('[Chronos] No session found')
-      return null
-    }
-
     const { data, error } = await supabase
       .from('profiles')
       .select('org_id')
-      .eq('id', session.user.id)
+      .eq('id', userId)
       .single()
-
+    
     if (error) {
-      // In production, log the error so we can debug in console
-      if (!isDev) {
-        console.error('[Chronos] Profile fetch error:', error.message, 'Code:', error.code, 'Details:', error.details)
-        console.error('[Chronos] User ID:', session.user.id)
-        console.error('[Chronos] Supabase config:', { 
-          url: import.meta.env.VITE_SUPABASE_URL ? 'SET' : 'MISSING',
-          key: import.meta.env.VITE_SUPABASE_ANON_KEY ? 'SET' : 'MISSING'
-        })
-      }
+      console.error('[Profile Error]', error.message)
       return null
     }
     return data
   } catch (e) {
-    if (!isDev) {
-      console.error('[Chronos] Profile fetch exception:', e)
-    }
+    console.error('[Profile Exception]', e)
     return null
   }
 }
 
 /**
- * Loading fallback while gateway/app chunks load.
- * Uses design tokens from index.css.
+ * Protected route wrapper - redirects to login if no session
+ */
+function ProtectedRoute({ children, requireOrg = false }) {
+  const [loading, setLoading] = useState(true)
+  const [authorized, setAuthorized] = useState(false)
+  const [needsOnboarding, setNeedsOnboarding] = useState(false)
+
+  useEffect(() => {
+    async function checkAuth() {
+      const hasSession = await checkSession()
+      
+      if (!hasSession) {
+        setAuthorized(false)
+        setLoading(false)
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      const profile = await getProfile(session.user.id)
+
+      if (requireOrg && !profile?.org_id) {
+        setNeedsOnboarding(true)
+        setLoading(false)
+        return
+      }
+
+      setAuthorized(true)
+      setLoading(false)
+    }
+
+    checkAuth()
+  }, [requireOrg])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-t-transparent rounded-full mx-auto mb-4" 
+               style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+          <p style={{ color: 'var(--text-muted)' }}>Loading...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (needsOnboarding) {
+    return <Navigate to="/onboarding" replace />
+  }
+
+  if (!authorized) {
+    return <Navigate to="/login" replace />
+  }
+
+  return children
+}
+
+/**
+ * Loading fallback for lazy-loaded components
  */
 function LoadingFallback() {
   return (
-    <div
-      className="min-h-screen flex items-center justify-center"
-      style={{ background: 'var(--bg-base)' }}
-    >
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
       <div className="flex flex-col items-center gap-4">
         <div
           className="w-12 h-12 rounded-2xl flex items-center justify-center animate-pulse"
@@ -134,100 +123,37 @@ function LoadingFallback() {
   )
 }
 
-// Lazy-load the Auth Gateway chunk (only when no session or needs onboarding)
-const Gateway = lazy(() =>
-  import('./gateway/mainGateway').then((mod) => ({
-    default: mod.AppGateway,
-  }))
-)
-
-// Lazy-load the Main App chunk (new app structure in src/app/)
-const MainApp = lazy(() => import('./app/mainApp'))
-
 /**
- * Root component — decides whether to load the Auth Gateway or the Main App
- * based on whether a session exists AND whether the user has an organization.
- * 
- * Flow:
- * 1. checkSessionLite() → no session → load Gateway (login/signup)
- * 2. Session exists → fetchProfileForSession() 
- *    - has org_id → load Main App
- *    - no org_id → load Gateway (onboarding)
- * 3. Gateway onAuthSuccess() → re-check session + profile → load Main App
+ * Main App Component
  */
-function Root() {
-  const [state, setState] = useState('checking') // 'checking' | 'gateway' | 'app'
-
-  useEffect(() => {
-    let mounted = true
-
-    async function initialize() {
-      console.log('[Chronos] Initializing auth check...')
-      const hasSession = await checkSessionLite()
-      console.log('[Chronos] Session check result:', hasSession)
-
-      if (!mounted) return
-
-      if (!hasSession) {
-        console.log('[Chronos] No session → loading Gateway')
-        setState('gateway')
-        return
-      }
-
-      // Session exists — check if user has organization
-      console.log('[Chronos] Session exists → fetching profile...')
-      const profile = await fetchProfileForSession()
-      console.log('[Chronos] Profile result:', profile)
-
-      if (!mounted) return
-
-      // In production: if profile is null (query failed), we should still show gateway
-      // because the user might not have a profile row yet (trigger didn't fire)
-      // or the schema isn't applied. This prevents skipping to the app.
-      if (profile?.org_id) {
-        console.log('[Chronos] Has org_id → loading App')
-        setState('app')
-      } else {
-        // No org_id OR profile query failed → load Gateway (onboarding)
-        console.log('[Chronos] No org_id or profile missing → loading Gateway')
-        setState('gateway')
-      }
-    }
-
-    initialize()
-    return () => { mounted = false }
-  }, [])
-
-  // Still checking — show loading
-  if (state === 'checking') {
-    return <LoadingFallback />
-  }
-
-  // No session OR session exists but no org → load Auth Gateway (lazy).
-  // Gateway depends on the parent's HashRouter.
-  if (state === 'gateway') {
-    return (
-      <HashRouter>
-        <Suspense fallback={<LoadingFallback />}>
-          <Gateway onAuthSuccess={() => setState('checking')} />
-        </Suspense>
-      </HashRouter>
-    )
-  }
-
-  // Session exists + has org → load Main App.
-  // MainApp provides its own HashRouter internally — DO NOT wrap here.
+export default function App() {
   return (
-    <Suspense fallback={<LoadingFallback />}>
-      <MainApp />
-    </Suspense>
+    <BrowserRouter>
+      <Suspense fallback={<LoadingFallback />}>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/onboarding" element={<Onboarding />} />
+          
+          {/* Protected app routes */}
+          <Route
+            path="/app/*"
+            element={
+              <ProtectedRoute requireOrg={true}>
+                <MainApp />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Root redirect */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          
+          {/* 404 */}
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   )
 }
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <RootErrorBoundary>
-      <Root />
-    </RootErrorBoundary>
-  </React.StrictMode>
-)

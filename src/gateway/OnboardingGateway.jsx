@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../auth/supabase';
 import { useGatewayAuth } from './AuthProviderGateway';
 import { Timer, Building2, ArrowRight } from 'lucide-react';
@@ -13,6 +14,7 @@ import friendlyAuthError from '../auth/errors';
  * to the main app (via the Root component in main.jsx).
  */
 export default function OnboardingGateway({ onAuthSuccess }) {
+  const navigate = useNavigate();
   const { user } = useGatewayAuth();
   const [orgName, setOrgName] = useState('');
   const [industry, setIndustry] = useState('Technology');
@@ -60,6 +62,9 @@ export default function OnboardingGateway({ onAuthSuccess }) {
       if (onAuthSuccess) {
         await onAuthSuccess();
       }
+      
+      // 4. Navigate to the main app
+      navigate('/app', { replace: true });
     } catch (err) {
       console.error('[OnboardingGateway] Error:', err);
       setError(friendlyAuthError(err));
