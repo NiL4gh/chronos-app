@@ -14,14 +14,12 @@ import '../index.css'
  */
 export default function MainApp() {
   return (
-    <HashRouter>
-      <AuthProviderApp>
-        <Routes>
-          <Route element={<AppShell />}>
-            <Route path="/*" element={<AppRoutes />} />
-          </Route>
-        </Routes>
-      </AuthProviderApp>
-    </HashRouter>
+    <AuthProviderApp>
+      <Routes>
+        <Route element={<AppShell />}>
+          <Route path="/*" element={<AppRoutes />} />
+        </Route>
+      </Routes>
+    </AuthProviderApp>
   )
 }

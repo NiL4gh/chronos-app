@@ -127,14 +127,16 @@ export default function LoginGateway({ onAuthSuccess }) {
             <p className="text-xs text-[var(--text-muted)] mb-2.5">
               Recruiters & hiring managers: explore the complete live workspace without signup or database setup.
             </p>
-            <a
-              href="https://chronos-demo-beige.vercel.app/#/my-time"
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => {
+                try { localStorage.setItem('chronos_demo_mode', 'true'); } catch {}
+                window.location.href = '/app/#/my-time';
+              }}
               className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all shadow-sm active:scale-[0.98]"
             >
               Launch Interactive Demo ↗
-            </a>
+            </button>
           </div>
 
           {/* Google OAuth */}

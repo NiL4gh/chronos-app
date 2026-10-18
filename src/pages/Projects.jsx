@@ -519,7 +519,7 @@ export default function Projects() {
 
   return (
     <div className="flex h-full overflow-hidden">
-    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 animate-fade-in flex flex-col gap-6" style={{ background: 'transparent' }}>
+    <div className="flex-1 overflow-y-auto overflow-x-hidden flex flex-col gap-6" style={{ background: 'transparent' }}>
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Projects</h1>
         <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -591,7 +591,7 @@ export default function Projects() {
 
       {/* Projects table */}
       <div
-        className="overflow-hidden rounded-xl"
+        className="overflow-x-auto rounded-xl"
         style={{ border: '1px solid var(--border-default)' }}
       >
         <table className="w-full text-sm border-collapse">

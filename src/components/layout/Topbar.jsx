@@ -261,7 +261,7 @@ export default function Topbar({
 
   return (
     <header
-      className="px-6 flex items-center justify-between gap-4 h-14 md:h-16 shrink-0 topbar-glass"
+      className="px-3 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 h-14 md:h-16 shrink-0 topbar-glass"
       style={{
         transition: 'box-shadow 0.4s ease',
         ...(timerRunning ? {
@@ -280,7 +280,7 @@ export default function Topbar({
       </div>
 
       {/* CENTER ZONE — always-visible Toggl-style entry bar */}
-      <div className="hidden xl:flex flex-1 min-w-0 mx-3 justify-center max-w-lg">
+      <div className="hidden xl:flex flex-1 min-w-0 mx-3 justify-center max-w-md 2xl:max-w-lg">
         <div
           className="flex items-center w-full gap-1.5 px-2.5 py-1 rounded-xl transition-all overflow-hidden"
           style={{
@@ -707,7 +707,7 @@ onClick={() => {
           style={{ color: 'var(--text-muted)' }}
         >
           <Plus size={14} />
-          <span>Manual</span>
+          <span className="hidden sm:inline">Manual</span>
         </button>
 
         {/* Search / command palette */}

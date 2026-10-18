@@ -392,7 +392,7 @@ export default function Reports() {
   return (
     <div className="flex w-full h-full overflow-hidden">
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-6 animate-fade-in relative z-10" style={{ background: 'transparent' }}>
         <div className="mb-6">
           <h1 className="text-xl font-bold text-[var(--text-primary)] tracking-tight">Reports</h1>
           <p className="text-sm text-[var(--text-muted)] mt-1">
@@ -427,7 +427,7 @@ export default function Reports() {
 
         {/* FILTER BAR */}
         <div className="glass-card p-4 relative z-30">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
+          <div className="flex flex-col sm:flex-row flex-wrap gap-4 items-end">
             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
               <label className="text-xs text-[var(--text-muted)] uppercase tracking-wider">Date Range</label>
               <DateTimePicker
@@ -651,7 +651,7 @@ export default function Reports() {
         </div>
 
         {/* PROJECT BREAKDOWN TABLE */}
-        <div className="glass-card overflow-hidden animate-fade-in">
+        <div className="glass-card overflow-x-auto animate-fade-in">
           <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border-default)' }}>
             <h3 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>By Project</h3>
           </div>
@@ -800,7 +800,7 @@ export default function Reports() {
 
             {/* Tag details table */}
             {tagData.length > 0 && (
-              <div className="glass-card overflow-hidden">
+              <div className="glass-card overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b" style={{ borderColor: 'var(--border-default)' }}>

@@ -209,7 +209,7 @@ export default function Tasks() {
 
       {/* Tasks data table */}
       <div
-        className="overflow-hidden rounded-xl"
+        className="overflow-x-auto rounded-xl"
         style={{ border: '1px solid var(--border-default)' }}
       >
         <table className="w-full text-sm border-collapse">

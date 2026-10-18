@@ -12,6 +12,12 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
   const { session, loading, isAdmin } = useAuthApp();
   const location = useLocation();
 
+  // Zero-friction demo mode for portfolio showcase
+  const isDemo = typeof window !== 'undefined' && localStorage.getItem('chronos_demo_mode') === 'true';
+  if (isDemo) {
+    return children;
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen" style={{ background: 'var(--bg-base)' }}>

@@ -35,7 +35,7 @@ export default function SlideOutDrawer({ isOpen, onClose, title, children, foote
         className={[
           'fixed inset-y-0 right-0 z-50 w-full max-w-md flex flex-col',
           'transition-transform duration-300 ease-in-out',
-          isOpen ? 'translate-x-0' : 'translate-x-full',
+          isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0 pointer-events-none invisible',
         ].join(' ')}
         style={{
           background: 'var(--bg-surface)',

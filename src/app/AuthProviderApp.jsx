@@ -131,9 +131,9 @@ export function AuthProviderApp({ children }) {
     signOut,
     refreshProfile,
     // Derived helpers consumed throughout the app
-    isAdmin: profile?.role === 'admin',
-    orgId: profile?.org_id ?? null,
-    displayName: profile?.full_name ?? user?.email ?? '',
+    isAdmin: (typeof window !== 'undefined' && localStorage.getItem('chronos_demo_mode') === 'true') || profile?.role === 'admin',
+    orgId: profile?.org_id ?? (typeof window !== 'undefined' && localStorage.getItem('chronos_demo_mode') === 'true' ? 'demo-org' : null),
+    displayName: profile?.full_name ?? user?.email ?? (typeof window !== 'undefined' && localStorage.getItem('chronos_demo_mode') === 'true' ? 'Demo Admin' : ''),
   };
 
   return (

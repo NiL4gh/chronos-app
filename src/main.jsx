@@ -67,6 +67,14 @@ function ProtectedRoute({ children, requireOrg = false }) {
 
   useEffect(() => {
     async function checkAuth() {
+      // Zero-friction portfolio demo mode for recruiters and review
+      const isDemo = localStorage.getItem('chronos_demo_mode') === 'true'
+      if (isDemo) {
+        setAuthorized(true)
+        setLoading(false)
+        return
+      }
+
       const hasSession = await checkSession()
       
       if (!hasSession) {
@@ -152,20 +160,15 @@ export default function App() {
           <Route path="/onboarding" element={<AuthProviderGateway><Onboarding /></AuthProviderGateway>} />
           
           {/* Protected app routes */}
+          <Route path="/app/*" element={<Navigate to="/my-time" replace />} />
           <Route
-            path="/app/*"
+            path="/*"
             element={
               <ProtectedRoute requireOrg={true}>
                 <MainApp />
               </ProtectedRoute>
             }
           />
-          
-          {/* Root redirect */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          
-          {/* 404 */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </Suspense>
     </BrowserRouter>
