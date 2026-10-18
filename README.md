@@ -18,8 +18,7 @@
 ## ⚡ Live Deployments & Interactive Demos
 
 | Environment | Purpose | Access | URL |
-| :--- | :--- | :--- | :--- |
-| **Instant Guest Sandbox** | Reviewer / Recruiter instant preview | **1-Click** (No signup or database required) | [chronos-demo-beige.vercel.app](https://chronos-demo-beige.vercel.app/#/my-time) |
+| **Instant Guest Sandbox** | Reviewer / Recruiter instant preview | **1-Click** (No signup or database required) | [Launch 1-Click Sandbox](https://chronos-app-rosy.vercel.app) |
 | **Production Cloud Gateway** | Live multi-tenant deployment | Google OAuth or Email Login | [chronos-app-rosy.vercel.app](https://chronos-app-rosy.vercel.app) |
 
 ---
