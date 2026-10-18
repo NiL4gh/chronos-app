@@ -14,6 +14,13 @@ const CALENDAR_HOURS = 24;
  */
 export default function CalendarView({ weekDays, selectedDate, filteredLogs, projects, setDrawerEntry, setDrawerOpen, setSelectedEntry }) {
   const visibleDays = weekDays;
+  const gridContainerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (gridContainerRef.current) {
+      gridContainerRef.current.scrollTop = 480; // Scroll to 8:00 AM
+    }
+  }, []);
 
   return (
     <div className="h-full w-full flex flex-col min-h-0 bg-[var(--bg-surface)] overflow-hidden">
@@ -45,7 +52,7 @@ export default function CalendarView({ weekDays, selectedDate, filteredLogs, pro
       </div>
 
       {/* Scrollable Time Grid */}
-      <div className="flex-1 overflow-y-auto min-h-0 relative bg-[var(--bg-surface)]">
+      <div ref={gridContainerRef} className="flex-1 overflow-y-auto min-h-0 relative bg-[var(--bg-surface)]">
         <div
           className="relative"
           style={{ display: 'grid', gridTemplateColumns: `64px repeat(${visibleDays.length}, 1fr)`, height: `${CALENDAR_HOURS * ROW_HEIGHT}px` }}

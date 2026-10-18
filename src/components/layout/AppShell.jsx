@@ -219,10 +219,10 @@ export default function AppShell() {
     }
 
     if (!user || !orgId) {
-      setProjectListState([]);
-      setTaskListState([]);
-      setInvoiceListState([]);
-      setLogsState([]);
+      setProjectListState(projects);
+      setTaskListState(tasks);
+      setInvoiceListState(invoices);
+      setLogsState(timeLogs);
       return;
     }
 

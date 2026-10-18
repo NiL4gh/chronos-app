@@ -280,9 +280,9 @@ export default function Topbar({
       </div>
 
       {/* CENTER ZONE — always-visible Toggl-style entry bar */}
-      <div className="hidden md:flex flex-1 min-w-0 mx-4 justify-center">
+      <div className="hidden xl:flex flex-1 min-w-0 mx-3 justify-center max-w-lg">
         <div
-          className="flex items-center w-full max-w-2xl gap-1.5 px-3 py-1.5 rounded-xl transition-all"
+          className="flex items-center w-full gap-1.5 px-2.5 py-1 rounded-xl transition-all overflow-hidden"
           style={{
             background: 'var(--bg-surface)',
             border: `1px solid ${timerRunning ? 'color-mix(in srgb, var(--accent) 40%, transparent)' : 'var(--border-default)'}`,

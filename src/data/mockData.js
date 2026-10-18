@@ -284,63 +284,63 @@ const generateMockLogs = () => {
     { id: 'p7', name: 'API Integration' },
   ];
 
-  // Create 3 entries per day for the last 5 weekdays
-  let daysAdded = 0;
-  for (let i = 0; i < 14 && logs.length < 24; i++) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
+  // Compute Monday of the current active week
+  const now = new Date();
+  const dayOfWeek = now.getDay();
+  const currentMonday = new Date(now);
+  const diffToMonday = currentMonday.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+  currentMonday.setDate(diffToMonday);
+
+  const timeSlots = [
+    { start: '09:00', end: '11:15', dur: 2.25 },
+    { start: '11:30', end: '13:00', dur: 1.5 },
+    { start: '14:00', end: '16:30', dur: 2.5 },
+    { start: '16:45', end: '17:45', dur: 1.0 }
+  ];
+
+  const taskNames = [
+    'Design System glassmorphic tokens',
+    'PostgreSQL RLS policy architecture',
+    'Hero component responsiveness audit',
+    'API Gateway rate limiting middleware',
+    'Client billing report breakdown',
+    'Interactive timesheet grid optimization',
+    'Automated keepalive cron workflow setup',
+    'Sprint backlog planning & triage'
+  ];
+
+  // Populate Monday through Friday of current week AND previous week
+  for (let offset = -7; offset < 5; offset++) {
+    const d = new Date(currentMonday);
+    d.setDate(d.getDate() + offset);
     const dateStr = d.toISOString().split('T')[0];
     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+    if (isWeekend) continue;
 
-    let entriesForDay = 1;
-    if (!isWeekend && daysAdded < 5) {
-      entriesForDay = 3;
-      daysAdded++;
-    } else if (isWeekend) {
-      entriesForDay = i % 2 === 0 ? 1 : 0;
-    }
+    // 2-3 entries per weekday
+    const slotsCount = (Math.abs(offset) % 2 === 0) ? 3 : 2;
+    for (let s = 0; s < slotsCount; s++) {
+      const slot = timeSlots[s % timeSlots.length];
+      const p = projs[(offset + s + 7) % projs.length];
+      const taskTitle = taskNames[(offset * 2 + s + 10) % taskNames.length];
+      const u = (s === 0) ? users[0] : users[(offset + s + 7) % users.length];
 
-    for (let j = 0; j < entriesForDay && logs.length < 24; j++) {
-      const u = users[(i + j) % users.length];
-      const p = projs[(i * j + 1) % projs.length];
       logs.push({
         id: 'tl' + idCount++,
         userId: u.id,
         userName: u.name,
         projectId: p.id,
         projectName: p.name,
-        task: 'Development task ' + idCount,
+        task: taskTitle,
         date: dateStr,
-        startTime: '09:00',
-        endTime: '11:00',
-        duration: 2,
-        source: j % 2 === 0 ? 'auto' : 'manual',
-        billable: j !== 2, // 2 out of 3 are billable
+        startTime: slot.start,
+        endTime: slot.end,
+        duration: slot.dur,
+        source: s % 2 === 0 ? 'auto' : 'manual',
+        billable: s !== 1,
+        tags: [p.name.split(' ')[0].toLowerCase()]
       });
     }
-  }
-
-  // Fill the rest if not 24
-  while (logs.length < 24) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - 10);
-    const dateStr = d.toISOString().split('T')[0];
-    const u = users[logs.length % users.length];
-    const p = projs[logs.length % projs.length];
-    logs.push({
-      id: 'tl' + idCount++,
-      userId: u.id,
-      userName: u.name,
-      projectId: p.id,
-      projectName: p.name,
-      task: 'Development task ' + idCount,
-      date: dateStr,
-      startTime: '13:00',
-      endTime: '14:30',
-      duration: 1.5,
-      source: 'auto',
-      billable: true,
-    });
   }
 
   return logs;
