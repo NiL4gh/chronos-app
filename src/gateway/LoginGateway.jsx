@@ -114,6 +114,29 @@ export default function LoginGateway({ onAuthSuccess }) {
             border: '1px solid var(--border-default)',
           }}
         >
+          {/* Portfolio Recruiter / 1-Click Sandbox Demo Access */}
+          <div className="mb-4 p-3 rounded-xl border border-violet-500/25 bg-violet-500/10 text-left">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs font-semibold text-violet-400 flex items-center gap-1.5">
+                <span>⚡</span> Portfolio Showcase
+              </span>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300">
+                1-Click Guest Access
+              </span>
+            </div>
+            <p className="text-xs text-[var(--text-muted)] mb-2.5">
+              Recruiters & hiring managers: explore the complete live workspace without signup or database setup.
+            </p>
+            <a
+              href="https://chronos-demo-beige.vercel.app/#/my-time"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold bg-violet-600 hover:bg-violet-500 text-white transition-all shadow-sm active:scale-[0.98]"
+            >
+              Launch Interactive Demo ↗
+            </a>
+          </div>
+
           {/* Google OAuth */}
           <button
             onClick={handleGoogleLogin}

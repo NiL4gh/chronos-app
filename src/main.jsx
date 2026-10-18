@@ -1,6 +1,8 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { supabase } from './auth/supabase'
+import { AuthProviderGateway } from './gateway/AuthProviderGateway'
 import './index.css'
 
 // Lazy-load pages
@@ -31,15 +33,26 @@ async function getProfile(userId) {
       .from('profiles')
       .select('org_id')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
     
-    if (error) {
-      console.error('[Profile Error]', error.message)
-      return null
+    if (data?.org_id) {
+      return data
     }
-    return data
+
+    // Check localStorage fallback
+    const cachedOrg = localStorage.getItem(`chronos_org_${userId}`)
+    if (cachedOrg) {
+      return { org_id: cachedOrg }
+    }
+
+    if (error) {
+      console.warn('[Profile Warning]', error.message)
+    }
+    return data || null
   } catch (e) {
-    console.error('[Profile Exception]', e)
+    console.warn('[Profile Exception]', e)
+    const cachedOrg = localStorage.getItem(`chronos_org_${userId}`)
+    if (cachedOrg) return { org_id: cachedOrg }
     return null
   }
 }
@@ -64,8 +77,9 @@ function ProtectedRoute({ children, requireOrg = false }) {
 
       const { data: { session } } = await supabase.auth.getSession()
       const profile = await getProfile(session.user.id)
+      const cachedOrg = localStorage.getItem(`chronos_org_${session.user.id}`)
 
-      if (requireOrg && !profile?.org_id) {
+      if (requireOrg && !profile?.org_id && !cachedOrg) {
         setNeedsOnboarding(true)
         setLoading(false)
         return
@@ -135,7 +149,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/onboarding" element={<AuthProviderGateway><Onboarding /></AuthProviderGateway>} />
           
           {/* Protected app routes */}
           <Route
@@ -156,4 +170,11 @@ export default function App() {
       </Suspense>
     </BrowserRouter>
   )
+}
+
+// Mount the app
+const container = document.getElementById('root')
+if (container) {
+  const root = createRoot(container)
+  root.render(<App />)
 }

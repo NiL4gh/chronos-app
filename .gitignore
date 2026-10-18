@@ -36,4 +36,7 @@ chrome_err.log
 *.sw?
 
 .vercel
-.env*
+.env
+.env.local
+.env.*.local
+!.env.example

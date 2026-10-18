@@ -16,21 +16,51 @@ export function AuthProviderApp({ children }) {
 
   // Fetch the profile row for the given user id
   const fetchProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        console.error('[AuthApp] Supabase tables missing. Run supabase/schema.sql to create them.');
-      } else {
-        console.error('[AuthProviderApp] fetchProfile error:', error.message);
+      if (data?.org_id) {
+        return data;
+      }
+
+      // Check localStorage fallback
+      const cached = localStorage.getItem(`chronos_profile_${userId}`);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {}
+      }
+
+      const cachedOrg = localStorage.getItem(`chronos_org_${userId}`);
+      if (cachedOrg) {
+        return {
+          id: userId,
+          org_id: cachedOrg,
+          role: 'admin',
+          full_name: 'Workspace Admin'
+        };
+      }
+
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.error('[AuthApp] Supabase tables missing. Run supabase/schema.sql to create them.');
+        } else {
+          console.warn('[AuthProviderApp] fetchProfile warning:', error.message);
+        }
+      }
+      return data || null;
+    } catch (e) {
+      console.warn('[AuthProviderApp] fetchProfile exception:', e);
+      const cachedOrg = localStorage.getItem(`chronos_org_${userId}`);
+      if (cachedOrg) {
+        return { id: userId, org_id: cachedOrg, role: 'admin' };
       }
       return null;
     }
-    return data;
   }, []);
 
   // Bootstrap: get the current session on mount

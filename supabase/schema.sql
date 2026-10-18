@@ -226,13 +226,35 @@ create policy "org_admin_update" on public.organizations
   using (id = public.my_org_id() and public.my_role() = 'admin')
   with check (id = public.my_org_id() and public.my_role() = 'admin');
 
+-- Profiles: allow users to read their own profile (crucial during onboarding before org is assigned)
+create policy "own_profile_read" on public.profiles
+  for select
+  to authenticated
+  using (id = auth.uid());
+
 -- Profiles: members see all profiles in their org
 create policy "org_members_see_profiles" on public.profiles
-  for select using (org_id = public.my_org_id());
+  for select
+  to authenticated
+  using (org_id = public.my_org_id());
+
+-- Profiles: allow authenticated users to insert their own profile (self-registration & OAuth fallback)
+create policy "own_profile_insert" on public.profiles
+  for insert
+  to authenticated
+  with check (id = auth.uid());
 
 -- Profiles: users can update their own profile
 create policy "own_profile_update" on public.profiles
-  for update using (id = auth.uid());
+  for update
+  to authenticated
+  using (id = auth.uid());
+
+-- Backfill profile rows for any existing auth.users who signed up before trigger was created:
+-- insert into public.profiles (id, email, full_name)
+-- select id, email, coalesce(raw_user_meta_data->>'full_name', split_part(email, '@', 1))
+-- from auth.users
+-- on conflict (id) do nothing;
 
 -- Projects: all org members can read; only admins can write
 create policy "org_read_projects" on public.projects

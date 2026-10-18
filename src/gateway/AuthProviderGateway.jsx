@@ -15,23 +15,43 @@ export function AuthProviderGateway({ children, onAuthSuccess }) {
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async (userId) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('org_id, full_name, avatar_url')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('org_id, full_name, avatar_url')
+        .eq('id', userId)
+        .maybeSingle();
 
-    if (error) {
-      if (error.code === 'PGRST116' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
-        console.error('[AuthGateway] Supabase tables missing. Run supabase/schema.sql to create them.');
-      } else {
-        console.error('[AuthGateway] fetchProfile error:', error.message);
+      if (data?.org_id) {
+        setProfile(data);
+        return data;
       }
+
+      // Check fallback from localStorage (handles newly onboarded sessions without race conditions)
+      const cached = localStorage.getItem(`chronos_profile_${userId}`);
+      if (cached) {
+        try {
+          const parsed = JSON.parse(cached);
+          setProfile(parsed);
+          return parsed;
+        } catch {}
+      }
+
+      if (error) {
+        if (error.code === '42P01' || error.message?.includes('does not exist')) {
+          console.error('[AuthGateway] Supabase tables missing. Run supabase/schema.sql to create them.');
+        } else {
+          console.warn('[AuthGateway] fetchProfile notice:', error.message);
+        }
+      }
+
+      setProfile(data || null);
+      return data || null;
+    } catch (e) {
+      console.warn('[AuthGateway] fetchProfile exception:', e);
       setProfile(null);
       return null;
     }
-    setProfile(data);
-    return data;
   }, []);
 
   useEffect(() => {

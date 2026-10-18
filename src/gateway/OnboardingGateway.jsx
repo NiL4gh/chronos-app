@@ -47,16 +47,35 @@ export default function OnboardingGateway({ onAuthSuccess }) {
 
       if (orgErr) throw orgErr;
 
-      // 2. Update profiles row
-      const { error: profileErr } = await supabase
-        .from('profiles')
-        .update({
-          org_id: orgId,
-          role: 'admin',
-        })
-        .eq('id', user.id);
+      // 2. Sync profile row (upsert if missing, fallback to update)
+      const profilePayload = {
+        id: user.id,
+        org_id: orgId,
+        role: 'admin',
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email?.split('@')[0],
+      };
 
-      if (profileErr) throw profileErr;
+      try {
+        const { error: upsertErr } = await supabase
+          .from('profiles')
+          .upsert(profilePayload);
+        if (upsertErr) {
+          // If upsert is blocked by RLS policy, fallback to targeted update
+          await supabase
+            .from('profiles')
+            .update({ org_id: orgId, role: 'admin' })
+            .eq('id', user.id);
+        }
+      } catch (err) {
+        console.warn('[OnboardingGateway] Profile sync warning:', err);
+      }
+
+      // Store in localStorage so navigation is instantaneous and immune to RLS replication lag
+      try {
+        localStorage.setItem(`chronos_org_${user.id}`, orgId);
+        localStorage.setItem(`chronos_profile_${user.id}`, JSON.stringify(profilePayload));
+      } catch {}
 
       // 3. Callback to trigger gateway → app transition
       if (onAuthSuccess) {
