@@ -9,6 +9,10 @@
 
 > **Portfolio Engineering Case Study:** Chronos is a production-grade, multi-tenant B2B time tracking and workforce management platform designed with a warm glassmorphic design system, strict PostgreSQL Row-Level Security (RLS), and a resilient dual-mode architecture.
 
+<p align="center">
+  <img src="docs/chronos-preview.gif" alt="Chronos App Interactive Preview" width="100%" style="border-radius: 10px; max-width: 900px;" />
+</p>
+
 ---
 
 ## ⚡ Live Deployments & Interactive Demos
